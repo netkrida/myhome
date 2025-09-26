@@ -1,0 +1,404 @@
+import { type Property, type PropertyImage, type Prisma } from "@prisma/client";
+import { prisma } from "../db/client";
+import type { 
+  CreatePropertyDTO,
+  UpdatePropertyDTO,
+  PropertyListQuery,
+  PropertyApprovalDTO,
+  PropertyStatsDTO,
+  PropertyListItem,
+  PropertyDetailItem,
+  PaginationDTO
+} from "../types";
+import { PropertyStatus, PropertyType } from "../types/property";
+
+/**
+ * Property Repository
+ * Data access layer for property operations
+ */
+export class PropertyRepository {
+  /**
+   * Find property by ID with optional includes
+   */
+  static async findById(
+    id: string, 
+    includeImages: boolean = true,
+    includeRooms: boolean = false,
+    includeOwner: boolean = false
+  ): Promise<PropertyDetailItem | null> {
+    const include: Prisma.PropertyInclude = {};
+    
+    if (includeImages) {
+      include.images = {
+        orderBy: { sortOrder: 'asc' }
+      };
+    }
+    
+    if (includeRooms) {
+      include.rooms = {
+        orderBy: { roomNumber: 'asc' }
+      };
+    }
+    
+    if (includeOwner) {
+      include.owner = {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true
+        }
+      };
+      include.approver = {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      };
+    }
+
+    const property = await prisma.property.findUnique({
+      where: { id },
+      include,
+    });
+
+    if (!property) return null;
+
+    // Transform to PropertyDetailItem
+    return {
+      id: property.id,
+      name: property.name,
+      buildYear: property.buildYear,
+      propertyType: property.propertyType as PropertyType,
+      description: property.description,
+      roomTypes: property.roomTypes as string[],
+      totalRooms: property.totalRooms,
+      availableRooms: property.availableRooms,
+      location: {
+        provinceCode: property.provinceCode,
+        provinceName: property.provinceName,
+        regencyCode: property.regencyCode,
+        regencyName: property.regencyName,
+        districtCode: property.districtCode,
+        districtName: property.districtName,
+        fullAddress: property.fullAddress,
+        latitude: property.latitude,
+        longitude: property.longitude,
+      },
+      facilities: property.facilities as any[],
+      rules: property.rules as any[],
+      status: property.status as PropertyStatus,
+      ownerId: property.ownerId,
+      createdAt: property.createdAt,
+      updatedAt: property.updatedAt,
+      approvedAt: property.approvedAt,
+      approvedBy: property.approvedBy,
+      images: property.images?.map(img => ({
+        id: img.id,
+        category: img.category as any,
+        imageUrl: img.imageUrl,
+        publicId: img.publicId,
+        caption: img.caption,
+        sortOrder: img.sortOrder,
+        createdAt: img.createdAt,
+        updatedAt: img.updatedAt,
+      })) || [],
+      owner: property.owner as any,
+      approver: property.approver as any,
+      rooms: property.rooms?.map(room => ({
+        id: room.id,
+        roomNumber: room.roomNumber,
+        floor: room.floor,
+        roomType: room.roomType,
+        monthlyPrice: Number(room.monthlyPrice),
+        isAvailable: room.isAvailable,
+      })) || [],
+    };
+  }
+
+  /**
+   * Create a new property
+   */
+  static async create(propertyData: CreatePropertyDTO, ownerId: string): Promise<Property> {
+    const { step1, step2, step4 } = propertyData;
+    
+    return prisma.property.create({
+      data: {
+        name: step1.name,
+        buildYear: step1.buildYear,
+        propertyType: step1.propertyType,
+        description: step1.description,
+        roomTypes: step1.roomTypes,
+        totalRooms: step1.totalRooms,
+        availableRooms: step1.availableRooms,
+        provinceCode: step2.location.provinceCode,
+        provinceName: step2.location.provinceName,
+        regencyCode: step2.location.regencyCode,
+        regencyName: step2.location.regencyName,
+        districtCode: step2.location.districtCode,
+        districtName: step2.location.districtName,
+        fullAddress: step2.location.fullAddress,
+        latitude: step2.location.latitude,
+        longitude: step2.location.longitude,
+        facilities: step4.facilities,
+        rules: step4.rules,
+        ownerId,
+        status: PropertyStatus.PENDING,
+      },
+    });
+  }
+
+  /**
+   * Update property
+   */
+  static async update(id: string, updateData: UpdatePropertyDTO): Promise<Property> {
+    const data: Prisma.PropertyUpdateInput = {};
+    
+    if (updateData.name) data.name = updateData.name;
+    if (updateData.buildYear) data.buildYear = updateData.buildYear;
+    if (updateData.propertyType) data.propertyType = updateData.propertyType;
+    if (updateData.description) data.description = updateData.description;
+    if (updateData.roomTypes) data.roomTypes = updateData.roomTypes;
+    if (updateData.totalRooms) data.totalRooms = updateData.totalRooms;
+    if (updateData.facilities) data.facilities = updateData.facilities;
+    if (updateData.rules) data.rules = updateData.rules;
+    
+    if (updateData.location) {
+      if (updateData.location.provinceCode) data.provinceCode = updateData.location.provinceCode;
+      if (updateData.location.provinceName) data.provinceName = updateData.location.provinceName;
+      if (updateData.location.regencyCode) data.regencyCode = updateData.location.regencyCode;
+      if (updateData.location.regencyName) data.regencyName = updateData.location.regencyName;
+      if (updateData.location.districtCode) data.districtCode = updateData.location.districtCode;
+      if (updateData.location.districtName) data.districtName = updateData.location.districtName;
+      if (updateData.location.fullAddress) data.fullAddress = updateData.location.fullAddress;
+      if (updateData.location.latitude) data.latitude = updateData.location.latitude;
+      if (updateData.location.longitude) data.longitude = updateData.location.longitude;
+    }
+
+    return prisma.property.update({
+      where: { id },
+      data,
+    });
+  }
+
+  /**
+   * Update property status (approval/rejection)
+   */
+  static async updateStatus(
+    id: string, 
+    approval: PropertyApprovalDTO, 
+    approverId: string
+  ): Promise<Property> {
+    const data: Prisma.PropertyUpdateInput = {
+      status: approval.status,
+      approvedBy: approverId,
+      approvedAt: new Date(),
+    };
+
+    return prisma.property.update({
+      where: { id },
+      data,
+    });
+  }
+
+  /**
+   * Update available rooms count
+   */
+  static async updateAvailableRooms(id: string, availableRooms: number): Promise<Property> {
+    return prisma.property.update({
+      where: { id },
+      data: { availableRooms },
+    });
+  }
+
+  /**
+   * Delete property
+   */
+  static async delete(id: string): Promise<Property> {
+    return prisma.property.delete({
+      where: { id },
+    });
+  }
+
+  /**
+   * Find properties with filtering and pagination
+   */
+  static async findMany(filters: PropertyListQuery): Promise<{
+    properties: PropertyListItem[];
+    pagination: PaginationDTO;
+  }> {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      propertyType,
+      status,
+      ownerId,
+      provinceCode,
+      regencyCode,
+      districtCode,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = filters;
+
+    // Build where clause
+    const where: Prisma.PropertyWhereInput = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { fullAddress: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    if (propertyType) where.propertyType = propertyType;
+    if (status) where.status = status;
+    if (ownerId) where.ownerId = ownerId;
+    if (provinceCode) where.provinceCode = provinceCode;
+    if (regencyCode) where.regencyCode = regencyCode;
+    if (districtCode) where.districtCode = districtCode;
+
+    // Get total count
+    const total = await prisma.property.count({ where });
+
+    // Calculate pagination
+    const totalPages = Math.ceil(total / limit);
+    const skip = (page - 1) * limit;
+
+    // Get properties
+    const properties = await prisma.property.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        images: {
+          where: { category: 'BUILDING_PHOTOS' },
+          orderBy: { sortOrder: 'asc' },
+          take: 1,
+        },
+      },
+    });
+
+    const propertyListItems: PropertyListItem[] = properties.map(property => ({
+      id: property.id,
+      name: property.name,
+      propertyType: property.propertyType as PropertyType,
+      status: property.status as PropertyStatus,
+      totalRooms: property.totalRooms,
+      availableRooms: property.availableRooms,
+      location: {
+        provinceName: property.provinceName,
+        regencyName: property.regencyName,
+        districtName: property.districtName,
+      },
+      owner: {
+        id: property.owner.id,
+        name: property.owner.name,
+        email: property.owner.email,
+      },
+      createdAt: property.createdAt,
+      mainImage: property.images[0]?.imageUrl,
+    }));
+
+    return {
+      properties: propertyListItems,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Get property statistics
+   */
+  static async getStatistics(ownerId?: string): Promise<PropertyStatsDTO> {
+    const where: Prisma.PropertyWhereInput = ownerId ? { ownerId } : {};
+
+    const [
+      totalProperties,
+      pendingProperties,
+      approvedProperties,
+      rejectedProperties,
+      roomStats
+    ] = await Promise.all([
+      prisma.property.count({ where }),
+      prisma.property.count({ where: { ...where, status: PropertyStatus.PENDING } }),
+      prisma.property.count({ where: { ...where, status: PropertyStatus.APPROVED } }),
+      prisma.property.count({ where: { ...where, status: PropertyStatus.REJECTED } }),
+      prisma.property.aggregate({
+        where,
+        _sum: {
+          totalRooms: true,
+          availableRooms: true,
+        },
+      }),
+    ]);
+
+    const totalRooms = roomStats._sum.totalRooms || 0;
+    const availableRooms = roomStats._sum.availableRooms || 0;
+    const occupancyRate = totalRooms > 0 ? ((totalRooms - availableRooms) / totalRooms) * 100 : 0;
+
+    return {
+      totalProperties,
+      pendingProperties,
+      approvedProperties,
+      rejectedProperties,
+      totalRooms,
+      availableRooms,
+      occupancyRate,
+    };
+  }
+
+  /**
+   * Find properties by owner
+   */
+  static async findByOwner(ownerId: string): Promise<Property[]> {
+    return prisma.property.findMany({
+      where: { ownerId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /**
+   * Find approved properties for public listing
+   */
+  static async findApproved(filters: Omit<PropertyListQuery, 'status'>): Promise<{
+    properties: PropertyListItem[];
+    pagination: PaginationDTO;
+  }> {
+    return this.findMany({ ...filters, status: PropertyStatus.APPROVED });
+  }
+
+  /**
+   * Bulk update property status
+   */
+  static async bulkUpdateStatus(
+    propertyIds: string[], 
+    status: PropertyStatus, 
+    approverId: string
+  ): Promise<{ count: number }> {
+    return prisma.property.updateMany({
+      where: { id: { in: propertyIds } },
+      data: { 
+        status, 
+        approvedBy: approverId, 
+        approvedAt: new Date() 
+      },
+    });
+  }
+}

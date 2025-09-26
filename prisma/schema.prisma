@@ -1,0 +1,306 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
+    // Further reading:
+    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+    url      = env("DATABASE_URL")
+
+}
+
+model Post {
+    id        Int      @id @default(autoincrement())
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    createdBy   User   @relation(fields: [createdById], references: [id])
+    createdById String
+
+    @@index([name])
+}
+
+// Necessary for Next auth
+model Account {
+    id                       String  @id @default(cuid())
+    userId                   String
+    type                     String
+    provider                 String
+    providerAccountId        String
+    refresh_token            String? // @db.Text
+    access_token             String? // @db.Text
+    expires_at               Int?
+    token_type               String?
+    scope                    String?
+    id_token                 String? // @db.Text
+    session_state            String?
+    user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    refresh_token_expires_in Int?
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum UserRole {
+    SUPERADMIN
+    ADMINKOS
+    RECEPTIONIST
+    CUSTOMER
+}
+
+model User {
+    id            String    @id @default(cuid())
+    name          String?
+    email         String?   @unique @db.VarChar(255)
+    emailVerified DateTime?
+    image         String?
+    password      String?   // For credentials-based authentication
+    role          UserRole  @default(CUSTOMER)
+    phoneNumber   String?   @db.VarChar(20)
+
+    // Address fields using wilayah.id structure
+    provinceCode  String?   @db.VarChar(10)   // Kode provinsi
+    provinceName  String?   @db.VarChar(100)  // Nama provinsi
+    regencyCode   String?   @db.VarChar(10)   // Kode kabupaten/kota
+    regencyName   String?   @db.VarChar(100)  // Nama kabupaten/kota
+    districtCode  String?   @db.VarChar(10)   // Kode kecamatan
+    districtName  String?   @db.VarChar(100)  // Nama kecamatan
+    streetAddress String?   @db.VarChar(500)  // Alamat jalan lengkap
+
+    isActive      Boolean   @default(true)
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+
+    // NextAuth relations
+    accounts      Account[]
+    sessions      Session[]
+    posts         Post[]
+
+    // RBAC relations
+    adminKosProfile      AdminKosProfile?
+    receptionistProfile  ReceptionistProfile?
+    customerProfile      CustomerProfile?
+
+    // Business relations
+    ownedProperties     Property[] @relation("PropertyOwner")
+    approvedProperties  Property[] @relation("PropertyApprover")
+
+    @@index([email])
+    @@index([role])
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
+
+// Role-specific profile models
+model AdminKosProfile {
+    id          String @id @default(cuid())
+    userId      String @unique
+    user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+}
+
+model ReceptionistProfile {
+    id          String @id @default(cuid())
+    userId      String @unique
+    user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    shift       Shift? // Using enum for better validation
+    startDate   DateTime?
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+}
+
+model CustomerProfile {
+    id              String @id @default(cuid())
+    userId          String @unique
+    user            User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    dateOfBirth     DateTime?
+    gender          String?
+    emergencyContact String?
+    emergencyPhone   String?
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+}
+
+// Business models
+enum Shift {
+    MORNING
+    EVENING
+    NIGHT
+}
+
+// Property Management Enums
+enum PropertyType {
+    MALE_ONLY      // Kos Cowo
+    FEMALE_ONLY    // Kos Cewek
+    MIXED          // Kos Campur
+}
+
+enum PropertyStatus {
+    PENDING        // Menunggu approval
+    APPROVED       // Sudah disetujui
+    REJECTED       // Ditolak
+    SUSPENDED      // Disuspend
+}
+
+enum ImageCategory {
+    BUILDING_PHOTOS          // Foto bangunan
+    SHARED_FACILITIES_PHOTOS // Foto fasilitas bersama
+    FLOOR_PLAN_PHOTOS       // Foto denah bangunan
+    ROOM_PHOTOS             // Foto kamar
+    BATHROOM_PHOTOS         // Foto kamar mandi
+}
+
+// Property Model
+model Property {
+    id                String        @id @default(cuid())
+
+    // Basic Information
+    name              String        @db.VarChar(255)
+    buildYear         Int
+    propertyType      PropertyType
+    description       String        @db.Text
+    roomTypes         Json          // Array of room types available
+    totalRooms        Int
+    availableRooms    Int           @default(0)
+
+    // Location Information
+    provinceCode      String        @db.VarChar(10)
+    provinceName      String        @db.VarChar(100)
+    regencyCode       String        @db.VarChar(10)
+    regencyName       String        @db.VarChar(100)
+    districtCode      String        @db.VarChar(10)
+    districtName      String        @db.VarChar(100)
+    fullAddress       String        @db.VarChar(500)
+    latitude          Float
+    longitude         Float
+
+    // Property Features
+    facilities        Json          // Array of property facilities
+    rules             Json          // Array of property rules
+
+    // Status and Ownership
+    status            PropertyStatus @default(PENDING)
+    ownerId           String
+    owner             User          @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+    // Timestamps
+    createdAt         DateTime      @default(now())
+    updatedAt         DateTime      @updatedAt
+    approvedAt        DateTime?
+    approvedBy        String?
+    approver          User?         @relation("PropertyApprover", fields: [approvedBy], references: [id])
+
+    // Relations
+    images            PropertyImage[]
+    rooms             Room[]
+
+    @@index([status])
+    @@index([propertyType])
+    @@index([ownerId])
+    @@index([provinceCode, regencyCode, districtCode])
+}
+
+// Property Images Model
+model PropertyImage {
+    id          String        @id @default(cuid())
+    propertyId  String
+    property    Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+    category    ImageCategory
+    imageUrl    String        @db.VarChar(500)
+    publicId    String?       @db.VarChar(255) // Cloudinary public ID
+    caption     String?       @db.VarChar(255)
+    sortOrder   Int           @default(0)
+
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+
+    @@index([propertyId, category])
+}
+
+// Room Model
+model Room {
+    id              String    @id @default(cuid())
+    propertyId      String
+    property        Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+    // Basic Information
+    roomNumber      String    @db.VarChar(50)
+    floor           Int
+    roomType        String    @db.VarChar(100) // From property roomTypes
+    description     String?   @db.Text
+    size            String?   @db.VarChar(50)  // e.g., "3x4 meter"
+
+    // Pricing Information
+    monthlyPrice    Decimal   @db.Decimal(10,2)
+    dailyPrice      Decimal?  @db.Decimal(10,2)
+    weeklyPrice     Decimal?  @db.Decimal(10,2)
+    quarterlyPrice  Decimal?  @db.Decimal(10,2) // 3 months
+    yearlyPrice     Decimal?  @db.Decimal(10,2)
+
+    // Deposit Information
+    hasDeposit      Boolean   @default(false)
+    depositPercent  Int?      // 10, 20, 30, 40, 50
+
+    // Room Features
+    facilities      Json      // Array of room facilities (room + bathroom)
+
+    // Availability
+    isAvailable     Boolean   @default(true)
+
+    // Timestamps
+    createdAt       DateTime  @default(now())
+    updatedAt       DateTime  @updatedAt
+
+    // Relations
+    images          RoomImage[]
+
+    @@unique([propertyId, roomNumber])
+    @@index([propertyId])
+    @@index([roomType])
+    @@index([isAvailable])
+}
+
+// Room Images Model
+model RoomImage {
+    id          String        @id @default(cuid())
+    roomId      String
+    room        Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+    category    ImageCategory
+    imageUrl    String        @db.VarChar(500)
+    publicId    String?       @db.VarChar(255) // Cloudinary public ID
+    caption     String?       @db.VarChar(255)
+    sortOrder   Int           @default(0)
+
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+
+    @@index([roomId, category])
+}
