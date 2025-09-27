@@ -101,9 +101,9 @@ export interface CreatePropertyStep2DTO {
 
 export interface CreatePropertyStep3DTO {
   images: {
-    buildingPhotos: File[];
-    sharedFacilitiesPhotos: File[];
-    floorPlanPhotos: File[];
+    buildingPhotos: any[];
+    sharedFacilitiesPhotos?: any[];
+    floorPlanPhotos?: any[];
   };
 }
 
@@ -115,7 +115,7 @@ export interface CreatePropertyStep4DTO {
 export interface CreatePropertyDTO {
   step1: CreatePropertyStep1DTO;
   step2: CreatePropertyStep2DTO;
-  step3: CreatePropertyStep3DTO;
+  step3?: CreatePropertyStep3DTO;
   step4: CreatePropertyStep4DTO;
 }
 
@@ -283,3 +283,20 @@ export const PROPERTY_RULES = [
   { id: 'tidak_perayaan_tanpa_izin', name: 'Tidak boleh melakukan perayaan/acara tanpa izin pemilik kos' },
   { id: 'dilarang_sound_system', name: 'Dilarang menggunakan sound system besar atau alat musik keras tanpa izin' }
 ] as const;
+
+// Common Room Types for Properties
+export const PROPERTY_ROOM_TYPES = [
+  'Kamar Standard',
+  'Kamar AC',
+  'Kamar VIP',
+  'Kamar Suite',
+  'Kamar Single',
+  'Kamar Double',
+  'Kamar Shared',
+  'Kamar Studio',
+  'Kamar Deluxe',
+  'Kamar Executive'
+] as const;
+
+// Parking Facilities (extracted from PROPERTY_FACILITIES.parking)
+export const PARKING_FACILITIES = PROPERTY_FACILITIES.parking;

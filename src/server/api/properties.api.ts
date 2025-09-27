@@ -178,7 +178,12 @@ export class PropertiesAPI {
         }
 
         // Create property
-        const property = await PropertyRepository.create(propertyData, userContext.userId);
+        console.log("🔍 Creating property with userContext:", {
+          id: userContext.id,
+          role: userContext.role,
+          email: userContext.email
+        });
+        const property = await PropertyRepository.create(propertyData, userContext.id);
 
         // Get full property details
         const fullProperty = await PropertyRepository.findById(property.id, true, true, true);

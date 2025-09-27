@@ -7,7 +7,8 @@ import type {
   RoomListItem,
   RoomPricing,
   BulkUpdateRoomAvailabilityDTO,
-  BulkUpdateRoomPricingDTO
+  BulkUpdateRoomPricingDTO,
+  DepositPercentage
 } from "../types";
 
 /**
@@ -15,6 +16,25 @@ import type {
  * Pure business logic for room management
  */
 export class RoomService {
+  /**
+   * Convert DepositPercentage enum to number
+   */
+  private static getDepositPercentageValue(percentage: DepositPercentage): number {
+    switch (percentage) {
+      case DepositPercentage.TEN_PERCENT:
+        return 10;
+      case DepositPercentage.TWENTY_PERCENT:
+        return 20;
+      case DepositPercentage.THIRTY_PERCENT:
+        return 30;
+      case DepositPercentage.FORTY_PERCENT:
+        return 40;
+      case DepositPercentage.FIFTY_PERCENT:
+        return 50;
+      default:
+        return 20; // Default to 20%
+    }
+  }
   /**
    * Validate room creation data
    */
@@ -111,12 +131,12 @@ export class RoomService {
       errors.push("Yearly price must be greater than 0 if provided");
     }
 
-    if (pricing.hasDeposit && !pricing.depositPercent) {
+    if (pricing.hasDeposit && !pricing.depositPercentage) {
       errors.push("Deposit percentage is required when deposit is enabled");
     }
 
-    if (pricing.depositPercent && ![10, 20, 30, 40, 50].includes(pricing.depositPercent)) {
-      errors.push("Deposit percentage must be 10, 20, 30, 40, or 50");
+    if (pricing.depositPercentage && !Object.values(DepositPercentage).includes(pricing.depositPercentage)) {
+      errors.push("Invalid deposit percentage");
     }
 
     // Validate price relationships
@@ -169,8 +189,9 @@ export class RoomService {
   /**
    * Calculate deposit amount
    */
-  static calculateDepositAmount(monthlyPrice: number, depositPercent: number): number {
-    return (monthlyPrice * depositPercent) / 100;
+  static calculateDepositAmount(monthlyPrice: number, depositPercentage: DepositPercentage): number {
+    const percentValue = this.getDepositPercentageValue(depositPercentage);
+    return (monthlyPrice * percentValue) / 100;
   }
 
   /**
@@ -201,8 +222,8 @@ export class RoomService {
         break;
     }
 
-    const depositAmount = pricing.hasDeposit && pricing.depositPercent 
-      ? this.calculateDepositAmount(pricing.monthlyPrice, pricing.depositPercent)
+    const depositAmount = pricing.hasDeposit && pricing.depositPercentage
+      ? this.calculateDepositAmount(pricing.monthlyPrice, pricing.depositPercentage)
       : 0;
 
     return {
@@ -283,8 +304,9 @@ export class RoomService {
     
     parts.push(`Rp ${room.pricing.monthlyPrice.toLocaleString('id-ID')}/bulan`);
     
-    if (room.pricing.hasDeposit && room.pricing.depositPercent) {
-      parts.push(`DP ${room.pricing.depositPercent}%`);
+    if (room.pricing.hasDeposit && room.pricing.depositPercentage) {
+      const percentValue = this.getDepositPercentageValue(room.pricing.depositPercentage);
+      parts.push(`DP ${percentValue}%`);
     }
 
     return parts.join(" • ");
@@ -390,9 +412,10 @@ export class RoomService {
       result.yearly = `Rp ${pricing.yearlyPrice.toLocaleString('id-ID')}/tahun`;
     }
 
-    if (pricing.hasDeposit && pricing.depositPercent) {
-      const depositAmount = this.calculateDepositAmount(pricing.monthlyPrice, pricing.depositPercent);
-      result.deposit = `Rp ${depositAmount.toLocaleString('id-ID')} (${pricing.depositPercent}%)`;
+    if (pricing.hasDeposit && pricing.depositPercentage) {
+      const depositAmount = this.calculateDepositAmount(pricing.monthlyPrice, pricing.depositPercentage);
+      const percentValue = this.getDepositPercentageValue(pricing.depositPercentage);
+      result.deposit = `Rp ${depositAmount.toLocaleString('id-ID')} (${percentValue}%)`;
     }
 
     return result;

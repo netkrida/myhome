@@ -10,7 +10,7 @@ import type {
   PropertyDetailItem,
   PaginationDTO
 } from "../types";
-import { PropertyStatus, PropertyType } from "../types/property";
+import { PropertyStatus, PropertyType, ImageCategory } from "../types/property";
 
 /**
  * Property Repository
@@ -121,31 +121,87 @@ export class PropertyRepository {
    * Create a new property
    */
   static async create(propertyData: CreatePropertyDTO, ownerId: string): Promise<Property> {
-    const { step1, step2, step4 } = propertyData;
-    
-    return prisma.property.create({
-      data: {
-        name: step1.name,
-        buildYear: step1.buildYear,
-        propertyType: step1.propertyType,
-        description: step1.description,
-        roomTypes: step1.roomTypes,
-        totalRooms: step1.totalRooms,
-        availableRooms: step1.availableRooms,
-        provinceCode: step2.location.provinceCode,
-        provinceName: step2.location.provinceName,
-        regencyCode: step2.location.regencyCode,
-        regencyName: step2.location.regencyName,
-        districtCode: step2.location.districtCode,
-        districtName: step2.location.districtName,
-        fullAddress: step2.location.fullAddress,
-        latitude: step2.location.latitude,
-        longitude: step2.location.longitude,
-        facilities: step4.facilities,
-        rules: step4.rules,
-        ownerId,
-        status: PropertyStatus.PENDING,
-      },
+    console.log("🔍 PropertyRepository.create called with ownerId:", ownerId);
+    const { step1, step2, step3, step4 } = propertyData;
+
+    // Create property in a transaction to ensure consistency
+    return prisma.$transaction(async (tx) => {
+      // Create the property
+      const property = await tx.property.create({
+        data: {
+          name: step1.name,
+          buildYear: step1.buildYear,
+          propertyType: step1.propertyType,
+          description: step1.description,
+          roomTypes: step1.roomTypes,
+          totalRooms: step1.totalRooms,
+          availableRooms: step1.availableRooms,
+          provinceCode: step2.location.provinceCode || 'UNKNOWN',
+          provinceName: step2.location.provinceName,
+          regencyCode: step2.location.regencyCode || 'UNKNOWN',
+          regencyName: step2.location.regencyName,
+          districtCode: step2.location.districtCode || 'UNKNOWN',
+          districtName: step2.location.districtName,
+          fullAddress: step2.location.fullAddress,
+          latitude: step2.location.latitude,
+          longitude: step2.location.longitude,
+          facilities: step4.facilities,
+          rules: step4.rules,
+          ownerId,
+          status: PropertyStatus.PENDING,
+        },
+      });
+
+      // Create property images if provided
+      if (step3?.images) {
+        const imageData: Prisma.PropertyImageCreateManyInput[] = [];
+        let sortOrder = 0;
+
+        // Building photos
+        if (step3.images.buildingPhotos) {
+          step3.images.buildingPhotos.forEach((imageUrl: string) => {
+            imageData.push({
+              propertyId: property.id,
+              category: ImageCategory.BUILDING_PHOTOS,
+              imageUrl,
+              sortOrder: sortOrder++,
+            });
+          });
+        }
+
+        // Shared facilities photos
+        if (step3.images.sharedFacilitiesPhotos) {
+          step3.images.sharedFacilitiesPhotos.forEach((imageUrl: string) => {
+            imageData.push({
+              propertyId: property.id,
+              category: ImageCategory.SHARED_FACILITIES_PHOTOS,
+              imageUrl,
+              sortOrder: sortOrder++,
+            });
+          });
+        }
+
+        // Floor plan photos
+        if (step3.images.floorPlanPhotos) {
+          step3.images.floorPlanPhotos.forEach((imageUrl: string) => {
+            imageData.push({
+              propertyId: property.id,
+              category: ImageCategory.FLOOR_PLAN_PHOTOS,
+              imageUrl,
+              sortOrder: sortOrder++,
+            });
+          });
+        }
+
+        // Create all images at once
+        if (imageData.length > 0) {
+          await tx.propertyImage.createMany({
+            data: imageData,
+          });
+        }
+      }
+
+      return property;
     });
   }
 

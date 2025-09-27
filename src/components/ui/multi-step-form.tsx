@@ -138,11 +138,17 @@ export function MultiStepFormProvider({
   }, [steps.length, onStepChange]);
 
   const setStepValid = useCallback((stepIndex: number, isValid: boolean) => {
-    setSteps(prev =>
-      prev.map((step, index) =>
+    setSteps(prev => {
+      // Check if the validity has actually changed
+      const currentStep = prev[stepIndex];
+      if (!currentStep || currentStep.isValid === isValid) {
+        return prev; // No change needed
+      }
+      
+      return prev.map((step, index) =>
         index === stepIndex ? { ...step, isValid } : step
-      )
-    );
+      );
+    });
   }, []);
 
   const value: MultiStepFormContextType = useMemo(() => ({

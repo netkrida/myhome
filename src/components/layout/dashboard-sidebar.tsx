@@ -70,11 +70,6 @@ export function DashboardSidebar({ variant = "sidebar" }: DashboardSidebarProps)
             ],
           },
           {
-            title: "Approval Properties",
-            url: "/dashboard/superadmin/approvalproperties",
-            icon: IconActivity,
-          },
-          {
             title: "Properties",
             url: "/dashboard/superadmin/properties",
             icon: IconBuilding,

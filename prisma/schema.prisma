@@ -176,6 +176,14 @@ enum ImageCategory {
     BATHROOM_PHOTOS         // Foto kamar mandi
 }
 
+enum DepositPercentage {
+    TEN_PERCENT      // 10%
+    TWENTY_PERCENT   // 20%
+    THIRTY_PERCENT   // 30%
+    FORTY_PERCENT    // 40%
+    FIFTY_PERCENT    // 50%
+}
+
 // Property Model
 model Property {
     id                String        @id @default(cuid())
@@ -265,8 +273,8 @@ model Room {
     yearlyPrice     Decimal?  @db.Decimal(10,2)
 
     // Deposit Information
-    hasDeposit      Boolean   @default(false)
-    depositPercent  Int?      // 10, 20, 30, 40, 50
+    hasDeposit        Boolean            @default(false)
+    depositPercentage DepositPercentage?
 
     // Room Features
     facilities      Json      // Array of room facilities (room + bathroom)

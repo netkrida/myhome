@@ -81,7 +81,7 @@ export class RoomRepository {
         quarterlyPrice: room.quarterlyPrice ? Number(room.quarterlyPrice) : undefined,
         yearlyPrice: room.yearlyPrice ? Number(room.yearlyPrice) : undefined,
         hasDeposit: room.hasDeposit,
-        depositPercent: room.depositPercent,
+        depositPercentage: room.depositPercentage,
       },
       facilities: room.facilities as any[],
       isAvailable: room.isAvailable,
@@ -135,7 +135,7 @@ export class RoomRepository {
             quarterlyPrice: step3.pricing.quarterlyPrice,
             yearlyPrice: step3.pricing.yearlyPrice,
             hasDeposit: step3.pricing.hasDeposit,
-            depositPercent: step3.pricing.depositPercent,
+            depositPercentage: step3.pricing.depositPercentage,
             facilities: step2.facilities,
             isAvailable: roomConfig.isAvailable,
           },
@@ -175,7 +175,7 @@ export class RoomRepository {
       if (updateData.pricing.quarterlyPrice !== undefined) data.quarterlyPrice = updateData.pricing.quarterlyPrice;
       if (updateData.pricing.yearlyPrice !== undefined) data.yearlyPrice = updateData.pricing.yearlyPrice;
       if (updateData.pricing.hasDeposit !== undefined) data.hasDeposit = updateData.pricing.hasDeposit;
-      if (updateData.pricing.depositPercent !== undefined) data.depositPercent = updateData.pricing.depositPercent;
+      if (updateData.pricing.depositPercentage !== undefined) data.depositPercentage = updateData.pricing.depositPercentage;
     }
 
     return prisma.room.update({
@@ -441,7 +441,7 @@ export class RoomRepository {
     if (data.pricing.quarterlyPrice !== undefined) updateData.quarterlyPrice = data.pricing.quarterlyPrice;
     if (data.pricing.yearlyPrice !== undefined) updateData.yearlyPrice = data.pricing.yearlyPrice;
     if (data.pricing.hasDeposit !== undefined) updateData.hasDeposit = data.pricing.hasDeposit;
-    if (data.pricing.depositPercent !== undefined) updateData.depositPercent = data.pricing.depositPercent;
+    if (data.pricing.depositPercentage !== undefined) updateData.depositPercentage = data.pricing.depositPercentage;
 
     return prisma.room.updateMany({
       where: { id: { in: data.roomIds } },

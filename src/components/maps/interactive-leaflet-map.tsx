@@ -47,6 +47,11 @@ export function InteractiveLeafletMap({
   draggableMarker = true,
   clickableMap = true,
 }: InteractiveLeafletMapProps) {
+  // Provide default center coordinates (Jakarta, Indonesia) if center is invalid
+  const validCenter = {
+    lat: center?.lat && !isNaN(center.lat) ? center.lat : -6.2088,
+    lng: center?.lng && !isNaN(center.lng) ? center.lng : 106.8456
+  };
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -120,7 +125,7 @@ export function InteractiveLeafletMap({
     try {
       // Initialize map
       const map = L.map(mapRef.current, {
-        center: [center.lat, center.lng],
+        center: [validCenter.lat, validCenter.lng],
         zoom: zoom,
         zoomControl: true,
         scrollWheelZoom: true,
@@ -137,7 +142,7 @@ export function InteractiveLeafletMap({
       }).addTo(map);
 
       // Create draggable marker
-      const marker = L.marker([center.lat, center.lng], {
+      const marker = L.marker([validCenter.lat, validCenter.lng], {
         draggable: draggableMarker,
       }).addTo(map);
 
@@ -175,16 +180,16 @@ export function InteractiveLeafletMap({
       setError("Failed to initialize map");
       setIsLoading(false);
     }
-  }, [center.lat, center.lng, zoom, draggableMarker, clickableMap, handlePositionChange]);
+  }, [validCenter.lat, validCenter.lng, zoom, draggableMarker, clickableMap, handlePositionChange]);
 
   // Update marker position when center changes
   useEffect(() => {
     if (mapInstanceRef.current && markerRef.current) {
-      const newLatLng = L.latLng(center.lat, center.lng);
+      const newLatLng = L.latLng(validCenter.lat, validCenter.lng);
       markerRef.current.setLatLng(newLatLng);
       mapInstanceRef.current.setView(newLatLng, zoom);
     }
-  }, [center.lat, center.lng, zoom]);
+  }, [validCenter.lat, validCenter.lng, zoom]);
 
   if (error) {
     return (

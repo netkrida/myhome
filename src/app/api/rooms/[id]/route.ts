@@ -14,7 +14,7 @@ import {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get user context
@@ -26,8 +26,11 @@ export async function GET(
       );
     }
 
+    // Await params
+    const resolvedParams = await params;
+
     // Validate room ID
-    const validationResult = roomIdSchema.safeParse({ id: params.id });
+    const validationResult = roomIdSchema.safeParse({ id: resolvedParams.id });
     if (!validationResult.success) {
       return NextResponse.json(
         { 
@@ -70,7 +73,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get user context
@@ -82,8 +85,11 @@ export async function PUT(
       );
     }
 
+    // Await params
+    const resolvedParams = await params;
+
     // Validate room ID
-    const idValidationResult = roomIdSchema.safeParse({ id: params.id });
+    const idValidationResult = roomIdSchema.safeParse({ id: resolvedParams.id });
     if (!idValidationResult.success) {
       return NextResponse.json(
         { 
@@ -114,7 +120,7 @@ export async function PUT(
     const updateData: UpdateRoomInput = validationResult.data;
 
     // Update room
-    const result = await RoomsAPI.updateRoom(id, updateData);
+    const result = await RoomsAPI.updateRoom(id, updateData as any);
 
     if (!result.success) {
       const errorResult = result as any;

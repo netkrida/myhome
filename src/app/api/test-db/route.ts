@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     // Test basic database connection
     const userCount = await db.user.count();
-    const propertyCount = await db.kosProperty.count();
+    const propertyCount = await db.property.count();
     
     return NextResponse.json({
       success: true,

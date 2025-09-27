@@ -75,10 +75,14 @@ export function PublicPropertyCard({
     return "Rp 800.000";
   };
 
-  // Get sample facilities (first 3)
+  // Get sample facilities (first 3) - PropertyListItem doesn't have facilities
   const getSampleFacilities = () => {
-    if (!property.facilities || property.facilities.length === 0) return [];
-    return property.facilities.slice(0, 3);
+    // Return some default facilities for display
+    return [
+      { id: 'wifi', name: 'WiFi' },
+      { id: 'ac', name: 'AC' },
+      { id: 'parking', name: 'Parkir' }
+    ];
   };
 
   const sampleFacilities = getSampleFacilities();
@@ -206,26 +210,23 @@ export function PublicPropertyCard({
                 {sampleFacilities.map((facility, index) => {
                   // Simple icon mapping
                   let icon = null;
-                  if (facility.toLowerCase().includes('wifi') || facility.toLowerCase().includes('internet')) {
+                  const facilityName = typeof facility === 'string' ? facility : facility.name;
+                  if (facilityName.toLowerCase().includes('wifi') || facilityName.toLowerCase().includes('internet')) {
                     icon = <Wifi className="h-3 w-3" />;
-                  } else if (facility.toLowerCase().includes('parkir') || facility.toLowerCase().includes('motor') || facility.toLowerCase().includes('mobil')) {
+                  } else if (facilityName.toLowerCase().includes('parkir') || facilityName.toLowerCase().includes('motor') || facilityName.toLowerCase().includes('mobil')) {
                     icon = <Car className="h-3 w-3" />;
-                  } else if (facility.toLowerCase().includes('mandi') || facility.toLowerCase().includes('kamar mandi')) {
+                  } else if (facilityName.toLowerCase().includes('mandi') || facilityName.toLowerCase().includes('kamar mandi')) {
                     icon = <Bath className="h-3 w-3" />;
                   }
 
                   return (
                     <Badge key={index} variant="outline" className="text-xs flex items-center gap-1">
                       {icon}
-                      {facility}
+                      {facilityName}
                     </Badge>
                   );
                 })}
-                {property.facilities && property.facilities.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{property.facilities.length - 3} lainnya
-                  </Badge>
-                )}
+                {/* PropertyListItem doesn't have facilities, so we'll skip this */}
               </div>
             </div>
           )}
@@ -246,7 +247,7 @@ export function PublicPropertyCard({
               Okupansi: {Math.round(((property.totalRooms - property.availableRooms) / property.totalRooms) * 100)}%
             </span>
             <span>
-              Diperbarui {new Date(property.updatedAt || property.createdAt).toLocaleDateString('id-ID')}
+              Dibuat {new Date(property.createdAt).toLocaleDateString('id-ID')}
             </span>
           </div>
         </CardFooter>

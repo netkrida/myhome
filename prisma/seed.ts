@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 // import { seedProperties } from './seeders/properties'; // Commented out - file doesn't exist
-import { seedBookings } from './seeders/bookings';
+// import { seedBookings } from './seeders/bookings'; // Removed - file doesn't exist
 
 const prisma = new PrismaClient();
 
@@ -10,9 +10,8 @@ async function main() {
 
   // Clear existing data (optional - be careful in production)
   console.log('🧹 Cleaning existing data...');
-  await prisma.booking.deleteMany();
   await prisma.room.deleteMany();
-  await prisma.kosProperty.deleteMany();
+  await prisma.property.deleteMany();
   await prisma.customerProfile.deleteMany();
   await prisma.receptionistProfile.deleteMany();
   await prisma.adminKosProfile.deleteMany();
@@ -49,10 +48,7 @@ async function main() {
       phoneNumber: '+62812-3456-7890',
       adminKosProfile: {
         create: {
-          businessName: 'Kos Mawar Premium',
-          businessAddress: 'Jl. Sudirman No. 123, Jakarta Pusat, DKI Jakarta 10220',
-          businessPhone: '+62812-3456-7890',
-          description: 'Premium boarding house with modern facilities near UI campus. Offering comfortable and secure accommodation for students and professionals.',
+          // AdminKosProfile only has basic fields
         },
       },
     },
@@ -72,10 +68,7 @@ async function main() {
       phoneNumber: '+62813-9876-5432',
       adminKosProfile: {
         create: {
-          businessName: 'Kos Putri Siti',
-          businessAddress: 'Jl. Kemang Raya No. 456, Jakarta Selatan, DKI Jakarta 12560',
-          businessPhone: '+62813-9876-5432',
-          description: 'Kos khusus putri dengan keamanan tinggi dan fasilitas lengkap untuk kenyamanan penghuni.',
+          // AdminKosProfile only has basic fields
         },
       },
     },
@@ -95,10 +88,7 @@ async function main() {
       phoneNumber: '+62814-5555-6666',
       adminKosProfile: {
         create: {
-          businessName: 'Kos Ekonomis Budi',
-          businessAddress: 'Jl. Margonda Raya No. 321, Depok, Jawa Barat 16424',
-          businessPhone: '+62814-5555-6666',
-          description: 'Kos terjangkau untuk mahasiswa dengan fasilitas standar dan lokasi strategis dekat kampus.',
+          // AdminKosProfile only has basic fields
         },
       },
     },
@@ -259,7 +249,7 @@ async function main() {
 
   // Seed additional data
   // await seedProperties(); // Commented out - function doesn't exist
-  await seedBookings();
+  // await seedBookings(); // Commented out - function doesn't exist
 
   console.log('\n🎉 Database seeding completed successfully!');
   console.log('\n📋 Test Account Credentials:');

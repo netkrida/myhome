@@ -14,7 +14,7 @@ import {
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get user context
@@ -26,8 +26,11 @@ export async function POST(
       );
     }
 
+    // Await params
+    const resolvedParams = await params;
+
     // Validate property ID
-    const idValidationResult = propertyIdSchema.safeParse({ id: params.id });
+    const idValidationResult = propertyIdSchema.safeParse({ id: resolvedParams.id });
     if (!idValidationResult.success) {
       return NextResponse.json(
         { 

@@ -14,7 +14,7 @@ import {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get user context
@@ -26,8 +26,11 @@ export async function GET(
       );
     }
 
+    // Await params
+    const resolvedParams = await params;
+
     // Validate property ID
-    const validationResult = propertyIdSchema.safeParse({ id: params.id });
+    const validationResult = propertyIdSchema.safeParse({ id: resolvedParams.id });
     if (!validationResult.success) {
       return NextResponse.json(
         { 
@@ -70,7 +73,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get user context
@@ -82,8 +85,11 @@ export async function PUT(
       );
     }
 
+    // Await params
+    const resolvedParams = await params;
+
     // Validate property ID
-    const idValidationResult = propertyIdSchema.safeParse({ id: params.id });
+    const idValidationResult = propertyIdSchema.safeParse({ id: resolvedParams.id });
     if (!idValidationResult.success) {
       return NextResponse.json(
         { 
@@ -143,7 +149,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get user context
@@ -155,8 +161,11 @@ export async function DELETE(
       );
     }
 
+    // Await params
+    const resolvedParams = await params;
+
     // Validate property ID
-    const validationResult = propertyIdSchema.safeParse({ id: params.id });
+    const validationResult = propertyIdSchema.safeParse({ id: resolvedParams.id });
     if (!validationResult.success) {
       return NextResponse.json(
         { 

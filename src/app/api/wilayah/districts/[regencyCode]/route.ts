@@ -8,10 +8,11 @@ import { WilayahService } from "@/server/services/wilayah.service";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { regencyCode: string } }
+  { params }: { params: Promise<{ regencyCode: string }> }
 ) {
   try {
-    const { regencyCode } = params;
+    const resolvedParams = await params;
+    const { regencyCode } = resolvedParams;
 
     if (!regencyCode) {
       return NextResponse.json(

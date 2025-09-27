@@ -8,10 +8,11 @@ import { WilayahService } from "@/server/services/wilayah.service";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { provinceCode: string } }
+  { params }: { params: Promise<{ provinceCode: string }> }
 ) {
   try {
-    const { provinceCode } = params;
+    const resolvedParams = await params;
+    const { provinceCode } = resolvedParams;
 
     if (!provinceCode) {
       return NextResponse.json(

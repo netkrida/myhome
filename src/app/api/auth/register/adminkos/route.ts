@@ -14,10 +14,9 @@ export async function POST(request: NextRequest) {
 
     if (!result.success) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: result.error,
-          details: result.details 
+        {
+          success: false,
+          error: result.error
         },
         { status: 400 }
       );
@@ -28,14 +27,13 @@ export async function POST(request: NextRequest) {
       message: "Akun AdminKos berhasil didaftarkan",
       data: {
         user: {
-          id: result.data.user.id,
-          name: result.data.user.name,
-          email: result.data.user.email,
-          role: result.data.user.role,
-          address: result.data.user.address,
-          createdAt: result.data.user.createdAt,
+          id: result.data?.user.id,
+          name: result.data?.user.name,
+          email: result.data?.user.email,
+          role: result.data?.user.role,
+          createdAt: result.data?.user.createdAt,
         },
-        profile: result.data.profile,
+        profile: result.data?.profile,
       },
     });
   } catch (error) {

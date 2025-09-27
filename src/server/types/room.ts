@@ -4,6 +4,15 @@
 
 import { ImageCategory } from './property';
 
+// Deposit Percentage Enum
+export enum DepositPercentage {
+  TEN_PERCENT = "10_PERCENT",
+  TWENTY_PERCENT = "20_PERCENT",
+  THIRTY_PERCENT = "30_PERCENT",
+  FORTY_PERCENT = "40_PERCENT",
+  FIFTY_PERCENT = "50_PERCENT",
+}
+
 // Room Facilities Types
 export interface RoomFacility {
   id: string;
@@ -31,7 +40,7 @@ export interface RoomPricing {
   quarterlyPrice?: number; // 3 months
   yearlyPrice?: number;
   hasDeposit: boolean;
-  depositPercent?: number; // 10, 20, 30, 40, 50
+  depositPercentage?: DepositPercentage;
 }
 
 // Base Room DTO
@@ -55,8 +64,8 @@ export interface RoomDTO {
 export interface CreateRoomStep1DTO {
   roomType: string;
   images: {
-    roomPhotos: File[];
-    bathroomPhotos: File[];
+    roomPhotos: any[];
+    bathroomPhotos?: any[];
   };
   description?: string;
 }

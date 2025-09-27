@@ -7,11 +7,11 @@ import { PropertyType, PropertyStatus, ImageCategory } from "../types/property";
 
 // Location schema
 export const locationSchema = z.object({
-  provinceCode: z.string().min(1, "Province code is required"),
+  provinceCode: z.string().optional(), // Made optional since we might not have proper mapping
   provinceName: z.string().min(1, "Province name is required"),
-  regencyCode: z.string().min(1, "Regency code is required"),
+  regencyCode: z.string().optional(), // Made optional since we might not have proper mapping
   regencyName: z.string().min(1, "Regency name is required"),
-  districtCode: z.string().min(1, "District code is required"),
+  districtCode: z.string().optional(), // Made optional since we might not have proper mapping
   districtName: z.string().min(1, "District name is required"),
   fullAddress: z.string().min(1, "Full address is required").max(500, "Address must be less than 500 characters"),
   latitude: z.number().min(-90, "Invalid latitude").max(90, "Invalid latitude"),

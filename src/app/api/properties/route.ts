@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PropertiesAPI } from "@/server/api/properties.api";
+import { PropertyService } from "@/server/services/property.service";
+import { PropertyRepository } from "@/server/repositories/property.repository";
 import { getCurrentUserContext } from "@/server/lib/auth";
-import { 
-  propertyListQuerySchema, 
+import {
+  propertyListQuerySchema,
   createPropertySchema,
   type PropertyListQueryInput,
   type CreatePropertyInput
@@ -86,12 +88,21 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
+    console.log("=== PROPERTY CREATION API DEBUG ===");
+    console.log("Request body:", JSON.stringify(body, null, 2));
 
     // Validate request body
     const validationResult = createPropertySchema.safeParse(body);
     if (!validationResult.success) {
+      console.error("Validation failed:", validationResult.error.errors);
+      console.error("Body structure:", Object.keys(body));
+      if (body.step1) console.error("Step1 keys:", Object.keys(body.step1));
+      if (body.step2) console.error("Step2 keys:", Object.keys(body.step2));
+      if (body.step3) console.error("Step3 keys:", Object.keys(body.step3));
+      if (body.step4) console.error("Step4 keys:", Object.keys(body.step4));
+
       return NextResponse.json(
-        { 
+        {
           error: "Invalid request data",
           details: validationResult.error.errors
         },
@@ -101,21 +112,33 @@ export async function POST(request: NextRequest) {
 
     const propertyData: CreatePropertyInput = validationResult.data;
 
-    // Create property
-    const result = await PropertiesAPI.createProperty(propertyData);
+    // Create property - call the repository directly to bypass withAuth wrapper
+    console.log("🔍 Creating property with userContext:", {
+      id: userContext.id,
+      role: userContext.role,
+      email: userContext.email
+    });
 
-    if (!result.success) {
-      const errorResult = result as any;
-      const errorMessage = typeof errorResult.error === 'string'
-        ? errorResult.error
-        : errorResult.error?.message || "Failed to create property";
+    // Validate property data using the service
+    const validation = PropertyService.validatePropertyCreation(propertyData);
+    if (!validation.isValid) {
+      console.error("Property creation validation failed:", validation.errors);
       return NextResponse.json(
-        { error: errorMessage },
-        { status: errorResult.statusCode || 500 }
+        {
+          error: "Invalid property data",
+          details: validation.errors
+        },
+        { status: 400 }
       );
     }
 
-    return NextResponse.json(result.data, { status: 201 });
+    // Create property directly using repository
+    const property = await PropertyRepository.create(propertyData, userContext.id);
+
+    // Get full property details
+    const fullProperty = await PropertyRepository.findById(property.id, true, true, true);
+
+    return NextResponse.json(fullProperty, { status: 201 });
   } catch (error) {
     console.error("Error in POST /api/properties:", error);
     return NextResponse.json(

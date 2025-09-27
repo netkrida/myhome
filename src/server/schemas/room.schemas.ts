@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ImageCategory } from "../types/property";
+import { DepositPercentage } from "../types/room";
 
 /**
  * Room validation schemas using Zod
@@ -20,15 +21,15 @@ export const roomPricingSchema = z.object({
   quarterlyPrice: z.number().min(0, "Quarterly price cannot be negative").optional(),
   yearlyPrice: z.number().min(0, "Yearly price cannot be negative").optional(),
   hasDeposit: z.boolean().default(false),
-  depositPercent: z.enum([10, 20, 30, 40, 50], { errorMap: () => ({ message: "Invalid deposit percentage" }) }).optional(),
+  depositPercentage: z.nativeEnum(DepositPercentage, { errorMap: () => ({ message: "Invalid deposit percentage" }) }).optional(),
 }).refine((data) => {
-  if (data.hasDeposit && !data.depositPercent) {
+  if (data.hasDeposit && !data.depositPercentage) {
     return false;
   }
   return true;
 }, {
   message: "Deposit percentage is required when deposit is enabled",
-  path: ["depositPercent"],
+  path: ["depositPercentage"],
 });
 
 // Room image schema

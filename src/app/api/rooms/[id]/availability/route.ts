@@ -14,7 +14,7 @@ import {
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get user context
@@ -26,8 +26,11 @@ export async function PUT(
       );
     }
 
+    // Await params
+    const resolvedParams = await params;
+
     // Validate room ID
-    const idValidationResult = roomIdSchema.safeParse({ id: params.id });
+    const idValidationResult = roomIdSchema.safeParse({ id: resolvedParams.id });
     if (!idValidationResult.success) {
       return NextResponse.json(
         { 

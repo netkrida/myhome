@@ -18,7 +18,12 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 export function PublicHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const navigationItems = [
+  const navigationItems: Array<{
+    label: string;
+    href: string;
+    badge?: string | null;
+    hasDropdown?: boolean;
+  }> = [
     // { label: "Pesawat", href: "/flights", badge: null },
     // { label: "Hotel", href: "/hotels", badge: "-40%" },
     // { label: "Vila & Apt", href: "/villas", badge: null },
