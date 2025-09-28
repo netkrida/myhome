@@ -35,7 +35,7 @@ interface RoomListProps {
 }
 
 const availabilityOptions = [
-  { value: "", label: "Semua Status" },
+  { value: "all", label: "Semua Status" },
   { value: "true", label: "Tersedia" },
   { value: "false", label: "Terisi" },
 ];
@@ -77,7 +77,7 @@ export function RoomList({
 
   // Get current filters from URL
   const currentSearch = searchParams.get("search") || "";
-  const currentAvailability = searchParams.get("isAvailable") || "";
+  const currentAvailability = searchParams.get("isAvailable") || "all";
   const currentRoomType = searchParams.get("roomType") || "";
   const currentSort = searchParams.get("sort") || "createdAt-desc";
   const currentPage = parseInt(searchParams.get("page") || "1");
@@ -111,15 +111,15 @@ export function RoomList({
       const params = new URLSearchParams();
       if (propertyId) params.set("propertyId", propertyId);
       if (currentSearch) params.set("search", currentSearch);
-      if (currentAvailability) params.set("isAvailable", currentAvailability);
+      if (currentAvailability && currentAvailability !== "all") params.set("isAvailable", currentAvailability);
       if (currentRoomType) params.set("roomType", currentRoomType);
       if (currentPage) params.set("page", currentPage.toString());
       params.set("limit", pagination.limit.toString());
 
       // Parse sort
       const [sortBy, sortOrder] = currentSort.split("-");
-      params.set("sortBy", sortBy);
-      params.set("sortOrder", sortOrder);
+      params.set("sortBy", sortBy || "createdAt");
+      params.set("sortOrder", sortOrder || "desc");
 
       const response = await fetch(`/api/rooms?${params.toString()}`);
       
@@ -149,7 +149,7 @@ export function RoomList({
 
   // Handle filter changes
   const handleAvailabilityChange = (value: string) => {
-    updateFilters({ isAvailable: value });
+    updateFilters({ isAvailable: value === "all" ? "" : value });
   };
 
   const handleRoomTypeChange = (value: string) => {
@@ -278,7 +278,7 @@ export function RoomList({
       </div>
 
       {/* Active Filters */}
-      {(currentSearch || currentAvailability || currentRoomType) && (
+      {(currentSearch || (currentAvailability && currentAvailability !== "all") || currentRoomType) && (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground">Filter aktif:</span>
           {currentSearch && (
@@ -289,10 +289,10 @@ export function RoomList({
               </button>
             </Badge>
           )}
-          {currentAvailability && (
+          {currentAvailability && currentAvailability !== "all" && (
             <Badge variant="secondary" className="gap-1">
               Status: {availabilityOptions.find(o => o.value === currentAvailability)?.label}
-              <button onClick={() => handleAvailabilityChange("")} className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5">
+              <button onClick={() => handleAvailabilityChange("all")} className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5">
                 ×
               </button>
             </Badge>

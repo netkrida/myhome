@@ -191,20 +191,29 @@ export class WilayahService {
       const provincesResult = await this.getProvinces();
       
       if (!provincesResult.success) {
-        return provincesResult;
+        return {
+          success: false,
+          error: provincesResult.error,
+          statusCode: provincesResult.statusCode || 500
+        };
       }
 
-      const province = provincesResult.data.find(p => p.code === code);
+      const province = provincesResult.data?.find(p => p.code === code) || null;
       
       return {
         success: true,
         data: province || null,
+        statusCode: 200
       };
     } catch (error) {
       console.error("Error getting province by code:", error);
       return {
         success: false,
-        error: "Terjadi kesalahan saat mengambil data provinsi",
+        error: {
+          message: "Terjadi kesalahan saat mengambil data provinsi",
+          code: "WILAYAH_ERROR"
+        },
+        statusCode: 500
       };
     }
   }
@@ -217,20 +226,29 @@ export class WilayahService {
       const regenciesResult = await this.getRegencies(provinceCode);
       
       if (!regenciesResult.success) {
-        return regenciesResult;
+        return {
+          success: false,
+          error: regenciesResult.error,
+          statusCode: regenciesResult.statusCode || 500
+        };
       }
 
-      const regency = regenciesResult.data.find(r => r.code === regencyCode);
+      const regency = regenciesResult.data?.find(r => r.code === regencyCode) || null;
       
       return {
         success: true,
         data: regency || null,
+        statusCode: 200
       };
     } catch (error) {
       console.error("Error getting regency by code:", error);
       return {
         success: false,
-        error: "Terjadi kesalahan saat mengambil data kabupaten/kota",
+        error: {
+          message: "Terjadi kesalahan saat mengambil data kabupaten/kota",
+          code: "WILAYAH_ERROR"
+        },
+        statusCode: 500
       };
     }
   }
@@ -243,20 +261,29 @@ export class WilayahService {
       const districtsResult = await this.getDistricts(regencyCode);
       
       if (!districtsResult.success) {
-        return districtsResult;
+        return {
+          success: false,
+          error: districtsResult.error,
+          statusCode: districtsResult.statusCode || 500
+        };
       }
 
-      const district = districtsResult.data.find(d => d.code === districtCode);
-      
+      const district = districtsResult.data?.find(d => d.code === districtCode) || null;
+
       return {
         success: true,
         data: district || null,
+        statusCode: 200
       };
     } catch (error) {
       console.error("Error getting district by code:", error);
       return {
         success: false,
-        error: "Terjadi kesalahan saat mengambil data kecamatan",
+        error: {
+          message: "Terjadi kesalahan saat mengambil data kecamatan",
+          code: "WILAYAH_ERROR"
+        },
+        statusCode: 500
       };
     }
   }

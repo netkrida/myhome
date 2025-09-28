@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { RoomsAPI } from "@/server/api/rooms.api";
 import { getCurrentUserContext } from "@/server/lib/auth";
-import { 
-  roomListQuerySchema, 
+import {
+  roomListQuerySchema,
   createRoomSchema,
-  type RoomListQueryInput,
-  type CreateRoomInput
+  type RoomListQueryInput
 } from "@/server/schemas/room.schemas";
 
 /**
@@ -90,8 +89,9 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validationResult = createRoomSchema.safeParse(body);
     if (!validationResult.success) {
+      console.error("POST /api/rooms - Schema validation failed:", validationResult.error.errors);
       return NextResponse.json(
-        { 
+        {
           error: "Invalid request data",
           details: validationResult.error.errors
         },
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const roomData: CreateRoomInput = validationResult.data;
+    const roomData = validationResult.data;
 
     // Create rooms
     const result = await RoomsAPI.createRooms(roomData);

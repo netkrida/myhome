@@ -12,19 +12,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Bed, 
-  MoreVertical, 
-  Edit, 
-  Eye, 
+import {
+  Bed,
+  MoreVertical,
+  Edit,
+  Eye,
   Trash2,
   CheckCircle,
   XCircle,
-  Ruler,
-  DollarSign,
-  Users,
-  Wifi,
-  Bath
+  Ruler
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RoomListItem } from "@/server/types";
@@ -225,7 +221,7 @@ export function RoomCard({
             <div className="flex flex-wrap gap-1">
               {room.facilities.slice(0, 3).map((facility, index) => (
                 <Badge key={index} variant="outline" className="text-xs">
-                  {facility}
+                  {facility.name}
                 </Badge>
               ))}
               {room.facilities.length > 3 && (

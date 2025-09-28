@@ -8,8 +8,21 @@ export * from "./auth";
 // AdminKos registration schemas
 export * from "./adminkos-registration";
 
-// User schemas
-export * from "./user.schemas";
+// User schemas (excluding duplicates from auth.ts)
+export {
+  createUserSchema,
+  updateUserSchema,
+  userListQuerySchema,
+  changeUserStatusSchema,
+  changeUserRoleSchema as userChangeRoleSchema, // Rename to avoid conflict
+  userIdSchema,
+  bulkUserOperationSchema,
+  type CreateUserInput,
+  type UserListQueryInput,
+  type ChangeUserStatusInput,
+  type UserIdInput,
+  type BulkUserOperationInput
+} from "./user.schemas";
 
 // Property schemas
 export * from "./property.schemas";

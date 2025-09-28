@@ -19,6 +19,13 @@ export enum PermissionResource {
   RECEPTIONIST_ACCOUNTS = "receptionist_accounts",
   CUSTOMER_ACCOUNTS = "customer_accounts",
 
+  // Property management
+  KOS_PROPERTIES = "kos_properties",
+  ROOMS = "rooms",
+  BOOKINGS = "bookings",
+  DIRECT_BOOKINGS = "direct_bookings",
+  BOOKING_VALIDATION = "booking_validation",
+
   // System administration
   SYSTEM_SETTINGS = "system_settings",
 }

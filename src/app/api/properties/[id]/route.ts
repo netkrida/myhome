@@ -17,9 +17,19 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log("🔍 GET /api/properties/[id] - Start");
+
     // Get user context
     const userContext = await getCurrentUserContext();
+    console.log("🔍 User context:", {
+      found: !!userContext,
+      userId: userContext?.id,
+      role: userContext?.role,
+      email: userContext?.email
+    });
+
     if (!userContext) {
+      console.log("🔍 Authentication failed - no user context");
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
@@ -28,12 +38,20 @@ export async function GET(
 
     // Await params
     const resolvedParams = await params;
+    console.log("🔍 Resolved params:", resolvedParams);
 
     // Validate property ID
     const validationResult = propertyIdSchema.safeParse({ id: resolvedParams.id });
+    console.log("🔍 Property ID validation:", {
+      success: validationResult.success,
+      id: resolvedParams.id,
+      errors: validationResult.success ? null : validationResult.error.errors
+    });
+
     if (!validationResult.success) {
+      console.log("🔍 Property ID validation failed");
       return NextResponse.json(
-        { 
+        {
           error: "Invalid property ID",
           details: validationResult.error.errors
         },
@@ -42,22 +60,38 @@ export async function GET(
     }
 
     const { id }: PropertyIdInput = validationResult.data;
+    console.log("🔍 Validated property ID:", id);
 
     // Get property
+    console.log("🔍 Calling PropertiesAPI.getPropertyById with:", { userContext: userContext.id, id });
     const result = await PropertiesAPI.getPropertyById(id);
+    console.log("🔍 PropertiesAPI.getPropertyById result:", {
+      success: result.success,
+      hasData: !!(result as any).data,
+      error: result.success ? null : (result as any).error,
+      statusCode: (result as any).statusCode
+    });
 
     if (!result.success) {
       const errorResult = result as any;
       const errorMessage = typeof errorResult.error === 'string'
         ? errorResult.error
         : errorResult.error?.message || "Failed to get property";
+
+      console.log("🔍 API call failed:", {
+        error: errorResult.error,
+        statusCode: errorResult.statusCode,
+        errorMessage
+      });
+
       return NextResponse.json(
         { error: errorMessage },
         { status: errorResult.statusCode || 500 }
       );
     }
 
-    return NextResponse.json(result.data);
+    console.log("🔍 API call successful, returning data");
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error in GET /api/properties/[id]:", error);
     return NextResponse.json(
@@ -178,25 +212,46 @@ export async function DELETE(
 
     const { id }: PropertyIdInput = validationResult.data;
 
-    // For now, we'll implement this as a status change to REJECTED
-    // In a real implementation, you might want a separate delete endpoint
-    const result = await PropertiesAPI.approveProperty(id, { 
-      status: 'REJECTED' as any,
-      rejectionReason: 'Property deleted by owner'
+    console.log("🗑️ DELETE API - Processing delete for property:", id);
+    console.log("🗑️ DELETE API - User context:", {
+      userId: userContext.id,
+      role: userContext.role,
+      email: userContext.email
     });
 
-    if (!result.success) {
-      const errorResult = result as any;
-      const errorMessage = typeof errorResult.error === 'string'
-        ? errorResult.error
-        : errorResult.error?.message || "Failed to delete property";
+    // Check if user can manage this property by trying to get it first
+    const property = await PropertiesAPI.getPropertyById(id);
+    
+    if (!property.success) {
+      console.log("🗑️ DELETE API - Property not found or access denied:", property);
+      const errorResult = property as any;
       return NextResponse.json(
-        { error: errorMessage },
-        { status: errorResult.statusCode || 500 }
+        { error: errorResult.error?.message || "Property not found or access denied" },
+        { status: errorResult.statusCode || 404 }
       );
     }
 
-    return NextResponse.json({ message: "Property deleted successfully" });
+    console.log("🗑️ DELETE API - Property found, proceeding with hard delete");
+
+    // Hard delete - completely remove the property from database
+    const { PropertyRepository } = await import("@/server/repositories/property.repository");
+    
+    try {
+      // Perform hard delete - remove property and all related data
+      await PropertyRepository.delete(id);
+
+      console.log("🗑️ DELETE API - Property permanently deleted from database");
+    } catch (repoError) {
+      console.error("🗑️ DELETE API - Repository error:", repoError);
+      throw new Error("Failed to delete property from database");
+    }
+
+    console.log("🗑️ DELETE API - Hard delete operation completed successfully");
+
+    return NextResponse.json({ 
+      success: true,
+      message: "Property deleted successfully" 
+    });
   } catch (error) {
     console.error("Error in DELETE /api/properties/[id]:", error);
     return NextResponse.json(

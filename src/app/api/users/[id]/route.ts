@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UsersAPI } from "@/server/api/users.api";
 import { getCurrentUserContext } from "@/server/lib/auth";
-import { 
-  userIdSchema, 
+import {
+  userIdSchema,
   updateUserSchema,
-  type UserIdInput,
-  type UpdateUserInput
+  type UserIdInput
 } from "@/server/schemas/user.schemas";
+import { type UpdateUserInput } from "@/server/schemas/auth";
 
 /**
  * GET /api/users/[id]

@@ -113,12 +113,12 @@ export const propertyApprovalSchema = z.object({
   status: z.nativeEnum(PropertyStatus, { errorMap: () => ({ message: "Invalid status" }) }),
   rejectionReason: z.string().min(1, "Rejection reason is required").max(500, "Rejection reason must be less than 500 characters").optional(),
 }).refine((data) => {
-  if (data.status === PropertyStatus.REJECTED && !data.rejectionReason) {
+  if ((data.status === PropertyStatus.REJECTED || data.status === PropertyStatus.SUSPENDED) && !data.rejectionReason) {
     return false;
   }
   return true;
 }, {
-  message: "Rejection reason is required when rejecting a property",
+  message: "Rejection reason is required when rejecting or suspending a property",
   path: ["rejectionReason"],
 });
 

@@ -13,24 +13,17 @@ export const roomFacilitySchema = z.object({
   category: z.enum(["room", "bathroom"], { errorMap: () => ({ message: "Invalid facility category" }) }),
 });
 
-// Room pricing schema
-export const roomPricingSchema = z.object({
+// Base room pricing schema (without refine for partial support)
+export const baseRoomPricingSchema = z.object({
   monthlyPrice: z.number().min(0, "Monthly price cannot be negative"),
   dailyPrice: z.number().min(0, "Daily price cannot be negative").optional(),
   weeklyPrice: z.number().min(0, "Weekly price cannot be negative").optional(),
   quarterlyPrice: z.number().min(0, "Quarterly price cannot be negative").optional(),
   yearlyPrice: z.number().min(0, "Yearly price cannot be negative").optional(),
-  hasDeposit: z.boolean().default(false),
-  depositPercentage: z.nativeEnum(DepositPercentage, { errorMap: () => ({ message: "Invalid deposit percentage" }) }).optional(),
-}).refine((data) => {
-  if (data.hasDeposit && !data.depositPercentage) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Deposit percentage is required when deposit is enabled",
-  path: ["depositPercentage"],
 });
+
+// Room pricing schema with validation
+export const roomPricingSchema = baseRoomPricingSchema;
 
 // Room image schema
 export const roomImageSchema = z.object({
@@ -51,12 +44,14 @@ export const roomConfigurationItemSchema = z.object({
 
 // Room creation step schemas
 export const createRoomStep1Schema = z.object({
-  roomType: z.string().min(1, "Room type is required"),
-  images: z.object({
-    roomPhotos: z.array(z.any()).min(1, "At least one room photo is required"),
-    bathroomPhotos: z.array(z.any()).optional(),
+  roomTypePhotos: z.record(z.string(), z.object({
+    frontViewPhotos: z.array(z.string()).min(1, "At least one front view photo is required"),
+    interiorPhotos: z.array(z.string()).min(1, "At least one interior photo is required"),
+    bathroomPhotos: z.array(z.string()).min(1, "At least one bathroom photo is required"),
+    description: z.string().min(10, "Description must be at least 10 characters").max(500, "Description must be less than 500 characters"),
+  })).refine((data) => Object.keys(data).length > 0, {
+    message: "At least one room type must have photos",
   }),
-  description: z.string().max(2000, "Description must be less than 2000 characters").optional(),
 });
 
 export const createRoomStep2Schema = z.object({
@@ -64,7 +59,28 @@ export const createRoomStep2Schema = z.object({
 });
 
 export const createRoomStep3Schema = z.object({
-  pricing: roomPricingSchema,
+  pricing: z.record(z.string(), baseRoomPricingSchema).refine((data) => Object.keys(data).length > 0, {
+    message: "At least one room type pricing is required",
+  }),
+  hasAlternativeRentals: z.boolean().default(false),
+  alternativeRentals: z.object({
+    daily: z.boolean().default(false),
+    weekly: z.boolean().default(false),
+    quarterly: z.boolean().default(false),
+    yearly: z.boolean().default(false),
+  }).optional(),
+  hasDeposit: z.boolean().default(false),
+  depositPercentage: z.nativeEnum(DepositPercentage).optional(),
+}).refine((data) => {
+  if (data.hasAlternativeRentals && !data.alternativeRentals) {
+    return false;
+  }
+  if (data.hasDeposit && !data.depositPercentage) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Alternative rentals and deposit percentage must be provided when enabled",
 });
 
 export const createRoomStep4Schema = z.object({
@@ -87,7 +103,7 @@ export const updateRoomSchema = z.object({
   roomType: z.string().min(1, "Room type is required").optional(),
   description: z.string().max(2000, "Description must be less than 2000 characters").optional(),
   size: z.string().max(50, "Size must be less than 50 characters").optional(),
-  pricing: roomPricingSchema.partial().optional(),
+  pricing: baseRoomPricingSchema.partial().optional(),
   facilities: z.array(roomFacilitySchema).min(1, "At least one facility is required").optional(),
   isAvailable: z.boolean().optional(),
 });

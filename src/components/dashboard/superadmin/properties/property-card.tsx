@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PropertyListItem } from "@/server/types";
-import { PropertyStatus, PropertyType } from "@/server/types/property";
+import { PropertyStatus, PropertyType, PROPERTY_FACILITIES } from "@/server/types/property";
 
 interface PropertyCardProps {
   property: PropertyListItem;
@@ -143,18 +143,18 @@ export function PropertyCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {onEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(property)}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Lihat Detail
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href={`/property/${property.id}`}>
                     <Eye className="h-4 w-4 mr-2" />
-                    Lihat Detail
+                    Lihat Halaman Publik
                   </Link>
                 </DropdownMenuItem>
-                {onEdit && (
-                  <DropdownMenuItem onClick={() => onEdit(property)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuSeparator />
                 {onApprove && property.status === PropertyStatus.PENDING && (
                   <DropdownMenuItem onClick={() => onApprove(property)}>
@@ -226,6 +226,37 @@ export function PropertyCard({
             </span>
           </div>
         </div>
+
+        {/* Facilities */}
+        {property.facilities && property.facilities.length > 0 && (
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Fasilitas Utama</div>
+            <div className="flex flex-wrap gap-1">
+              {property.facilities.slice(0, 4).map((facility) => {
+                // Find facility name from predefined list
+                const facilityInfo = [
+                  ...PROPERTY_FACILITIES.property,
+                  ...PROPERTY_FACILITIES.parking
+                ].find(f => f.id === facility.id);
+
+                return (
+                  <Badge
+                    key={facility.id}
+                    variant="secondary"
+                    className="text-xs px-2 py-1"
+                  >
+                    {facilityInfo?.name || facility.name}
+                  </Badge>
+                );
+              })}
+              {property.facilities.length > 4 && (
+                <Badge variant="outline" className="text-xs px-2 py-1">
+                  +{property.facilities.length - 4} lainnya
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Owner Info */}
         {showOwner && (

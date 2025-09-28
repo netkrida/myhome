@@ -128,6 +128,16 @@ export class PropertyService {
    * Check if user can manage property
    */
   static canManageProperty(userId: string, property: PropertyDetailItem, userRole: string): boolean {
+    console.log("🔍 canManageProperty check:", {
+      userId,
+      userRole,
+      propertyId: property.id,
+      propertyOwnerId: property.owner?.id,
+      propertyOwnerIdFallback: (property as any).ownerId,
+      hasOwner: !!property.owner,
+      ownerObject: property.owner
+    });
+
     // Superadmin can manage all properties
     if (userRole === 'SUPERADMIN') {
       return true;
@@ -135,7 +145,16 @@ export class PropertyService {
 
     // AdminKos can only manage their own properties
     if (userRole === 'ADMINKOS') {
-      return property.ownerId === userId;
+      // Use owner.id if available, fallback to ownerId
+      const propertyOwnerId = property.owner?.id || (property as any).ownerId;
+      const canManage = propertyOwnerId === userId;
+      console.log("🔍 canManageProperty result:", {
+        propertyOwnerId,
+        userId,
+        canManage,
+        comparison: `${propertyOwnerId} === ${userId}`
+      });
+      return canManage;
     }
 
     return false;
@@ -230,9 +249,9 @@ export class PropertyService {
     floorPlanPhotos: string[];
   } {
     const result = {
-      buildingPhotos: [],
-      sharedFacilitiesPhotos: [],
-      floorPlanPhotos: [],
+      buildingPhotos: [] as string[],
+      sharedFacilitiesPhotos: [] as string[],
+      floorPlanPhotos: [] as string[],
     };
 
     if (!images || !Array.isArray(images)) {

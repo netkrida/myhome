@@ -16,25 +16,7 @@ import type {
  * Pure business logic for room management
  */
 export class RoomService {
-  /**
-   * Convert DepositPercentage enum to number
-   */
-  private static getDepositPercentageValue(percentage: DepositPercentage): number {
-    switch (percentage) {
-      case DepositPercentage.TEN_PERCENT:
-        return 10;
-      case DepositPercentage.TWENTY_PERCENT:
-        return 20;
-      case DepositPercentage.THIRTY_PERCENT:
-        return 30;
-      case DepositPercentage.FORTY_PERCENT:
-        return 40;
-      case DepositPercentage.FIFTY_PERCENT:
-        return 50;
-      default:
-        return 20; // Default to 20%
-    }
-  }
+
   /**
    * Validate room creation data
    */
@@ -49,13 +31,24 @@ export class RoomService {
       errors.push("Property ID is required");
     }
 
-    // Step 1 validation
-    if (!roomData.step1.roomType?.trim()) {
-      errors.push("Room type is required");
-    }
-
-    if (!roomData.step1.images?.roomPhotos || roomData.step1.images.roomPhotos.length === 0) {
-      errors.push("At least one room photo is required");
+    // Step 1 validation (room type photos)
+    if (!roomData.step1.roomTypePhotos || Object.keys(roomData.step1.roomTypePhotos).length === 0) {
+      errors.push("At least one room type with photos is required");
+    } else {
+      Object.entries(roomData.step1.roomTypePhotos).forEach(([roomType, photos]) => {
+        if (!photos.frontViewPhotos || photos.frontViewPhotos.length === 0) {
+          errors.push(`${roomType}: At least one front view photo is required`);
+        }
+        if (!photos.interiorPhotos || photos.interiorPhotos.length === 0) {
+          errors.push(`${roomType}: At least one interior photo is required`);
+        }
+        if (!photos.bathroomPhotos || photos.bathroomPhotos.length === 0) {
+          errors.push(`${roomType}: At least one bathroom photo is required`);
+        }
+        if (!photos.description?.trim()) {
+          errors.push(`${roomType}: Description is required`);
+        }
+      });
     }
 
     // Step 2 validation
@@ -64,9 +57,35 @@ export class RoomService {
     }
 
     // Step 3 validation (pricing)
-    const pricingValidation = this.validateRoomPricing(roomData.step3.pricing);
-    if (!pricingValidation.isValid) {
-      errors.push(...pricingValidation.errors);
+    if (!roomData.step3.pricing || Object.keys(roomData.step3.pricing).length === 0) {
+      errors.push("Pricing information is required");
+    } else {
+      Object.entries(roomData.step3.pricing).forEach(([roomType, pricing]) => {
+        if (!pricing.monthlyPrice || pricing.monthlyPrice <= 0) {
+          errors.push(`${roomType}: Monthly price is required and must be greater than 0`);
+        }
+
+        // Validate alternative rentals if enabled
+        if (roomData.step3.hasAlternativeRentals && roomData.step3.alternativeRentals) {
+          if (roomData.step3.alternativeRentals.daily && (!pricing.dailyPrice || pricing.dailyPrice <= 0)) {
+            errors.push(`${roomType}: Daily price is required when daily rental is enabled`);
+          }
+          if (roomData.step3.alternativeRentals.weekly && (!pricing.weeklyPrice || pricing.weeklyPrice <= 0)) {
+            errors.push(`${roomType}: Weekly price is required when weekly rental is enabled`);
+          }
+          if (roomData.step3.alternativeRentals.quarterly && (!pricing.quarterlyPrice || pricing.quarterlyPrice <= 0)) {
+            errors.push(`${roomType}: Quarterly price is required when quarterly rental is enabled`);
+          }
+          if (roomData.step3.alternativeRentals.yearly && (!pricing.yearlyPrice || pricing.yearlyPrice <= 0)) {
+            errors.push(`${roomType}: Yearly price is required when yearly rental is enabled`);
+          }
+        }
+      });
+    }
+
+    // Validate deposit settings
+    if (roomData.step3.hasDeposit && !roomData.step3.depositPercentage) {
+      errors.push("Deposit percentage is required when deposit is enabled");
     }
 
     // Step 4 validation (room configurations)
@@ -131,13 +150,7 @@ export class RoomService {
       errors.push("Yearly price must be greater than 0 if provided");
     }
 
-    if (pricing.hasDeposit && !pricing.depositPercentage) {
-      errors.push("Deposit percentage is required when deposit is enabled");
-    }
 
-    if (pricing.depositPercentage && !Object.values(DepositPercentage).includes(pricing.depositPercentage)) {
-      errors.push("Invalid deposit percentage");
-    }
 
     // Validate price relationships
     if (pricing.dailyPrice && pricing.monthlyPrice) {
@@ -184,6 +197,26 @@ export class RoomService {
       isValid: errors.length === 0,
       errors,
     };
+  }
+
+  /**
+   * Get numeric value from DepositPercentage enum
+   */
+  static getDepositPercentageValue(depositPercentage: DepositPercentage): number {
+    switch (depositPercentage) {
+      case "TEN_PERCENT":
+        return 10;
+      case "TWENTY_PERCENT":
+        return 20;
+      case "THIRTY_PERCENT":
+        return 30;
+      case "FORTY_PERCENT":
+        return 40;
+      case "FIFTY_PERCENT":
+        return 50;
+      default:
+        return 0;
+    }
   }
 
   /**

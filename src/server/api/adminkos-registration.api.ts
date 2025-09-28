@@ -21,11 +21,17 @@ export class AdminKosRegistrationAPI {
       if (!validationResult.success) {
         return {
           success: false,
-          error: "Data tidak valid",
-          details: validationResult.error.errors.map(err => ({
-            field: err.path.join('.'),
-            message: err.message,
-          })),
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Data tidak valid",
+            details: {
+              errors: validationResult.error.errors.map(err => ({
+                field: err.path.join('.'),
+                message: err.message,
+              })),
+            },
+          },
+          statusCode: 400,
         };
       }
 
@@ -34,26 +40,29 @@ export class AdminKosRegistrationAPI {
       // Call domain service
       const result = await AdminKosRegistrationService.registerAdminKos(data);
 
-      if (!result.success) {
+      if (!result.success || !result.data) {
         return result;
       }
 
       // Return success without sensitive data
+      const { password, ...userWithoutPassword } = result.data.user;
       return {
         success: true,
         data: {
-          user: {
-            ...result.data.user,
-            password: undefined, // Remove password from response
-          },
+          user: userWithoutPassword,
           profile: result.data.profile,
         } as AdminKosRegistrationResult,
+        statusCode: 201,
       };
     } catch (error) {
       console.error("Error in AdminKos registration API:", error);
       return {
         success: false,
-        error: "Terjadi kesalahan saat mendaftarkan akun",
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Terjadi kesalahan saat mendaftarkan akun",
+        },
+        statusCode: 500,
       };
     }
   }
@@ -66,7 +75,11 @@ export class AdminKosRegistrationAPI {
       if (!email || typeof email !== 'string') {
         return {
           success: false,
-          error: "Email tidak valid",
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Email tidak valid",
+          },
+          statusCode: 400,
         };
       }
 
@@ -76,7 +89,11 @@ export class AdminKosRegistrationAPI {
       console.error("Error checking email availability:", error);
       return {
         success: false,
-        error: "Terjadi kesalahan saat memeriksa email",
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Terjadi kesalahan saat memeriksa email",
+        },
+        statusCode: 500,
       };
     }
   }
@@ -89,7 +106,11 @@ export class AdminKosRegistrationAPI {
       if (!userId || typeof userId !== 'string') {
         return {
           success: false,
-          error: "User ID tidak valid",
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "User ID tidak valid",
+          },
+          statusCode: 400,
         };
       }
 
@@ -101,15 +122,14 @@ export class AdminKosRegistrationAPI {
 
       // Remove password from response if user exists
       if (result.data) {
+        const { password, ...userWithoutPassword } = result.data.user;
         return {
           success: true,
           data: {
-            user: {
-              ...result.data.user,
-              password: undefined,
-            },
+            user: userWithoutPassword,
             profile: result.data.profile,
           } as AdminKosRegistrationResult,
+          statusCode: 200,
         };
       }
 
@@ -118,7 +138,11 @@ export class AdminKosRegistrationAPI {
       console.error("Error getting AdminKos profile:", error);
       return {
         success: false,
-        error: "Terjadi kesalahan saat mengambil profil AdminKos",
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Terjadi kesalahan saat mengambil profil AdminKos",
+        },
+        statusCode: 500,
       };
     }
   }

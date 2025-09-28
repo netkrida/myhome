@@ -62,6 +62,24 @@ const depositOptions = [
   { value: DepositPercentage.FIFTY_PERCENT, label: "50%", description: "Deposit 50% dari harga sewa" },
 ];
 
+// Helper function to get numeric value from DepositPercentage enum
+const getDepositPercentageValue = (percentage: DepositPercentage): number => {
+  switch (percentage) {
+    case DepositPercentage.TEN_PERCENT:
+      return 10;
+    case DepositPercentage.TWENTY_PERCENT:
+      return 20;
+    case DepositPercentage.THIRTY_PERCENT:
+      return 30;
+    case DepositPercentage.FORTY_PERCENT:
+      return 40;
+    case DepositPercentage.FIFTY_PERCENT:
+      return 50;
+    default:
+      return 0;
+  }
+};
+
 const priceFields = [
   {
     key: "dailyPrice" as keyof PricingFormData,
@@ -134,8 +152,8 @@ export function RoomPricingForm({ onDataChange, initialData, className }: RoomPr
 
   // Calculate deposit amount
   const calculateDeposit = (price: number, percentage: DepositPercentage) => {
-    const percentValue = parseInt(percentage.replace('_PERCENT', '')) / 100;
-    return price * percentValue;
+    const percentValue = getDepositPercentageValue(percentage);
+    return (price * percentValue) / 100;
   };
 
   // Get filled prices for deposit calculation
@@ -144,10 +162,11 @@ export function RoomPricingForm({ onDataChange, initialData, className }: RoomPr
     
     priceFields.forEach(field => {
       const value = watchedData[field.key];
-      if (value && value > 0) {
+      const numValue = typeof value === 'string' ? parseFloat(value) : value;
+      if (numValue && numValue > 0) {
         prices.push({
           label: field.label,
-          amount: value,
+          amount: numValue,
           period: field.period,
         });
       }

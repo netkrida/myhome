@@ -45,12 +45,14 @@ export async function POST(
 
     // Parse request body
     const body = await request.json();
+    console.log("Received approval request body:", body);
 
     // Validate request body
     const validationResult = propertyApprovalSchema.safeParse(body);
     if (!validationResult.success) {
+      console.log("Validation failed:", validationResult.error.errors);
       return NextResponse.json(
-        { 
+        {
           error: "Invalid request data",
           details: validationResult.error.errors
         },

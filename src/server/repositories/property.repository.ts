@@ -1,6 +1,6 @@
 import { type Property, type PropertyImage, type Prisma } from "@prisma/client";
 import { prisma } from "../db/client";
-import type { 
+import type {
   CreatePropertyDTO,
   UpdatePropertyDTO,
   PropertyListQuery,
@@ -8,9 +8,10 @@ import type {
   PropertyStatsDTO,
   PropertyListItem,
   PropertyDetailItem,
-  PaginationDTO
+  PaginationDTO,
+  PropertyCoordinate
 } from "../types";
-import { PropertyStatus, PropertyType, ImageCategory } from "../types/property";
+import { PropertyStatus, PropertyType, ImageCategory, type PropertyFacility } from "../types/property";
 
 /**
  * Property Repository
@@ -36,6 +37,11 @@ export class PropertyRepository {
     
     if (includeRooms) {
       include.rooms = {
+        include: {
+          images: {
+            orderBy: { sortOrder: 'asc' }
+          }
+        },
         orderBy: { roomNumber: 'asc' }
       };
     }
@@ -58,9 +64,26 @@ export class PropertyRepository {
       };
     }
 
+    console.log("🔍 PropertyRepository.findById - Query:", {
+      id,
+      includeImages,
+      includeRooms,
+      includeOwner,
+      include
+    });
+
     const property = await prisma.property.findUnique({
       where: { id },
       include,
+    });
+
+    console.log("🔍 PropertyRepository.findById - Result:", {
+      found: !!property,
+      propertyId: property?.id,
+      propertyName: property?.name,
+      imagesCount: property?.images?.length || 0,
+      roomsCount: property?.rooms?.length || 0,
+      hasOwner: !!property?.owner
     });
 
     if (!property) return null;
@@ -92,14 +115,14 @@ export class PropertyRepository {
       ownerId: property.ownerId,
       createdAt: property.createdAt,
       updatedAt: property.updatedAt,
-      approvedAt: property.approvedAt,
-      approvedBy: property.approvedBy,
+      approvedAt: property.approvedAt || undefined,
+      approvedBy: property.approvedBy || undefined,
       images: property.images?.map(img => ({
         id: img.id,
         category: img.category as any,
         imageUrl: img.imageUrl,
-        publicId: img.publicId,
-        caption: img.caption,
+        publicId: img.publicId || undefined,
+        caption: img.caption || undefined,
         sortOrder: img.sortOrder,
         createdAt: img.createdAt,
         updatedAt: img.updatedAt,
@@ -111,8 +134,29 @@ export class PropertyRepository {
         roomNumber: room.roomNumber,
         floor: room.floor,
         roomType: room.roomType,
+        description: room.description || undefined,
+        size: room.size || undefined,
         monthlyPrice: Number(room.monthlyPrice),
+        dailyPrice: room.dailyPrice ? Number(room.dailyPrice) : undefined,
+        weeklyPrice: room.weeklyPrice ? Number(room.weeklyPrice) : undefined,
+        quarterlyPrice: room.quarterlyPrice ? Number(room.quarterlyPrice) : undefined,
+        yearlyPrice: room.yearlyPrice ? Number(room.yearlyPrice) : undefined,
+        hasDeposit: room.hasDeposit,
+        depositPercentage: room.depositPercentage || undefined,
+        facilities: room.facilities as any[],
         isAvailable: room.isAvailable,
+        createdAt: room.createdAt,
+        updatedAt: room.updatedAt,
+        images: (room as any).images?.map((img: any) => ({
+          id: img.id,
+          category: img.category as any,
+          imageUrl: img.imageUrl,
+          publicId: img.publicId || undefined,
+          caption: img.caption || undefined,
+          sortOrder: img.sortOrder,
+          createdAt: img.createdAt,
+          updatedAt: img.updatedAt,
+        })) || [],
       })) || [],
     };
   }
@@ -145,8 +189,8 @@ export class PropertyRepository {
           fullAddress: step2.location.fullAddress,
           latitude: step2.location.latitude,
           longitude: step2.location.longitude,
-          facilities: step4.facilities,
-          rules: step4.rules,
+          facilities: step4.facilities as any,
+          rules: step4.rules as any,
           ownerId,
           status: PropertyStatus.PENDING,
         },
@@ -217,8 +261,8 @@ export class PropertyRepository {
     if (updateData.description) data.description = updateData.description;
     if (updateData.roomTypes) data.roomTypes = updateData.roomTypes;
     if (updateData.totalRooms) data.totalRooms = updateData.totalRooms;
-    if (updateData.facilities) data.facilities = updateData.facilities;
-    if (updateData.rules) data.rules = updateData.rules;
+    if (updateData.facilities) data.facilities = updateData.facilities as any;
+    if (updateData.rules) data.rules = updateData.rules as any;
     
     if (updateData.location) {
       if (updateData.location.provinceCode) data.provinceCode = updateData.location.provinceCode;
@@ -246,7 +290,7 @@ export class PropertyRepository {
     approval: PropertyApprovalDTO, 
     approverId: string
   ): Promise<Property> {
-    const data: Prisma.PropertyUpdateInput = {
+    const data: any = {
       status: approval.status,
       approvedBy: approverId,
       approvedAt: new Date(),
@@ -359,9 +403,10 @@ export class PropertyRepository {
       },
       owner: {
         id: property.owner.id,
-        name: property.owner.name,
-        email: property.owner.email,
+        name: property.owner.name || undefined,
+        email: property.owner.email || undefined,
       },
+      facilities: property.facilities as unknown as PropertyFacility[],
       createdAt: property.createdAt,
       mainImage: property.images[0]?.imageUrl,
     }));
@@ -444,17 +489,68 @@ export class PropertyRepository {
    * Bulk update property status
    */
   static async bulkUpdateStatus(
-    propertyIds: string[], 
-    status: PropertyStatus, 
+    propertyIds: string[],
+    status: PropertyStatus,
     approverId: string
   ): Promise<{ count: number }> {
     return prisma.property.updateMany({
       where: { id: { in: propertyIds } },
-      data: { 
-        status, 
-        approvedBy: approverId, 
-        approvedAt: new Date() 
+      data: {
+        status,
+        approvedBy: approverId,
+        approvedAt: new Date()
       },
     });
+  }
+
+  /**
+   * Get property coordinates for map display
+   * Returns approved properties with valid coordinates
+   */
+  static async getPropertyCoordinates(): Promise<PropertyCoordinate[]> {
+    const properties = await prisma.property.findMany({
+      where: {
+        status: PropertyStatus.APPROVED,
+      },
+      select: {
+        id: true,
+        name: true,
+        latitude: true,
+        longitude: true,
+        propertyType: true,
+        districtName: true,
+        regencyName: true,
+        provinceName: true,
+        images: {
+          where: { category: ImageCategory.BUILDING_PHOTOS },
+          orderBy: { sortOrder: 'asc' },
+          take: 1,
+          select: { imageUrl: true }
+        },
+        rooms: {
+          select: {
+            id: true,
+            isAvailable: true,
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return properties.map(property => ({
+      id: property.id,
+      name: property.name,
+      latitude: property.latitude!,
+      longitude: property.longitude!,
+      propertyType: property.propertyType as PropertyType,
+      location: {
+        districtName: property.districtName,
+        regencyName: property.regencyName,
+        provinceName: property.provinceName,
+      },
+      totalRooms: property.rooms.length,
+      availableRooms: property.rooms.filter(room => room.isAvailable).length,
+      mainImage: property.images[0]?.imageUrl,
+    }));
   }
 }

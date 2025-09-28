@@ -1,33 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { PropertyList, SuperadminPropertyStats, PropertyApprovalDialog } from "@/components/dashboard/superadmin/properties";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { 
-  Building2, 
-  BarChart3, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Building2,
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertCircle,
-  Users
+  Map
 } from "lucide-react";
-import type { PropertyListItem } from "@/server/types";
+import type { PropertyListItem, PropertyCoordinate } from "@/server/types";
 import { PropertyStatus } from "@/server/types/property";
 
+// Import the map component directly for now
+import PropertyMapView from "@/components/maps/property-map-view";
+
 export default function SuperadminPropertiesPage() {
+  const router = useRouter();
   const [selectedProperty, setSelectedProperty] = useState<PropertyListItem | null>(null);
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Map-related state
+  const [propertyCoordinates, setPropertyCoordinates] = useState<PropertyCoordinate[]>([]);
+  const [mapLoading, setMapLoading] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
+
   // Handle property actions
   const handlePropertyEdit = (property: PropertyListItem) => {
+    console.log("🔄 Navigating to property detail:", {
+      propertyId: property.id,
+      propertyName: property.name,
+      targetUrl: `/dashboard/superadmin/properties/${property.id}`
+    });
     // Navigate to view page (superadmin can only view, not edit)
-    window.location.href = `/dashboard/superadmin/properties/${property.id}`;
+    router.push(`/dashboard/superadmin/properties/${property.id}`);
   };
 
   const handlePropertyApprove = (property: PropertyListItem) => {
@@ -43,6 +56,38 @@ export default function SuperadminPropertiesPage() {
   const handleApprovalSuccess = () => {
     setRefreshKey(prev => prev + 1);
   };
+
+  // Fetch property coordinates for map
+  const fetchPropertyCoordinates = async () => {
+    try {
+      setMapLoading(true);
+      setMapError(null);
+
+      const response = await fetch("/api/properties/coordinates");
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch property coordinates");
+      }
+
+      const data: PropertyCoordinate[] = await response.json();
+      setPropertyCoordinates(data);
+    } catch (err) {
+      setMapError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setMapLoading(false);
+    }
+  };
+
+  // Handle property click from map
+  const handlePropertyClick = (property: PropertyCoordinate) => {
+    // Navigate to property detail page
+    router.push(`/dashboard/superadmin/properties/${property.id}`);
+  };
+
+  // Fetch property coordinates on component mount
+  useEffect(() => {
+    fetchPropertyCoordinates();
+  }, []);
 
   const statusTabs = [
     {
@@ -92,6 +137,10 @@ export default function SuperadminPropertiesPage() {
               Review dan kelola semua properti yang terdaftar di platform
             </p>
           </div>
+          <div className="flex gap-2">
+          </div>
+          <div className="flex gap-2">
+          </div>
         </div>
 
         {/* Statistics Overview */}
@@ -100,81 +149,25 @@ export default function SuperadminPropertiesPage() {
           <SuperadminPropertyStats key={refreshKey} />
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => window.location.href = '/dashboard/superadmin/properties?status=PENDING'}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Perlu Review
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">
-                {/* This would be populated from stats */}
-                -
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Properti menunggu persetujuan
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => window.location.href = '/dashboard/superadmin/users'}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Pemilik Kos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                -
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Total pemilik kos aktif
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => window.location.href = '/dashboard/superadmin/properties?status=APPROVED'}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Properti Aktif
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                -
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Properti yang disetujui
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => window.location.href = '/dashboard/superadmin/analytics'}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Laporan
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                -
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Analitik platform
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Property Map */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Map className="h-5 w-5" />
+              Peta Lokasi Properti
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PropertyMapView
+              properties={propertyCoordinates}
+              loading={mapLoading}
+              error={mapError}
+              onPropertyClick={handlePropertyClick}
+              height="500px"
+              className="rounded-lg border"
+            />
+          </CardContent>
+        </Card>
 
         {/* Property Management Tabs */}
         <Tabs defaultValue="all" className="space-y-6">
@@ -193,17 +186,6 @@ export default function SuperadminPropertiesPage() {
           {statusTabs.map((tab) => (
             <TabsContent key={tab.value} value={tab.value} className="space-y-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold">
-                    {tab.label === "Semua" ? "Semua Properti" : `Properti ${tab.label}`}
-                  </h2>
-                  <p className="text-muted-foreground">
-                    {tab.label === "Semua" 
-                      ? "Daftar lengkap semua properti di platform"
-                      : `Properti dengan status ${tab.label.toLowerCase()}`
-                    }
-                  </p>
-                </div>
                 {tab.value === "pending" && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />

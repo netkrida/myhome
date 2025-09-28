@@ -39,11 +39,11 @@ export interface PropertyRule {
 
 // Location Types
 export interface LocationData {
-  provinceCode: string;
+  provinceCode?: string;
   provinceName: string;
-  regencyCode: string;
+  regencyCode?: string;
   regencyName: string;
-  districtCode: string;
+  districtCode?: string;
   districtName: string;
   fullAddress: string;
   latitude: number;
@@ -178,6 +178,7 @@ export interface PropertyListItem {
     name?: string;
     email?: string;
   };
+  facilities: PropertyFacility[];
   createdAt: Date;
   mainImage?: string;
 }
@@ -215,14 +216,68 @@ export interface PropertyStatsDTO {
   occupancyRate: number;
 }
 
+// Property Coordinate DTO (for map display)
+export interface PropertyCoordinate {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  propertyType: PropertyType;
+  location: {
+    districtName: string;
+    regencyName: string;
+    provinceName: string;
+  };
+  totalRooms: number;
+  availableRooms: number;
+  mainImage?: string;
+}
+
+// Public Property Statistics DTO (for public pages)
+export interface PublicPropertyStats {
+  totalProperties: number;
+  totalRooms: number;
+  availableRooms: number;
+  averageOccupancyRate: number;
+  propertiesByType: {
+    maleOnly: number;
+    femaleOnly: number;
+    mixed: number;
+  };
+}
+
+// Room Image DTO for Room summary
+export interface RoomImageSummary {
+  id: string;
+  category: ImageCategory;
+  imageUrl: string;
+  publicId?: string;
+  caption?: string;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Supporting types for Room summary in Property
 export interface RoomSummary {
   id: string;
   roomNumber: string;
   floor: number;
   roomType: string;
+  description?: string;
+  size?: string;
   monthlyPrice: number;
+  dailyPrice?: number | null;
+  weeklyPrice?: number | null;
+  quarterlyPrice?: number | null;
+  yearlyPrice?: number | null;
+  hasDeposit: boolean;
+  depositPercentage?: string | null;
+  facilities: any[];
   isAvailable: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  images: RoomImageSummary[];
 }
 
 // Predefined Facilities and Rules

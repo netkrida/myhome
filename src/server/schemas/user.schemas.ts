@@ -71,10 +71,10 @@ export const userSearchSchema = z.object({
 
 // Export types for TypeScript
 export type CreateUserInput = z.infer<typeof createUserSchema>;
-export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+// UpdateUserInput is exported from auth.ts to avoid duplicate exports
 export type UserListQueryInput = z.infer<typeof userListQuerySchema>;
 export type ChangeUserStatusInput = z.infer<typeof changeUserStatusSchema>;
-export type ChangeUserRoleInput = z.infer<typeof changeUserRoleSchema>;
+// ChangeUserRoleInput is exported from auth.ts to avoid duplicate exports
 export type UserIdInput = z.infer<typeof userIdSchema>;
 export type BulkUserOperationInput = z.infer<typeof bulkUserOperationSchema>;
 export type UserSearchInput = z.infer<typeof userSearchSchema>;

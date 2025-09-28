@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UsersAPI } from "@/server/api/users.api";
 import { getCurrentUserContext } from "@/server/lib/auth";
-import { 
-  userIdSchema, 
-  changeUserRoleSchema,
-  type UserIdInput,
-  type ChangeUserRoleInput
-} from "@/server/schemas/user.schemas";
+import {
+  userIdSchema,
+  userChangeRoleSchema as changeUserRoleSchema,
+  type UserIdInput
+} from "@/server/schemas";
+
+import { UserRole } from "@/server/types/rbac";
+
+// Define local type for this route
+type ChangeUserRoleInput = {
+  role: UserRole;
+};
 
 /**
  * PATCH /api/users/[id]/role

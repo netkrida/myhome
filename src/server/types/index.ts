@@ -8,8 +8,12 @@ export * from "./rbac";
 // User types
 export * from "./user";
 
-// AdminKos types
-export * from "./adminkos";
+// AdminKos types (excluding duplicates from user.ts)
+export type {
+  AdminKosRegistrationData as AdminKosRegistrationDTO,
+  AdminKosRegistrationResult,
+  AdminKosWithProfile
+} from "./adminkos";
 
 // Result types
 export * from "./result";

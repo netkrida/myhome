@@ -50,7 +50,7 @@ export class RoomsAPI {
             error: {
               code: "VALIDATION_ERROR",
               message: "Invalid search filters",
-              details: validation.errors,
+              details: { errors: validation.errors },
             },
             statusCode: 400,
           };
@@ -60,7 +60,7 @@ export class RoomsAPI {
         let filters = { ...query };
         if (userContext.role === UserRole.ADMINKOS && !query.propertyId) {
           // Get user's properties first
-          const userProperties = await PropertyRepository.findByOwner(userContext.userId);
+          const userProperties = await PropertyRepository.findByOwner(userContext.id);
           const propertyIds = userProperties.map(p => p.id);
           
           if (propertyIds.length === 0) {
@@ -141,7 +141,7 @@ export class RoomsAPI {
         }
 
         // Check if user can access this room
-        if (!RoomService.canManageRoom(userContext.userId, room, userContext.role)) {
+        if (!RoomService.canManageRoom(userContext.id, room, userContext.role)) {
           return {
             success: false,
             error: {
@@ -191,14 +191,16 @@ export class RoomsAPI {
         }
 
         // Validate room data
+        console.log("Validating room data:", JSON.stringify(roomData, null, 2));
         const validation = RoomService.validateRoomCreation(roomData);
         if (!validation.isValid) {
+          console.error("Room validation failed:", validation.errors);
           return {
             success: false,
             error: {
               code: "VALIDATION_ERROR",
               message: "Invalid room data",
-              details: validation.errors,
+              details: { errors: validation.errors },
             },
             statusCode: 400,
           };
@@ -218,7 +220,7 @@ export class RoomsAPI {
           };
         }
 
-        if (!PropertyService.canManageProperty(userContext.userId, property, userContext.role)) {
+        if (!PropertyService.canManageProperty(userContext.id, property, userContext.role)) {
           return {
             success: false,
             error: {
@@ -303,7 +305,7 @@ export class RoomsAPI {
         }
 
         // Check if user can manage this room
-        if (!RoomService.canManageRoom(userContext.userId, existingRoom, userContext.role)) {
+        if (!RoomService.canManageRoom(userContext.id, existingRoom, userContext.role)) {
           return {
             success: false,
             error: {
@@ -322,7 +324,7 @@ export class RoomsAPI {
             error: {
               code: "VALIDATION_ERROR",
               message: "Invalid update data",
-              details: validation.errors,
+              details: { errors: validation.errors },
             },
             statusCode: 400,
           };
@@ -406,7 +408,7 @@ export class RoomsAPI {
         }
 
         // Check if user can manage this room
-        if (!RoomService.canManageRoom(userContext.userId, existingRoom, userContext.role)) {
+        if (!RoomService.canManageRoom(userContext.id, existingRoom, userContext.role)) {
           return {
             success: false,
             error: {
@@ -464,7 +466,7 @@ export class RoomsAPI {
         // If propertyId is provided and user is AdminKos, verify ownership
         if (propertyId && userContext.role === UserRole.ADMINKOS) {
           const property = await PropertyRepository.findById(propertyId);
-          if (!property || !PropertyService.canManageProperty(userContext.userId, property, userContext.role)) {
+          if (!property || !PropertyService.canManageProperty(userContext.id, property, userContext.role)) {
             return {
               success: false,
               error: {

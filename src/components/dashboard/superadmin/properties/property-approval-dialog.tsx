@@ -26,7 +26,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
-import type { PropertyListItem } from "@/server/types";
+import type { PropertyListItem, PropertyDetailItem } from "@/server/types";
 import { PropertyStatus } from "@/server/types/property";
 
 const approvalSchema = z.object({
@@ -35,19 +35,27 @@ const approvalSchema = z.object({
   }),
   rejectionReason: z.string().optional(),
 }).refine((data) => {
-  if (data.status === PropertyStatus.REJECTED && !data.rejectionReason?.trim()) {
+  if ((data.status === PropertyStatus.REJECTED || data.status === PropertyStatus.SUSPENDED) && !data.rejectionReason?.trim()) {
     return false;
   }
   return true;
 }, {
-  message: "Rejection reason is required when rejecting a property",
+  message: "Rejection reason is required when rejecting or suspending a property",
+  path: ["rejectionReason"],
+}).refine((data) => {
+  if (data.rejectionReason && data.rejectionReason.trim().length > 500) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Rejection reason must be less than 500 characters",
   path: ["rejectionReason"],
 });
 
 type ApprovalFormData = z.infer<typeof approvalSchema>;
 
 interface PropertyApprovalDialogProps {
-  property: PropertyListItem | null;
+  property: PropertyListItem | PropertyDetailItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
@@ -105,12 +113,20 @@ export function PropertyApprovalDialog({
     try {
       setIsSubmitting(true);
 
+      // Clean up data - remove empty rejectionReason if not needed
+      const submitData = {
+        status: data.status,
+        ...(data.rejectionReason?.trim() && { rejectionReason: data.rejectionReason.trim() })
+      };
+
+      console.log("Submitting approval data:", submitData);
+
       const response = await fetch(`/api/properties/${property.id}/approve`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(submitData),
       });
 
       if (!response.ok) {
@@ -160,7 +176,7 @@ export function PropertyApprovalDialog({
           <div>
             <h4 className="font-medium">{property.name}</h4>
             <p className="text-sm text-muted-foreground">
-              {property.location.districtName}, {property.location.regencyName}
+              {property.location?.districtName}, {property.location?.regencyName}
             </p>
           </div>
           
@@ -173,7 +189,7 @@ export function PropertyApprovalDialog({
           </div>
 
           <div className="text-sm text-muted-foreground">
-            <span className="font-medium">Pemilik:</span> {property.owner.name || property.owner.email}
+            <span className="font-medium">Pemilik:</span> {property.owner?.name || property.owner?.email}
           </div>
         </div>
 

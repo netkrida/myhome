@@ -233,18 +233,21 @@ export function Step3Images({ onDataChange, initialData }: Step3ImagesProps) {
     
     for (let i = 0; i < newUploads.length; i++) {
       const uploadIndex = categoryUploads.length + i;
-      
+      const currentUpload = newUploads[i];
+
+      if (!currentUpload?.file) continue;
+
       // Mark as uploading
       setUploads(prev => ({
         ...prev,
-        [category]: prev[category].map((upload, idx) => 
+        [category]: (prev[category] || []).map((upload, idx) =>
           idx === uploadIndex ? { ...upload, uploading: true } : upload
         ),
       }));
 
       try {
         const formData = new FormData();
-        formData.append('file', newUploads[i].file);
+        formData.append('file', currentUpload.file);
         formData.append('category', category);
         formData.append('subcategory', 'property-images');
 
@@ -268,8 +271,8 @@ export function Step3Images({ onDataChange, initialData }: Step3ImagesProps) {
         // Mark as uploaded and save URL
         setUploads(prev => ({
           ...prev,
-          [category]: prev[category].map((upload, idx) => 
-            idx === uploadIndex 
+          [category]: (prev[category] || []).map((upload, idx) =>
+            idx === uploadIndex
               ? { ...upload, uploading: false, uploaded: true, url: data.secure_url }
               : upload
           ),
@@ -285,14 +288,14 @@ export function Step3Images({ onDataChange, initialData }: Step3ImagesProps) {
         // Mark as error
         setUploads(prev => ({
           ...prev,
-          [category]: prev[category].map((upload, idx) => 
-            idx === uploadIndex 
+          [category]: (prev[category] || []).map((upload, idx) =>
+            idx === uploadIndex
               ? { ...upload, uploading: false, error: 'Upload gagal' }
               : upload
           ),
         }));
 
-        toast.error(`Gagal upload ${newUploads[i].file.name}`);
+        toast.error(`Gagal upload ${currentUpload.file.name}`);
       }
     }
   };
@@ -301,16 +304,16 @@ export function Step3Images({ onDataChange, initialData }: Step3ImagesProps) {
   const removeImage = (category: keyof Step3FormData, index: number) => {
     const categoryUploads = uploads[category] || [];
     const upload = categoryUploads[index];
-    
+
     // Revoke object URL to prevent memory leaks
-    if (upload.preview) {
+    if (upload?.preview) {
       URL.revokeObjectURL(upload.preview);
     }
 
     // Remove from uploads
     setUploads(prev => ({
       ...prev,
-      [category]: prev[category].filter((_, idx) => idx !== index),
+      [category]: (prev[category] || []).filter((_, idx) => idx !== index),
     }));
 
     // Remove from form data
@@ -321,7 +324,7 @@ export function Step3Images({ onDataChange, initialData }: Step3ImagesProps) {
 
   // Retry upload
   const retryUpload = (category: keyof Step3FormData, index: number) => {
-    const upload = uploads[category][index];
+    const upload = uploads[category]?.[index];
     if (upload && upload.error) {
       uploadFiles(category, [upload]);
     }

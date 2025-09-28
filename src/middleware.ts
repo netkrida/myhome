@@ -12,7 +12,7 @@ const ROLE_DASHBOARDS = {
 
 const PUBLIC_ROUTES = [
   "/", "/login", "/register", "/about", "/contact",
-  "/search", "/properties", "/property", "/api/auth", "/api/test-db", "/api/wilayah"
+  "/search", "/properties", "/property", "/api/auth", "/api/test-db", "/api/wilayah", "/api/properties/coordinates"
 ];
 
 const ADMIN_ROLES = ["SUPERADMIN", "ADMINKOS", "RECEPTIONIST"];
@@ -61,6 +61,11 @@ export default async function middleware(request: NextRequest) {
 
   // Handle public routes
   if (isPublic) {
+    // Don't redirect API endpoints even for authenticated users
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.next();
+    }
+
     if (token?.role && ADMIN_ROLES.includes(token.role as string)) {
       const dashboardUrl = ROLE_DASHBOARDS[token.role as keyof typeof ROLE_DASHBOARDS];
       console.log("🔄 Middleware - Redirecting authenticated user:", {
@@ -107,6 +112,18 @@ export default async function middleware(request: NextRequest) {
 
     // Simple role-based access check
     const allowedDashboard = ROLE_DASHBOARDS[userRole as keyof typeof ROLE_DASHBOARDS];
+
+    // Special logging for property detail pages
+    if (pathname.includes("/properties/")) {
+      console.log("🏠 Middleware - Property detail access:", {
+        pathname,
+        userRole,
+        allowedDashboard,
+        startsWithAllowed: pathname.startsWith(allowedDashboard || ""),
+        willRedirect: allowedDashboard && !pathname.startsWith(allowedDashboard)
+      });
+    }
+
     if (allowedDashboard && !pathname.startsWith(allowedDashboard)) {
       console.log("🔄 Middleware - Role mismatch, redirecting:", {
         from: pathname,

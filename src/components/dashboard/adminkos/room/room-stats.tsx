@@ -127,38 +127,6 @@ export function RoomStats({ propertyId, className }: RoomStatsProps) {
       bgColor: "bg-indigo-100 dark:bg-indigo-900",
       description: `${stats.occupiedRooms} dari ${stats.totalRooms} kamar`,
     },
-    {
-      title: "Harga Rata-rata",
-      value: stats.averagePrice ? formatPrice(stats.averagePrice) : "N/A",
-      icon: DollarSign,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-100 dark:bg-emerald-900",
-      description: "per bulan",
-    },
-    {
-      title: "Harga Terendah",
-      value: stats.lowestPrice ? formatPrice(stats.lowestPrice) : "N/A",
-      icon: DollarSign,
-      color: "text-orange-600",
-      bgColor: "bg-orange-100 dark:bg-orange-900",
-      description: "per bulan",
-    },
-    {
-      title: "Harga Tertinggi",
-      value: stats.highestPrice ? formatPrice(stats.highestPrice) : "N/A",
-      icon: DollarSign,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100 dark:bg-purple-900",
-      description: "per bulan",
-    },
-    {
-      title: "Jenis Kamar",
-      value: stats.roomTypeCount,
-      icon: Home,
-      color: "text-teal-600",
-      bgColor: "bg-teal-100 dark:bg-teal-900",
-      description: "variasi jenis",
-    },
   ];
 
   return (

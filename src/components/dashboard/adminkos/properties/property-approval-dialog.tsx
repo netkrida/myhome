@@ -35,12 +35,20 @@ const approvalSchema = z.object({
   }),
   rejectionReason: z.string().optional(),
 }).refine((data) => {
-  if (data.status === PropertyStatus.REJECTED && !data.rejectionReason?.trim()) {
+  if ((data.status === PropertyStatus.REJECTED || data.status === PropertyStatus.SUSPENDED) && !data.rejectionReason?.trim()) {
     return false;
   }
   return true;
 }, {
-  message: "Rejection reason is required when rejecting a property",
+  message: "Rejection reason is required when rejecting or suspending a property",
+  path: ["rejectionReason"],
+}).refine((data) => {
+  if (data.rejectionReason && data.rejectionReason.trim().length > 500) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Rejection reason must be less than 500 characters",
   path: ["rejectionReason"],
 });
 

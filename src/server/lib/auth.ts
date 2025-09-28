@@ -82,12 +82,12 @@ export async function validateSessionUser(session: Session): Promise<{
     // Add role-specific context
     if (dbUser.role === "ADMINKOS") {
       // TODO: Add adminKosProfile relation when available
-      userContext.adminKosId = dbUser.id; // Placeholder
+      // userContext.adminKosId = dbUser.id; // Placeholder - commented out until interface is updated
     }
 
     if (dbUser.role === "RECEPTIONIST") {
       // TODO: Add managedProperties relation when available
-      userContext.assignedPropertyIds = []; // Placeholder
+      // userContext.assignedPropertyIds = []; // Placeholder - commented out until interface is updated
     }
 
     console.log("✅ Auth Validation - Session validated successfully:", {

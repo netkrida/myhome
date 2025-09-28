@@ -119,6 +119,17 @@ export async function POST(request: NextRequest) {
       email: userContext.email
     });
 
+    // Ensure required location data is present
+    if (!propertyData.step2.location.provinceName || !propertyData.step2.location.regencyName || !propertyData.step2.location.districtName) {
+      return NextResponse.json(
+        {
+          error: "Incomplete location data",
+          details: "Province, regency, and district names are required"
+        },
+        { status: 400 }
+      );
+    }
+
     // Validate property data using the service
     const validation = PropertyService.validatePropertyCreation(propertyData);
     if (!validation.isValid) {

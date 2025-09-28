@@ -1,6 +1,7 @@
 import { type Room, type RoomImage, type Prisma } from "@prisma/client";
 import { prisma } from "../db/client";
-import type { 
+import { ImageCategory } from "../types/property";
+import type {
   CreateRoomDTO,
   UpdateRoomDTO,
   RoomListQuery,
@@ -72,17 +73,17 @@ export class RoomRepository {
       roomNumber: room.roomNumber,
       floor: room.floor,
       roomType: room.roomType,
-      description: room.description,
-      size: room.size,
+      description: room.description || undefined,
+      size: room.size || undefined,
       pricing: {
         monthlyPrice: Number(room.monthlyPrice),
         dailyPrice: room.dailyPrice ? Number(room.dailyPrice) : undefined,
         weeklyPrice: room.weeklyPrice ? Number(room.weeklyPrice) : undefined,
         quarterlyPrice: room.quarterlyPrice ? Number(room.quarterlyPrice) : undefined,
         yearlyPrice: room.yearlyPrice ? Number(room.yearlyPrice) : undefined,
-        hasDeposit: room.hasDeposit,
-        depositPercentage: room.depositPercentage,
       },
+      hasDeposit: room.hasDeposit,
+      depositPercentage: room.depositPercentage || undefined,
       facilities: room.facilities as any[],
       isAvailable: room.isAvailable,
       createdAt: room.createdAt,
@@ -91,8 +92,8 @@ export class RoomRepository {
         id: img.id,
         category: img.category as any,
         imageUrl: img.imageUrl,
-        publicId: img.publicId,
-        caption: img.caption,
+        publicId: img.publicId || undefined,
+        caption: img.caption || undefined,
         sortOrder: img.sortOrder,
         createdAt: img.createdAt,
         updatedAt: img.updatedAt,
@@ -107,7 +108,7 @@ export class RoomRepository {
           districtName: room.property.districtName,
           fullAddress: room.property.fullAddress,
         },
-        owner: room.property.owner as any,
+        owner: (room.property as any).owner,
       } : undefined as any,
     };
   }
@@ -122,34 +123,86 @@ export class RoomRepository {
       const rooms: Room[] = [];
       
       for (const roomConfig of step4.rooms) {
+        // Get pricing for this room type
+        const roomTypePricing = step3.pricing[roomConfig.roomType];
+        if (!roomTypePricing) {
+          throw new Error(`Pricing not found for room type: ${roomConfig.roomType}`);
+        }
+
+        // Get description for this room type
+        const roomTypeData = step1.roomTypePhotos[roomConfig.roomType];
+        const description = roomTypeData?.description || "";
+
         const room = await tx.room.create({
           data: {
             propertyId,
             roomNumber: roomConfig.roomNumber,
             floor: roomConfig.floor,
             roomType: roomConfig.roomType,
-            description: step1.description,
-            monthlyPrice: step3.pricing.monthlyPrice,
-            dailyPrice: step3.pricing.dailyPrice,
-            weeklyPrice: step3.pricing.weeklyPrice,
-            quarterlyPrice: step3.pricing.quarterlyPrice,
-            yearlyPrice: step3.pricing.yearlyPrice,
-            hasDeposit: step3.pricing.hasDeposit,
-            depositPercentage: step3.pricing.depositPercentage,
-            facilities: step2.facilities,
+            description,
+            monthlyPrice: roomTypePricing.monthlyPrice,
+            dailyPrice: roomTypePricing.dailyPrice || null,
+            weeklyPrice: roomTypePricing.weeklyPrice || null,
+            quarterlyPrice: roomTypePricing.quarterlyPrice || null,
+            yearlyPrice: roomTypePricing.yearlyPrice || null,
+            hasDeposit: step3.hasDeposit,
+            depositPercentage: step3.depositPercentage || null,
+            facilities: step2.facilities as any,
             isAvailable: roomConfig.isAvailable,
           },
         });
         rooms.push(room);
+
+        // Create room images for this room type
+        const roomTypePhotos = step1.roomTypePhotos[roomConfig.roomType];
+        if (roomTypePhotos) {
+          const imageData: any[] = [];
+
+          // Front view photos - use ROOM_PHOTOS category
+          roomTypePhotos.frontViewPhotos.forEach((url, index) => {
+            imageData.push({
+              roomId: room.id,
+              category: ImageCategory.ROOM_PHOTOS,
+              imageUrl: url,
+              sortOrder: index,
+            });
+          });
+
+          // Interior photos - use ROOM_PHOTOS category
+          roomTypePhotos.interiorPhotos.forEach((url, index) => {
+            imageData.push({
+              roomId: room.id,
+              category: ImageCategory.ROOM_PHOTOS,
+              imageUrl: url,
+              sortOrder: index + 1000, // Offset to distinguish from front view photos
+            });
+          });
+
+          // Bathroom photos - use BATHROOM_PHOTOS category
+          roomTypePhotos.bathroomPhotos.forEach((url, index) => {
+            imageData.push({
+              roomId: room.id,
+              category: ImageCategory.BATHROOM_PHOTOS,
+              imageUrl: url,
+              sortOrder: index,
+            });
+          });
+
+          if (imageData.length > 0) {
+            await tx.roomImage.createMany({
+              data: imageData,
+            });
+          }
+        }
       }
-      
+
       // Update property available rooms count
       const availableCount = step4.rooms.filter(r => r.isAvailable).length;
       await tx.property.update({
         where: { id: propertyId },
         data: { availableRooms: availableCount },
       });
-      
+
       return rooms;
     });
   }
@@ -165,7 +218,7 @@ export class RoomRepository {
     if (updateData.roomType) data.roomType = updateData.roomType;
     if (updateData.description !== undefined) data.description = updateData.description;
     if (updateData.size !== undefined) data.size = updateData.size;
-    if (updateData.facilities) data.facilities = updateData.facilities;
+    if (updateData.facilities) data.facilities = updateData.facilities as any;
     if (updateData.isAvailable !== undefined) data.isAvailable = updateData.isAvailable;
     
     if (updateData.pricing) {
@@ -174,13 +227,44 @@ export class RoomRepository {
       if (updateData.pricing.weeklyPrice !== undefined) data.weeklyPrice = updateData.pricing.weeklyPrice;
       if (updateData.pricing.quarterlyPrice !== undefined) data.quarterlyPrice = updateData.pricing.quarterlyPrice;
       if (updateData.pricing.yearlyPrice !== undefined) data.yearlyPrice = updateData.pricing.yearlyPrice;
-      if (updateData.pricing.hasDeposit !== undefined) data.hasDeposit = updateData.pricing.hasDeposit;
-      if (updateData.pricing.depositPercentage !== undefined) data.depositPercentage = updateData.pricing.depositPercentage;
+      // hasDeposit and depositPercentage are not part of RoomPricing interface
+      // They should be handled separately if needed
     }
 
-    return prisma.room.update({
-      where: { id },
-      data,
+    return prisma.$transaction(async (tx) => {
+      const updatedRoom = await tx.room.update({
+        where: { id },
+        data,
+      });
+
+      // If availability changed, update property available rooms count
+      if (updateData.isAvailable !== undefined) {
+        await this.updatePropertyAvailableRooms(updatedRoom.propertyId, tx);
+      }
+
+      return updatedRoom;
+    });
+  }
+
+  /**
+   * Update property available rooms count based on current room availability
+   */
+  static async updatePropertyAvailableRooms(
+    propertyId: string,
+    tx?: Prisma.TransactionClient
+  ): Promise<void> {
+    const client = tx || prisma;
+
+    const availableCount = await client.room.count({
+      where: {
+        propertyId,
+        isAvailable: true,
+      },
+    });
+
+    await client.property.update({
+      where: { id: propertyId },
+      data: { availableRooms: availableCount },
     });
   }
 
@@ -316,7 +400,7 @@ export class RoomRepository {
       roomType: room.roomType,
       monthlyPrice: Number(room.monthlyPrice),
       isAvailable: room.isAvailable,
-      size: room.size,
+      size: room.size || undefined,
       property: {
         id: room.property.id,
         name: room.property.name,
@@ -440,8 +524,8 @@ export class RoomRepository {
     if (data.pricing.weeklyPrice !== undefined) updateData.weeklyPrice = data.pricing.weeklyPrice;
     if (data.pricing.quarterlyPrice !== undefined) updateData.quarterlyPrice = data.pricing.quarterlyPrice;
     if (data.pricing.yearlyPrice !== undefined) updateData.yearlyPrice = data.pricing.yearlyPrice;
-    if (data.pricing.hasDeposit !== undefined) updateData.hasDeposit = data.pricing.hasDeposit;
-    if (data.pricing.depositPercentage !== undefined) updateData.depositPercentage = data.pricing.depositPercentage;
+    // hasDeposit and depositPercentage are not part of RoomPricing interface
+    // They should be handled separately if needed
 
     return prisma.room.updateMany({
       where: { id: { in: data.roomIds } },

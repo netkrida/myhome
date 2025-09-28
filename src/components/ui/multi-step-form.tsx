@@ -138,16 +138,28 @@ export function MultiStepFormProvider({
   }, [steps.length, onStepChange]);
 
   const setStepValid = useCallback((stepIndex: number, isValid: boolean) => {
+    console.log(`🔄 MultiStepForm - setStepValid called: step ${stepIndex} = ${isValid}`);
     setSteps(prev => {
       // Check if the validity has actually changed
       const currentStep = prev[stepIndex];
+      console.log(`🔍 MultiStepForm - Current step ${stepIndex}:`, currentStep);
+      console.log(`🔍 MultiStepForm - Current validity: ${currentStep?.isValid} -> ${isValid}`);
+      
       if (!currentStep || currentStep.isValid === isValid) {
+        console.log(`🔍 MultiStepForm - No change needed for step ${stepIndex}`);
         return prev; // No change needed
       }
       
-      return prev.map((step, index) =>
+      const newSteps = prev.map((step, index) =>
         index === stepIndex ? { ...step, isValid } : step
       );
+      
+      console.log(`✅ MultiStepForm - Updated steps:`, newSteps.map(s => ({ 
+        id: s.id, 
+        isValid: s.isValid 
+      })));
+      
+      return newSteps;
     });
   }, []);
 
@@ -305,12 +317,22 @@ export function StepNavigation({
 
       <Button
         type="button"
-        onClick={nextStep}
+        onClick={() => {
+          console.log(`🎯 Next button clicked - canProceed: ${canProceed}, currentStep: ${currentStep}`);
+          console.log(`🎯 Current step data:`, steps[currentStep]);
+          nextStep();
+        }}
         disabled={!canProceed}
         className="flex items-center gap-2"
       >
         {isLastStep ? finishButtonText : nextButtonText}
         {!isLastStep && <ChevronRight className="w-4 h-4" />}
+        {/* Debug info */}
+        {process.env.NODE_ENV === 'development' && (
+          <span className="text-xs opacity-75">
+            {canProceed ? "✓" : "✗"}
+          </span>
+        )}
       </Button>
     </div>
   );

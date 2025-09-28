@@ -4,14 +4,15 @@ import { withAuth } from "../lib/auth";
 import { UserRole } from "../types/rbac";
 import type { UserContext } from "../types/rbac";
 import type { Result } from "../types/result";
-import type { 
+import type {
   CreatePropertyDTO,
   UpdatePropertyDTO,
   PropertyListQuery,
   PropertyListResponse,
   PropertyDetailItem,
   PropertyApprovalDTO,
-  PropertyStatsDTO
+  PropertyStatsDTO,
+  PropertyCoordinate
 } from "../types";
 
 /**
@@ -46,7 +47,7 @@ export class PropertiesAPI {
             error: {
               code: "VALIDATION_ERROR",
               message: "Invalid search filters",
-              details: validation.errors,
+              details: { errors: validation.errors },
             },
             statusCode: 400,
           };
@@ -55,7 +56,7 @@ export class PropertiesAPI {
         // AdminKos can only see their own properties
         const filters = { ...query };
         if (userContext.role === UserRole.ADMINKOS) {
-          filters.ownerId = userContext.userId;
+          filters.ownerId = userContext.id;
         }
 
         // Get properties from repository
@@ -87,6 +88,8 @@ export class PropertiesAPI {
   static getPropertyById = withAuth(
     async (userContext: UserContext, propertyId: string): Promise<Result<PropertyDetailItem>> => {
       try {
+
+
         // Check permissions
         if (![UserRole.SUPERADMIN, UserRole.ADMINKOS].includes(userContext.role)) {
           return {
@@ -100,8 +103,18 @@ export class PropertiesAPI {
         }
 
         // Get property from repository
+        console.log("🔍 PropertiesAPI.getPropertyById - Fetching property:", propertyId);
         const property = await PropertyRepository.findById(propertyId, true, true, true);
-        
+
+        console.log("🔍 PropertiesAPI.getPropertyById - Property found:", {
+          found: !!property,
+          propertyId: property?.id,
+          propertyName: property?.name,
+          hasImages: property?.images?.length || 0,
+          hasRooms: property?.rooms?.length || 0,
+          hasOwner: !!property?.owner
+        });
+
         if (!property) {
           return {
             success: false,
@@ -114,7 +127,7 @@ export class PropertiesAPI {
         }
 
         // Check if user can access this property
-        if (!PropertyService.canManageProperty(userContext.userId, property, userContext.role)) {
+        if (!PropertyService.canManageProperty(userContext.id, property, userContext.role)) {
           return {
             success: false,
             error: {
@@ -132,6 +145,8 @@ export class PropertiesAPI {
         };
       } catch (error) {
         console.error("Error getting property:", error);
+        console.error("Property ID:", propertyId);
+        console.error("User context:", userContext);
         return {
           success: false,
           error: {
@@ -171,7 +186,7 @@ export class PropertiesAPI {
             error: {
               code: "VALIDATION_ERROR",
               message: "Invalid property data",
-              details: validation.errors,
+              details: { errors: validation.errors },
             },
             statusCode: 400,
           };
@@ -241,7 +256,7 @@ export class PropertiesAPI {
         }
 
         // Check if user can manage this property
-        if (!PropertyService.canManageProperty(userContext.userId, existingProperty, userContext.role)) {
+        if (!PropertyService.canManageProperty(userContext.id, existingProperty, userContext.role)) {
           return {
             success: false,
             error: {
@@ -272,7 +287,7 @@ export class PropertiesAPI {
             error: {
               code: "VALIDATION_ERROR",
               message: "Invalid update data",
-              details: validation.errors,
+              details: { errors: validation.errors },
             },
             statusCode: 400,
           };
@@ -330,7 +345,7 @@ export class PropertiesAPI {
             error: {
               code: "VALIDATION_ERROR",
               message: "Invalid approval data",
-              details: validation.errors,
+              details: { errors: validation.errors },
             },
             statusCode: 400,
           };
@@ -351,7 +366,7 @@ export class PropertiesAPI {
         }
 
         // Update property status
-        await PropertyRepository.updateStatus(propertyId, approvalData, userContext.userId);
+        await PropertyRepository.updateStatus(propertyId, approvalData, userContext.id);
 
         // Get updated property details
         const updatedProperty = await PropertyRepository.findById(propertyId, true, true, true);
@@ -395,7 +410,7 @@ export class PropertiesAPI {
         }
 
         // AdminKos can only see stats for their own properties
-        const ownerId = userContext.role === UserRole.ADMINKOS ? userContext.userId : undefined;
+        const ownerId = userContext.role === UserRole.ADMINKOS ? userContext.id : undefined;
 
         // Get statistics from repository
         const stats = await PropertyRepository.getStatistics(ownerId);
@@ -418,4 +433,31 @@ export class PropertiesAPI {
       }
     }
   );
+
+  /**
+   * Get property coordinates for map display
+   * Public endpoint - no authentication required
+   */
+  static async getPropertyCoordinates(): Promise<Result<PropertyCoordinate[]>> {
+    try {
+      // Get coordinates from repository
+      const coordinates = await PropertyRepository.getPropertyCoordinates();
+
+      return {
+        success: true,
+        data: coordinates,
+        statusCode: 200,
+      };
+    } catch (error) {
+      console.error("Error getting property coordinates:", error);
+      return {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Failed to retrieve property coordinates",
+        },
+        statusCode: 500,
+      };
+    }
+  }
 }

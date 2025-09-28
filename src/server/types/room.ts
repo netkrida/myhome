@@ -4,13 +4,13 @@
 
 import { ImageCategory } from './property';
 
-// Deposit Percentage Enum
+// Deposit Percentage Enum (must match Prisma enum values)
 export enum DepositPercentage {
-  TEN_PERCENT = "10_PERCENT",
-  TWENTY_PERCENT = "20_PERCENT",
-  THIRTY_PERCENT = "30_PERCENT",
-  FORTY_PERCENT = "40_PERCENT",
-  FIFTY_PERCENT = "50_PERCENT",
+  TEN_PERCENT = "TEN_PERCENT",
+  TWENTY_PERCENT = "TWENTY_PERCENT",
+  THIRTY_PERCENT = "THIRTY_PERCENT",
+  FORTY_PERCENT = "FORTY_PERCENT",
+  FIFTY_PERCENT = "FIFTY_PERCENT",
 }
 
 // Room Facilities Types
@@ -19,6 +19,45 @@ export interface RoomFacility {
   name: string;
   category: 'room' | 'bathroom';
 }
+
+// Predefined Room Facilities
+export const ROOM_FACILITIES: RoomFacility[] = [
+  // Room Facilities
+  { id: 'kasur', name: 'Kasur / Spring bed', category: 'room' },
+  { id: 'bantal_guling', name: 'Bantal & guling', category: 'room' },
+  { id: 'lemari_pakaian', name: 'Lemari pakaian', category: 'room' },
+  { id: 'meja_belajar', name: 'Meja belajar & kursi', category: 'room' },
+  { id: 'kursi_tambahan', name: 'Kursi tambahan / sofa kecil', category: 'room' },
+  { id: 'ac_kipas', name: 'AC / Kipas angin', category: 'room' },
+  { id: 'meja_rias', name: 'Meja rias / cermin', category: 'room' },
+  { id: 'tv', name: 'TV', category: 'room' },
+  { id: 'rak_buku', name: 'Rak buku', category: 'room' },
+  { id: 'lampu_belajar', name: 'Lampu belajar', category: 'room' },
+  { id: 'colokan_listrik', name: 'Colokan listrik tambahan', category: 'room' },
+  { id: 'wifi', name: 'WiFi / Internet', category: 'room' },
+  { id: 'jendela_tirai', name: 'Jendela dengan tirai', category: 'room' },
+  { id: 'lantai_keramik', name: 'Lantai keramik / vinyl', category: 'room' },
+  { id: 'tempat_sampah', name: 'Tempat sampah', category: 'room' },
+  { id: 'ventilasi_udara', name: 'Ventilasi udara', category: 'room' },
+  { id: 'dispenser', name: 'Dispenser / teko listrik', category: 'room' },
+  { id: 'mini_kulkas', name: 'Mini kulkas', category: 'room' },
+
+  // Bathroom Facilities
+  { id: 'kamar_mandi_dalam_luar', name: 'Kamar mandi dalam / luar', category: 'bathroom' },
+  { id: 'kloset', name: 'Kloset duduk / jongkok', category: 'bathroom' },
+  { id: 'shower', name: 'Shower', category: 'bathroom' },
+  { id: 'bak_mandi', name: 'Bak mandi', category: 'bathroom' },
+  { id: 'wastafel', name: 'Wastafel', category: 'bathroom' },
+  { id: 'cermin_km', name: 'Cermin', category: 'bathroom' },
+  { id: 'air_panas', name: 'Air panas (water heater)', category: 'bathroom' },
+  { id: 'tempat_sabun', name: 'Tempat sabun & shampoo', category: 'bathroom' },
+  { id: 'gantungan_handuk', name: 'Gantungan handuk', category: 'bathroom' },
+  { id: 'tempat_sampah_km', name: 'Tempat sampah kamar mandi', category: 'bathroom' },
+  { id: 'exhaust_fan', name: 'Exhaust fan / ventilasi', category: 'bathroom' },
+  { id: 'keran_air', name: 'Keran air bersih (sumur bor / PDAM)', category: 'bathroom' },
+  { id: 'tisu_holder', name: 'Tisu / toilet paper holder', category: 'bathroom' },
+  { id: 'lantai_anti_slip', name: 'Lantai keramik anti slip', category: 'bathroom' },
+];
 
 // Room Image Types
 export interface RoomImageDTO {
@@ -39,7 +78,7 @@ export interface RoomPricing {
   weeklyPrice?: number;
   quarterlyPrice?: number; // 3 months
   yearlyPrice?: number;
-  hasDeposit: boolean;
+  hasDeposit?: boolean;
   depositPercentage?: DepositPercentage;
 }
 
@@ -53,6 +92,8 @@ export interface RoomDTO {
   description?: string;
   size?: string;
   pricing: RoomPricing;
+  hasDeposit: boolean;
+  depositPercentage?: string;
   facilities: RoomFacility[];
   isAvailable: boolean;
   createdAt: Date;
@@ -62,12 +103,12 @@ export interface RoomDTO {
 
 // Room Creation DTO (Step-by-step form)
 export interface CreateRoomStep1DTO {
-  roomType: string;
-  images: {
-    roomPhotos: any[];
-    bathroomPhotos?: any[];
-  };
-  description?: string;
+  roomTypePhotos: Record<string, {
+    frontViewPhotos: string[];
+    interiorPhotos: string[];
+    bathroomPhotos: string[];
+    description: string;
+  }>;
 }
 
 export interface CreateRoomStep2DTO {
@@ -75,7 +116,16 @@ export interface CreateRoomStep2DTO {
 }
 
 export interface CreateRoomStep3DTO {
-  pricing: RoomPricing;
+  pricing: Record<string, RoomPricing>;
+  hasAlternativeRentals: boolean;
+  alternativeRentals?: {
+    daily?: boolean;
+    weekly?: boolean;
+    quarterly?: boolean;
+    yearly?: boolean;
+  };
+  hasDeposit: boolean;
+  depositPercentage?: DepositPercentage;
 }
 
 export interface CreateRoomStep4DTO {
@@ -143,9 +193,16 @@ export interface RoomListItem {
   roomNumber: string;
   floor: number;
   roomType: string;
+  description?: string;
   monthlyPrice: number;
+  dailyPrice?: number;
+  weeklyPrice?: number;
+  quarterlyPrice?: number;
+  yearlyPrice?: number;
+  depositPercentage?: string;
   isAvailable: boolean;
   size?: string;
+  facilities?: RoomFacility[];
   property: {
     id: string;
     name: string;
@@ -214,45 +271,7 @@ export interface RoomFilterParams {
   floor?: number;
 }
 
-// Predefined Room Facilities
-export const ROOM_FACILITIES = {
-  room: [
-    { id: 'kasur', name: 'Kasur / Spring bed' },
-    { id: 'bantal_guling', name: 'Bantal & guling' },
-    { id: 'lemari_pakaian', name: 'Lemari pakaian' },
-    { id: 'meja_belajar', name: 'Meja belajar & kursi' },
-    { id: 'kursi_tambahan', name: 'Kursi tambahan / sofa kecil' },
-    { id: 'ac_kipas', name: 'AC / Kipas angin' },
-    { id: 'meja_rias', name: 'Meja rias / cermin' },
-    { id: 'tv', name: 'TV' },
-    { id: 'rak_buku', name: 'Rak buku' },
-    { id: 'lampu_belajar', name: 'Lampu belajar' },
-    { id: 'colokan_listrik', name: 'Colokan listrik tambahan' },
-    { id: 'wifi', name: 'WiFi / Internet' },
-    { id: 'jendela_tirai', name: 'Jendela dengan tirai' },
-    { id: 'lantai_keramik', name: 'Lantai keramik / vinyl' },
-    { id: 'tempat_sampah', name: 'Tempat sampah' },
-    { id: 'ventilasi', name: 'Ventilasi udara' },
-    { id: 'dispenser', name: 'Dispenser / teko listrik' },
-    { id: 'mini_kulkas', name: 'Mini kulkas' }
-  ],
-  bathroom: [
-    { id: 'kamar_mandi_dalam', name: 'Kamar mandi dalam / luar' },
-    { id: 'kloset_duduk', name: 'Kloset duduk / jongkok' },
-    { id: 'shower', name: 'Shower' },
-    { id: 'bak_mandi', name: 'Bak mandi' },
-    { id: 'wastafel', name: 'Wastafel' },
-    { id: 'cermin', name: 'Cermin' },
-    { id: 'air_panas', name: 'Air panas (water heater)' },
-    { id: 'tempat_sabun', name: 'Tempat sabun & shampoo' },
-    { id: 'gantungan_handuk', name: 'Gantungan handuk' },
-    { id: 'tempat_sampah_km', name: 'Tempat sampah kamar mandi' },
-    { id: 'exhaust_fan', name: 'Exhaust fan / ventilasi' },
-    { id: 'keran_air', name: 'Keran air bersih (sumur bor / PDAM)' },
-    { id: 'tisu_holder', name: 'Tisu / toilet paper holder' },
-    { id: 'lantai_anti_slip', name: 'Lantai keramik anti slip' }
-  ]
-} as const;
+
 
 // Room Type Configuration
 export interface RoomTypeConfig {
