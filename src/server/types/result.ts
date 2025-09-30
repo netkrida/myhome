@@ -126,6 +126,20 @@ export function validationError(
   );
 }
 
+export function badRequest(
+  message: string,
+  details?: Record<string, unknown>
+): Result<never> {
+  return fail(
+    {
+      code: ErrorCode.INVALID_INPUT,
+      message,
+      details,
+    },
+    400
+  );
+}
+
 export function conflict(
   message: string,
   details?: Record<string, unknown>

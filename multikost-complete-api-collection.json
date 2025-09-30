@@ -1,0 +1,1179 @@
+{
+  "info": {
+    "name": "MultiKost - Complete API Collection",
+    "description": "Dokumentasi lengkap untuk semua API endpoints dalam sistem MultiKost. Sistem ini menggunakan 3-tier architecture dengan role-based access control.\n\n## Base URL\n`http://localhost:3000` (Development)\n\n## Authentication\nSistem menggunakan NextAuth.js dengan JWT tokens. Beberapa endpoint memerlukan authentication dan role-specific access.\n\n## Roles\n- **SUPERADMIN**: Full system access\n- **ADMINKOS**: Property management\n- **RECEPTIONIST**: Front desk operations  \n- **CUSTOMER**: Booking and browsing\n\n## Response Format\n```json\n{\n  \"success\": boolean,\n  \"data\": object | array,\n  \"error\": string | object,\n  \"statusCode\": number\n}\n```",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set auth token if available",
+          "if (pm.environment.get('auth_token')) {",
+          "    pm.request.headers.add({",
+          "        key: 'Authorization',",
+          "        value: 'Bearer ' + pm.environment.get('auth_token')",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "description": "Endpoints untuk authentication dan session management menggunakan NextAuth.js",
+      "item": [
+        {
+          "name": "NextAuth Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/providers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "providers"]
+            },
+            "description": "Mendapatkan daftar authentication providers yang tersedia"
+          }
+        },
+        {
+          "name": "NextAuth Session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/session",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "session"]
+            },
+            "description": "Mendapatkan informasi session user yang sedang login"
+          }
+        },
+        {
+          "name": "Register AdminKos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phoneNumber\": \"08123456789\",\n  \"password\": \"Password123\",\n  \"confirmPassword\": \"Password123\",\n  \"provinceCode\": \"31\",\n  \"provinceName\": \"DKI Jakarta\",\n  \"regencyCode\": \"3171\",\n  \"regencyName\": \"Jakarta Selatan\",\n  \"districtCode\": \"317101\",\n  \"districtName\": \"Setiabudi\",\n  \"streetAddress\": \"Jl. Sudirman No. 123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register/adminkos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register", "adminkos"]
+            },
+            "description": "Registrasi akun baru untuk AdminKos (pemilik kos)"
+          }
+        },
+        {
+          "name": "Check Email Availability",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/check-email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "check-email"]
+            },
+            "description": "Mengecek apakah email sudah terdaftar atau belum"
+          }
+        },
+        {
+          "name": "Validate Session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/validate-session",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "validate-session"]
+            },
+            "description": "Validasi session yang sedang aktif"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Logout dan clear session"
+          }
+        },
+        {
+          "name": "Clear Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/clear-session",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "clear-session"]
+            },
+            "description": "Clear session data"
+          }
+        },
+        {
+          "name": "Emergency Reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/emergency-reset",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "emergency-reset"]
+            },
+            "description": "Emergency session reset untuk troubleshooting"
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 User Management",
+      "description": "Endpoints untuk manajemen user (hanya untuk SUPERADMIN)",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users?page=1&limit=10&role=ADMINKOS&search=john",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Nomor halaman"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Jumlah data per halaman"
+                },
+                {
+                  "key": "role",
+                  "value": "ADMINKOS",
+                  "description": "Filter berdasarkan role"
+                },
+                {
+                  "key": "search",
+                  "value": "john",
+                  "description": "Search berdasarkan nama atau email"
+                }
+              ]
+            },
+            "description": "Mendapatkan daftar semua user dengan pagination dan filter (SUPERADMIN only)"
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}"]
+            },
+            "description": "Mendapatkan detail user berdasarkan ID (SUPERADMIN only)"
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"phoneNumber\": \"08123456790\",\n  \"password\": \"Password123\",\n  \"role\": \"CUSTOMER\",\n  \"provinceCode\": \"31\",\n  \"provinceName\": \"DKI Jakarta\",\n  \"regencyCode\": \"3171\",\n  \"regencyName\": \"Jakarta Selatan\",\n  \"districtCode\": \"317101\",\n  \"districtName\": \"Setiabudi\",\n  \"streetAddress\": \"Jl. Sudirman No. 456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Membuat user baru (SUPERADMIN only)"
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"phoneNumber\": \"08123456791\",\n  \"streetAddress\": \"Jl. Sudirman No. 789\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}"]
+            },
+            "description": "Update data user (SUPERADMIN only)"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}"]
+            },
+            "description": "Soft delete user (SUPERADMIN only)"
+          }
+        },
+        {
+          "name": "Change User Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false,\n  \"reason\": \"Account suspended for violation\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}", "status"]
+            },
+            "description": "Mengubah status aktif/non-aktif user (SUPERADMIN only)"
+          }
+        },
+        {
+          "name": "Change User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"RECEPTIONIST\",\n  \"reason\": \"Promoted to receptionist\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/role",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}", "role"]
+            },
+            "description": "Mengubah role user (SUPERADMIN only)"
+          }
+        },
+        {
+          "name": "Get User Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "stats"]
+            },
+            "description": "Mendapatkan statistik user (SUPERADMIN only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏠 Property Management",
+      "description": "Endpoints untuk manajemen properti kos (SUPERADMIN view-only, ADMINKOS full access)",
+      "item": [
+        {
+          "name": "Get All Properties",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/properties?page=1&limit=10&status=APPROVED&propertyType=MIXED&search=kos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "properties"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Nomor halaman"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Jumlah data per halaman"
+                },
+                {
+                  "key": "status",
+                  "value": "APPROVED",
+                  "description": "Filter status: PENDING, APPROVED, REJECTED"
+                },
+                {
+                  "key": "propertyType",
+                  "value": "MIXED",
+                  "description": "Filter tipe: MALE_ONLY, FEMALE_ONLY, MIXED"
+                },
+                {
+                  "key": "search",
+                  "value": "kos",
+                  "description": "Search berdasarkan nama properti"
+                }
+              ]
+            },
+            "description": "Mendapatkan daftar properti dengan filter dan pagination"
+          }
+        },
+        {
+          "name": "Get Property by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/properties/{{property_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "properties", "{{property_id}}"]
+            },
+            "description": "Mendapatkan detail properti berdasarkan ID"
+          }
+        },
+        {
+          "name": "Create Property",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kos Indah Sejahtera\",\n  \"description\": \"Kos nyaman dan strategis\",\n  \"propertyType\": \"MIXED\",\n  \"totalRooms\": 20,\n  \"availableRooms\": 15,\n  \"provinceCode\": \"31\",\n  \"provinceName\": \"DKI Jakarta\",\n  \"regencyCode\": \"3171\",\n  \"regencyName\": \"Jakarta Selatan\",\n  \"districtCode\": \"317101\",\n  \"districtName\": \"Setiabudi\",\n  \"streetAddress\": \"Jl. Sudirman No. 123\",\n  \"latitude\": -6.2088,\n  \"longitude\": 106.8456,\n  \"facilities\": [\n    {\n      \"id\": \"wifi\",\n      \"name\": \"WiFi / Internet\",\n      \"category\": \"property\"\n    },\n    {\n      \"id\": \"ac_kipas\",\n      \"name\": \"AC / Kipas angin\",\n      \"category\": \"property\"\n    }\n  ],\n  \"terms\": \"Dilarang membawa tamu menginap\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/properties",
+              "host": ["{{base_url}}"],
+              "path": ["api", "properties"]
+            },
+            "description": "Membuat properti baru (ADMINKOS only)"
+          }
+        },
+        {
+          "name": "Update Property",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kos Indah Sejahtera Updated\",\n  \"description\": \"Kos nyaman dan strategis dengan fasilitas lengkap\",\n  \"availableRooms\": 12\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/properties/{{property_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "properties", "{{property_id}}"]
+            },
+            "description": "Update data properti (ADMINKOS only)"
+          }
+        },
+        {
+          "name": "Delete Property",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/properties/{{property_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "properties", "{{property_id}}"]
+            },
+            "description": "Soft delete properti (ADMINKOS only)"
+          }
+        },
+        {
+          "name": "Approve Property",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"reason\": \"Property meets all requirements\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/properties/{{property_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "properties", "{{property_id}}", "status"]
+            },
+            "description": "Approve/reject properti (SUPERADMIN only)"
+          }
+        },
+        {
+          "name": "Get Property Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/properties/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "properties", "stats"]
+            },
+            "description": "Mendapatkan statistik properti"
+          }
+        },
+        {
+          "name": "Get Properties for Map",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/properties/coordinates?propertyType=MIXED&regencyCode=3171",
+              "host": ["{{base_url}}"],
+              "path": ["api", "properties", "coordinates"],
+              "query": [
+                {
+                  "key": "propertyType",
+                  "value": "MIXED",
+                  "description": "Filter tipe properti"
+                },
+                {
+                  "key": "regencyCode",
+                  "value": "3171",
+                  "description": "Filter berdasarkan kota"
+                }
+              ]
+            },
+            "description": "Mendapatkan koordinat properti untuk ditampilkan di map"
+          }
+        },
+        {
+          "name": "Get Public Property Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/properties/public-stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "properties", "public-stats"]
+            },
+            "description": "Mendapatkan statistik properti untuk halaman public"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛏️ Room Management",
+      "description": "Endpoints untuk manajemen kamar (SUPERADMIN view-only, ADMINKOS full access)",
+      "item": [
+        {
+          "name": "Get All Rooms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rooms?page=1&limit=10&propertyId={{property_id}}&isAvailable=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Nomor halaman"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Jumlah data per halaman"
+                },
+                {
+                  "key": "propertyId",
+                  "value": "{{property_id}}",
+                  "description": "Filter berdasarkan properti"
+                },
+                {
+                  "key": "isAvailable",
+                  "value": "true",
+                  "description": "Filter ketersediaan kamar"
+                }
+              ]
+            },
+            "description": "Mendapatkan daftar kamar dengan filter dan pagination"
+          }
+        },
+        {
+          "name": "Get Room by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}"]
+            },
+            "description": "Mendapatkan detail kamar berdasarkan ID"
+          }
+        },
+        {
+          "name": "Create Room",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"propertyId\": \"{{property_id}}\",\n  \"roomNumber\": \"A101\",\n  \"roomType\": \"SINGLE\",\n  \"monthlyPrice\": 1500000,\n  \"dailyPrice\": 75000,\n  \"size\": 12,\n  \"capacity\": 1,\n  \"isAvailable\": true,\n  \"description\": \"Kamar single dengan fasilitas lengkap\",\n  \"facilities\": [\n    {\n      \"id\": \"ac\",\n      \"name\": \"AC\",\n      \"category\": \"room\"\n    },\n    {\n      \"id\": \"lemari\",\n      \"name\": \"Lemari\",\n      \"category\": \"room\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/rooms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms"]
+            },
+            "description": "Membuat kamar baru (ADMINKOS only)"
+          }
+        },
+        {
+          "name": "Update Room",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthlyPrice\": 1600000,\n  \"dailyPrice\": 80000,\n  \"isAvailable\": false,\n  \"description\": \"Kamar single dengan fasilitas lengkap - Updated\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}"]
+            },
+            "description": "Update data kamar (ADMINKOS only)"
+          }
+        },
+        {
+          "name": "Delete Room",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}"]
+            },
+            "description": "Soft delete kamar (ADMINKOS only)"
+          }
+        },
+        {
+          "name": "Update Room Availability",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isAvailable\": false,\n  \"reason\": \"Under maintenance\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}/availability",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}", "availability"]
+            },
+            "description": "Update ketersediaan kamar (ADMINKOS only)"
+          }
+        },
+        {
+          "name": "Get Room Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/stats?propertyId={{property_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "stats"],
+              "query": [
+                {
+                  "key": "propertyId",
+                  "value": "{{property_id}}",
+                  "description": "Filter berdasarkan properti"
+                }
+              ]
+            },
+            "description": "Mendapatkan statistik kamar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Booking Management",
+      "description": "Endpoints untuk manajemen booking (role-based access)",
+      "item": [
+        {
+          "name": "Get All Bookings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bookings?page=1&limit=10&status=CONFIRMED&propertyId={{property_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Nomor halaman"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Jumlah data per halaman"
+                },
+                {
+                  "key": "status",
+                  "value": "CONFIRMED",
+                  "description": "Filter status: PENDING, CONFIRMED, CANCELLED, COMPLETED"
+                },
+                {
+                  "key": "propertyId",
+                  "value": "{{property_id}}",
+                  "description": "Filter berdasarkan properti"
+                }
+              ]
+            },
+            "description": "Mendapatkan daftar booking (role-based filtering)"
+          }
+        },
+        {
+          "name": "Get Booking by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bookings/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings", "{{booking_id}}"]
+            },
+            "description": "Mendapatkan detail booking berdasarkan ID"
+          }
+        },
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"{{room_id}}\",\n  \"checkInDate\": \"2024-02-01\",\n  \"checkOutDate\": \"2024-08-01\",\n  \"bookingType\": \"MONTHLY\",\n  \"totalAmount\": 9000000,\n  \"notes\": \"Booking untuk 6 bulan\",\n  \"guestInfo\": {\n    \"name\": \"John Customer\",\n    \"phoneNumber\": \"08123456789\",\n    \"email\": \"john.customer@example.com\",\n    \"identityNumber\": \"1234567890123456\",\n    \"emergencyContact\": {\n      \"name\": \"Jane Doe\",\n      \"phoneNumber\": \"08123456790\",\n      \"relationship\": \"Sister\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bookings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings"]
+            },
+            "description": "Membuat booking baru (CUSTOMER, RECEPTIONIST, ADMINKOS)"
+          }
+        },
+        {
+          "name": "Calculate Booking Price",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"{{room_id}}\",\n  \"checkInDate\": \"2024-02-01\",\n  \"checkOutDate\": \"2024-08-01\",\n  \"bookingType\": \"MONTHLY\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bookings/calculate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings", "calculate"]
+            },
+            "description": "Menghitung total harga booking sebelum konfirmasi"
+          }
+        },
+        {
+          "name": "Update Booking Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CONFIRMED\",\n  \"reason\": \"Payment received\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bookings/{{booking_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings", "{{booking_id}}", "status"]
+            },
+            "description": "Update status booking (RECEPTIONIST, ADMINKOS)"
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Customer request\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bookings/{{booking_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings", "{{booking_id}}", "cancel"]
+            },
+            "description": "Cancel booking (CUSTOMER, RECEPTIONIST, ADMINKOS)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🌐 Public APIs",
+      "description": "Endpoints public yang tidak memerlukan authentication",
+      "item": [
+        {
+          "name": "Get Public Properties",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties?page=1&limit=12&propertyType=MIXED&sortBy=price&sortOrder=asc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Nomor halaman"
+                },
+                {
+                  "key": "limit",
+                  "value": "12",
+                  "description": "Jumlah data per halaman (max: 50)"
+                },
+                {
+                  "key": "propertyType",
+                  "value": "MIXED",
+                  "description": "Filter tipe: MALE_ONLY, FEMALE_ONLY, MIXED"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "price",
+                  "description": "Sort by: price, newest"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc",
+                  "description": "Sort order: asc, desc"
+                }
+              ]
+            },
+            "description": "Mendapatkan daftar properti untuk homepage (public access)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🗺️ Location & Geocoding",
+      "description": "Endpoints untuk data wilayah dan geocoding",
+      "item": [
+        {
+          "name": "Get Provinces",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/wilayah/provinces",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wilayah", "provinces"]
+            },
+            "description": "Mendapatkan daftar semua provinsi"
+          }
+        },
+        {
+          "name": "Get Regencies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/wilayah/regencies?provinceCode=31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wilayah", "regencies"],
+              "query": [
+                {
+                  "key": "provinceCode",
+                  "value": "31",
+                  "description": "Kode provinsi"
+                }
+              ]
+            },
+            "description": "Mendapatkan daftar kabupaten/kota berdasarkan provinsi"
+          }
+        },
+        {
+          "name": "Get Districts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/wilayah/districts?regencyCode=3171",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wilayah", "districts"],
+              "query": [
+                {
+                  "key": "regencyCode",
+                  "value": "3171",
+                  "description": "Kode kabupaten/kota"
+                }
+              ]
+            },
+            "description": "Mendapatkan daftar kecamatan berdasarkan kabupaten/kota"
+          }
+        },
+        {
+          "name": "Reverse Geocoding",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/geocoding/reverse?lat=-6.2088&lng=106.8456",
+              "host": ["{{base_url}}"],
+              "path": ["api", "geocoding", "reverse"],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "-6.2088",
+                  "description": "Latitude"
+                },
+                {
+                  "key": "lng",
+                  "value": "106.8456",
+                  "description": "Longitude"
+                }
+              ]
+            },
+            "description": "Mendapatkan alamat berdasarkan koordinat"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard & Analytics",
+      "description": "Endpoints untuk dashboard dan analytics (role-based access)",
+      "item": [
+        {
+          "name": "Get Dashboard Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard/overview",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dashboard", "overview"]
+            },
+            "description": "Mendapatkan overview dashboard (role-based data)"
+          }
+        },
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard/stats?period=monthly",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dashboard", "stats"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "monthly",
+                  "description": "Period: daily, weekly, monthly, yearly"
+                }
+              ]
+            },
+            "description": "Mendapatkan statistik dashboard"
+          }
+        },
+        {
+          "name": "Get Dashboard Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard/analytics?startDate=2024-01-01&endDate=2024-12-31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dashboard", "analytics"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01",
+                  "description": "Tanggal mulai (YYYY-MM-DD)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31",
+                  "description": "Tanggal akhir (YYYY-MM-DD)"
+                }
+              ]
+            },
+            "description": "Mendapatkan analytics data dengan rentang tanggal"
+          }
+        },
+        {
+          "name": "Get Dashboard Activities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard/activities?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dashboard", "activities"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Nomor halaman"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Jumlah data per halaman"
+                }
+              ]
+            },
+            "description": "Mendapatkan recent activities untuk dashboard"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📁 File Upload",
+      "description": "Endpoints untuk upload file dan image management",
+      "item": [
+        {
+          "name": "Upload Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "category",
+                  "value": "BUILDING_PHOTOS",
+                  "type": "text",
+                  "description": "Category: BUILDING_PHOTOS, SHARED_FACILITIES_PHOTOS, ROOM_PHOTOS, BATHROOM_PHOTOS"
+                },
+                {
+                  "key": "propertyId",
+                  "value": "{{property_id}}",
+                  "type": "text",
+                  "description": "Property ID (required)"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "1",
+                  "type": "text",
+                  "description": "Sort order (optional)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/upload/image",
+              "host": ["{{base_url}}"],
+              "path": ["api", "upload", "image"]
+            },
+            "description": "Upload image ke Cloudinary (ADMINKOS only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔧 System & Health",
+      "description": "Endpoints untuk system monitoring dan health check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Health check untuk monitoring system status"
+          }
+        },
+        {
+          "name": "Expire Bookings (Cron)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cron_secret}}",
+                "description": "Cron job secret"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cron/expire",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cron", "expire"]
+            },
+            "description": "Cron job untuk expire booking yang sudah lewat waktu"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token untuk authentication"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string",
+      "description": "ID user untuk testing"
+    },
+    {
+      "key": "property_id",
+      "value": "",
+      "type": "string",
+      "description": "ID properti untuk testing"
+    },
+    {
+      "key": "room_id",
+      "value": "",
+      "type": "string",
+      "description": "ID kamar untuk testing"
+    },
+    {
+      "key": "booking_id",
+      "value": "",
+      "type": "string",
+      "description": "ID booking untuk testing"
+    },
+    {
+      "key": "cron_secret",
+      "value": "",
+      "type": "string",
+      "description": "Secret key untuk cron jobs"
+    }
+  ]
+}

@@ -125,7 +125,7 @@ export default function LoginPage() {
           <Card className="w-full">
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl font-bold text-center">
-                Sign in to MultiKost
+                Sign in to myhome
               </CardTitle>
               <CardDescription className="text-center">
                 Enter your credentials to access your dashboard
@@ -199,10 +199,10 @@ export default function LoginPage() {
             </div>
             
             <div className="mt-4 space-y-2 text-sm text-gray-600">
-              <p><strong>Superadmin:</strong> superadmin@multikost.com / password123</p>
-              <p><strong>Admin Kos:</strong> admin@multikost.com / password123</p>
-              <p><strong>Receptionist:</strong> receptionist@multikost.com / password123</p>
-              <p><strong>Customer:</strong> customer@multikost.com / password123</p>
+              <p><strong>Superadmin:</strong> superadmin@myhome.com / password123</p>
+              <p><strong>Admin Kos:</strong> admin@myhome.com / password123</p>
+              <p><strong>Receptionist:</strong> receptionist@myhome.com / password123</p>
+              <p><strong>Customer:</strong> customer@myhome.com / password123</p>
             </div>
           </div>
         </CardContent>

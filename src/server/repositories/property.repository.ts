@@ -9,7 +9,10 @@ import type {
   PropertyListItem,
   PropertyDetailItem,
   PaginationDTO,
-  PropertyCoordinate
+  PropertyCoordinate,
+  PublicPropertyCardDTO,
+  PublicPropertiesQuery,
+  PublicPropertiesResponse
 } from "../types";
 import { PropertyStatus, PropertyType, ImageCategory, type PropertyFacility } from "../types/property";
 
@@ -552,5 +555,141 @@ export class PropertyRepository {
       availableRooms: property.rooms.filter(room => room.isAvailable).length,
       mainImage: property.images[0]?.imageUrl,
     }));
+  }
+
+  /**
+   * Get public properties for homepage with filtering and pagination
+   */
+  static async getPublicProperties(filters: PublicPropertiesQuery): Promise<PublicPropertiesResponse> {
+    const {
+      page = 1,
+      limit = 12,
+      propertyType,
+      regencyCode,
+      districtCode,
+      minPrice,
+      maxPrice,
+      sortBy = "newest",
+      sortOrder = "desc",
+    } = filters;
+
+    // Build where clause
+    const where: Prisma.PropertyWhereInput = {
+      status: PropertyStatus.APPROVED, // Only approved properties
+    };
+
+    if (propertyType) where.propertyType = propertyType;
+    if (regencyCode) where.regencyCode = regencyCode;
+    if (districtCode) where.districtCode = districtCode;
+
+    // Get total count
+    const total = await prisma.property.count({ where });
+
+    // Calculate pagination
+    const totalPages = Math.ceil(total / limit);
+    const skip = (page - 1) * limit;
+
+    // Build orderBy clause
+    let orderBy: Prisma.PropertyOrderByWithRelationInput = {};
+    if (sortBy === "newest") {
+      orderBy = { createdAt: sortOrder };
+    } else if (sortBy === "price") {
+      // For price sorting, we'll sort after getting the data since Prisma doesn't support
+      // sorting by aggregated fields in findMany. We'll sort in memory after transformation.
+      orderBy = { createdAt: 'desc' }; // Default sort, will be overridden later
+    }
+
+    // Get properties with rooms and images
+    const properties = await prisma.property.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy,
+      include: {
+        rooms: {
+          select: {
+            monthlyPrice: true,
+            isAvailable: true,
+          },
+          where: {
+            isAvailable: true, // Only available rooms for price calculation
+          },
+          orderBy: {
+            monthlyPrice: 'asc', // Get cheapest first
+          }
+        },
+        images: {
+          where: {
+            category: ImageCategory.BUILDING_PHOTOS
+          },
+          orderBy: {
+            sortOrder: 'asc'
+          },
+          take: 1, // Only get the main image
+        },
+      },
+    });
+
+    // Transform to DTO and apply price filtering if needed
+    let transformedProperties: PublicPropertyCardDTO[] = properties
+      .map(property => {
+        // Get cheapest monthly price from available rooms
+        const cheapestPrice = property.rooms.length > 0
+          ? Math.min(...property.rooms.map(room => Number(room.monthlyPrice)))
+          : 0;
+
+        return {
+          id: property.id,
+          name: property.name,
+          propertyType: property.propertyType as PropertyType,
+          availableRooms: property.availableRooms,
+          facilities: property.facilities as unknown as PropertyFacility[],
+          cheapestMonthlyPrice: cheapestPrice,
+          mainImage: property.images[0]?.imageUrl,
+          location: {
+            districtName: property.districtName,
+            regencyName: property.regencyName,
+          },
+        };
+      });
+
+    // Apply price filtering after transformation
+    if (minPrice !== undefined) {
+      transformedProperties = transformedProperties.filter(
+        property => property.cheapestMonthlyPrice >= minPrice
+      );
+    }
+    if (maxPrice !== undefined) {
+      transformedProperties = transformedProperties.filter(
+        property => property.cheapestMonthlyPrice <= maxPrice
+      );
+    }
+
+    // Apply price sorting after transformation if needed
+    if (sortBy === "price") {
+      transformedProperties.sort((a, b) => {
+        if (sortOrder === "asc") {
+          return a.cheapestMonthlyPrice - b.cheapestMonthlyPrice;
+        } else {
+          return b.cheapestMonthlyPrice - a.cheapestMonthlyPrice;
+        }
+      });
+    }
+
+    // If we applied price filtering, we need to recalculate pagination
+    const filteredTotal = transformedProperties.length;
+    const filteredTotalPages = Math.ceil(filteredTotal / limit);
+
+    return {
+      properties: transformedProperties,
+      pagination: {
+        page,
+        limit,
+        total: minPrice !== undefined || maxPrice !== undefined ? filteredTotal : total,
+        totalPages: minPrice !== undefined || maxPrice !== undefined ? filteredTotalPages : totalPages,
+        hasNext: page < (minPrice !== undefined || maxPrice !== undefined ? filteredTotalPages : totalPages),
+        hasPrev: page > 1,
+      },
+    };
   }
 }

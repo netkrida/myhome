@@ -19,3 +19,9 @@ export * from "./property.service";
 
 // Room service
 export * from "./room.service";
+
+// Booking service
+export * from "./booking.service";
+
+// Payment service
+export * from "./payment.service";

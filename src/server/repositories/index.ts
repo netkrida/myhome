@@ -10,3 +10,9 @@ export * from "./property.repository";
 
 // Room repository
 export * from "./room.repository";
+
+// Booking repository
+export * from "./booking.repository";
+
+// Payment repository
+export * from "./payment.repository";

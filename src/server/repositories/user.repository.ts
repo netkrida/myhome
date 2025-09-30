@@ -1,12 +1,14 @@
 import { type User, type Prisma } from "@prisma/client";
 import { UserRole } from "../types/rbac";
 import { prisma } from "../db/client";
-import type { 
-  CreateUserDTO, 
-  UpdateUserDTO, 
+import type {
+  CreateUserDTO,
+  UpdateUserDTO,
   UserFilterParams,
-  PaginationDTO 
+  PaginationDTO
 } from "../types/user";
+import type { Result } from "../types/result";
+import { ok, fail, notFound, internalError } from "../types/result";
 
 /**
  * User Repository
@@ -27,6 +29,22 @@ export class UserRepository {
       where: { id },
       include,
     });
+  }
+
+  /**
+   * Get user by ID with Result wrapper
+   */
+  static async getById(id: string, includeProfile: boolean = false): Promise<Result<User>> {
+    try {
+      const user = await this.findById(id, includeProfile);
+      if (!user) {
+        return notFound("User not found");
+      }
+      return ok(user);
+    } catch (error) {
+      console.error("Error getting user by ID:", error);
+      return internalError("Failed to get user");
+    }
   }
 
   /**

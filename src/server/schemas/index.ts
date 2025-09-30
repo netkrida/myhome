@@ -29,3 +29,6 @@ export * from "./property.schemas";
 
 // Room schemas
 export * from "./room.schemas";
+
+// Booking schemas
+export * from "./booking.schemas";

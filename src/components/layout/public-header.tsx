@@ -1,7 +1,10 @@
+
 "use client";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, X, Search, User, Heart, Bell, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,18 +40,19 @@ export function PublicHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white shadow-sm">
-      <div className="container mx-auto px-4">
+  <header className="sticky top-0 z-50 w-full border-b bg-background shadow-sm text-foreground">
+  <div className="container mx-auto px-4">
         {/* Top Bar */}
         <div className="flex h-14 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="flex items-center">
-              <div className="bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm">
-                M
-              </div>
-              <span className="ml-2 text-lg font-bold text-gray-900">MultiKost</span>
-            </div>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logo.png"
+              alt="MyHome"
+              width={160}
+              height={48}
+              className="h-10 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -78,7 +82,7 @@ export function PublicHeader() {
                 ) : (
                   <Link
                     href={item.href}
-                    className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors text-sm"
+                    className="flex items-center space-x-1 text-foreground hover:text-primary transition-colors text-sm"
                   >
                     <span>{item.label}</span>
                     {item.badge && (
@@ -94,6 +98,8 @@ export function PublicHeader() {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
+            {/* Theme Toggler */}
+            <AnimatedThemeToggler className="mr-2" />
             {/* Search Button - Mobile */}
             <Button
               variant="ghost"
@@ -110,7 +116,7 @@ export function PublicHeader() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="text-xs text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs text-foreground hover:text-primary transition-colors"
                 >
                   {item.label}
                 </Link>
@@ -135,7 +141,7 @@ export function PublicHeader() {
               <Button variant="outline" size="sm" className="text-xs" asChild>
                 <Link href="/login">Masuk</Link>
               </Button>
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-xs" asChild>
+              <Button size="sm" className="bg-primary hover:bg-primary/80 text-xs" asChild>
                 <Link href="/register">Daftar</Link>
               </Button>
             </div>
@@ -165,7 +171,7 @@ export function PublicHeader() {
                       <Link
                         key={item.label}
                         href={item.href}
-                        className="flex items-center justify-between py-2 text-gray-700 hover:text-blue-600 transition-colors"
+                        className="flex items-center justify-between py-2 text-foreground hover:text-primary transition-colors"
                       >
                         <span>{item.label}</span>
                         {item.badge && (
@@ -184,7 +190,7 @@ export function PublicHeader() {
                         <Link
                           key={item.label}
                           href={item.href}
-                          className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                          className="text-sm text-foreground hover:text-primary transition-colors"
                         >
                           {item.label}
                         </Link>
@@ -214,3 +220,5 @@ export function PublicHeader() {
     </header>
   );
 }
+
+

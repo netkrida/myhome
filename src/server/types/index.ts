@@ -23,3 +23,6 @@ export * from "./property";
 
 // Room types
 export * from "./room";
+
+// Booking types
+export * from "./booking";

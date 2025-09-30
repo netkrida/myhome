@@ -1,3 +1,4 @@
+import type { PaginationDTO } from "./user";
 /**
  * Property-related DTOs and types
  */
@@ -355,3 +356,37 @@ export const PROPERTY_ROOM_TYPES = [
 
 // Parking Facilities (extracted from PROPERTY_FACILITIES.parking)
 export const PARKING_FACILITIES = PROPERTY_FACILITIES.parking;
+
+// Public Property Card DTO (for homepage)
+export interface PublicPropertyCardDTO {
+  id: string;
+  name: string;
+  propertyType: PropertyType;
+  availableRooms: number;
+  facilities: PropertyFacility[];
+  cheapestMonthlyPrice: number;
+  mainImage?: string;
+  location: {
+    districtName: string;
+    regencyName: string;
+  };
+}
+
+// Public Properties Query Parameters
+export interface PublicPropertiesQuery {
+  page?: number;
+  limit?: number;
+  propertyType?: PropertyType;
+  regencyCode?: string;
+  districtCode?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sortBy?: 'price' | 'newest';
+  sortOrder?: 'asc' | 'desc';
+}
+
+// Public Properties Response
+export interface PublicPropertiesResponse {
+  properties: PublicPropertyCardDTO[];
+  pagination: PaginationDTO;
+}

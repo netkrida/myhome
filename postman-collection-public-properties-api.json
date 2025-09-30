@@ -1,0 +1,388 @@
+{
+  "info": {
+    "name": "MultiKost - Public Properties API",
+    "description": "API untuk menampilkan daftar properti kos di halaman public. API ini mengikuti 3-tier architecture dan menyediakan data untuk homepage property cards.\n\n## Base URL\n`http://localhost:3000` (Development)\n\n## Authentication\nTidak memerlukan authentication - API ini bersifat public.\n\n## Response Format\nSemua response menggunakan format JSON dengan struktur:\n```json\n{\n  \"success\": boolean,\n  \"data\": object | array,\n  \"error\": string (jika ada error)\n}\n```",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Public Properties",
+      "description": "Endpoint untuk mendapatkan daftar properti kos yang sudah disetujui (APPROVED) untuk ditampilkan di halaman public.",
+      "item": [
+        {
+          "name": "Get All Properties (Basic)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties?page=1&limit=12",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Nomor halaman (default: 1, min: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "12",
+                  "description": "Jumlah data per halaman (default: 12, min: 1, max: 50)"
+                }
+              ]
+            },
+            "description": "Mendapatkan daftar properti kos dengan pagination dasar. Menampilkan 12 properti per halaman secara default, diurutkan berdasarkan yang terbaru."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/public/properties?page=1&limit=12",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "public", "properties"],
+                  "query": [
+                    {"key": "page", "value": "1"},
+                    {"key": "limit", "value": "12"}
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"properties\": [\n      {\n        \"id\": \"cmg51mxxn000buovwm83ypxl8\",\n        \"name\": \"KOS INDAH SEKALI\",\n        \"propertyType\": \"MIXED\",\n        \"availableRooms\": 1,\n        \"facilities\": [\n          {\n            \"id\": \"lemari\",\n            \"name\": \"Lemari pakaian\",\n            \"category\": \"property\"\n          },\n          {\n            \"id\": \"wifi\",\n            \"name\": \"WiFi / Internet\",\n            \"category\": \"property\"\n          }\n        ],\n        \"cheapestMonthlyPrice\": 300000,\n        \"mainImage\": \"https://res.cloudinary.com/dg0ybxdbt/image/upload/v1759145147/kos-properties/buildingPhotos/example.png\",\n        \"location\": {\n          \"districtName\": \"Setiabudi\",\n          \"regencyName\": \"Jakarta Selatan\"\n        }\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 12,\n      \"total\": 1,\n      \"totalPages\": 1,\n      \"hasNext\": false,\n      \"hasPrev\": false\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Filter by Property Type",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties?page=1&limit=10&propertyType=MALE_ONLY",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "propertyType",
+                  "value": "MALE_ONLY",
+                  "description": "Filter berdasarkan tipe properti: MALE_ONLY, FEMALE_ONLY, MIXED"
+                }
+              ]
+            },
+            "description": "Filter properti berdasarkan tipe: MALE_ONLY (khusus pria), FEMALE_ONLY (khusus wanita), atau MIXED (campuran)."
+          }
+        },
+        {
+          "name": "Filter by Location",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties?page=1&limit=10&regencyCode=3171&districtCode=317101",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "regencyCode",
+                  "value": "3171",
+                  "description": "Kode kabupaten/kota (contoh: 3171 untuk Jakarta Selatan)"
+                },
+                {
+                  "key": "districtCode",
+                  "value": "317101",
+                  "description": "Kode kecamatan (contoh: 317101 untuk Setiabudi)"
+                }
+              ]
+            },
+            "description": "Filter properti berdasarkan lokasi menggunakan kode kabupaten/kota dan kecamatan."
+          }
+        },
+        {
+          "name": "Filter by Price Range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties?page=1&limit=10&minPrice=500000&maxPrice=2000000",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "500000",
+                  "description": "Harga minimum per bulan (dalam Rupiah)"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "2000000",
+                  "description": "Harga maksimum per bulan (dalam Rupiah)"
+                }
+              ]
+            },
+            "description": "Filter properti berdasarkan rentang harga bulanan. Harga yang digunakan adalah harga termurah dari semua kamar di properti tersebut."
+          }
+        },
+        {
+          "name": "Sort by Price (Ascending)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties?page=1&limit=10&sortBy=price&sortOrder=asc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "price",
+                  "description": "Urutkan berdasarkan: price (harga) atau newest (terbaru)"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc",
+                  "description": "Urutan: asc (naik) atau desc (turun)"
+                }
+              ]
+            },
+            "description": "Mengurutkan properti berdasarkan harga termurah ke termahal."
+          }
+        },
+        {
+          "name": "Sort by Newest",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties?page=1&limit=10&sortBy=newest&sortOrder=desc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "newest",
+                  "description": "Urutkan berdasarkan tanggal dibuat (default)"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "description": "Urutan menurun (terbaru dulu)"
+                }
+              ]
+            },
+            "description": "Mengurutkan properti berdasarkan tanggal dibuat, yang terbaru ditampilkan pertama (default sorting)."
+          }
+        },
+        {
+          "name": "Complex Filter Example",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties?page=1&limit=8&propertyType=MIXED&regencyCode=3171&minPrice=800000&maxPrice=1500000&sortBy=price&sortOrder=asc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "8"
+                },
+                {
+                  "key": "propertyType",
+                  "value": "MIXED"
+                },
+                {
+                  "key": "regencyCode",
+                  "value": "3171"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "800000"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "1500000"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "price"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": "Contoh penggunaan multiple filter: properti campuran di Jakarta Selatan dengan harga 800rb-1.5jt, diurutkan berdasarkan harga termurah."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Examples",
+      "description": "Contoh response error untuk berbagai kasus validasi.",
+      "item": [
+        {
+          "name": "Invalid Parameters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties?page=0&limit=100",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Invalid: page harus >= 1"
+                },
+                {
+                  "key": "limit",
+                  "value": "100",
+                  "description": "Invalid: limit maksimal 50"
+                }
+              ]
+            },
+            "description": "Contoh request dengan parameter yang tidak valid."
+          },
+          "response": [
+            {
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/public/properties?page=0&limit=100",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "public", "properties"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "limit", "value": "100"}
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"error\": \"Invalid query parameters\",\n  \"details\": [\n    {\n      \"code\": \"too_small\",\n      \"minimum\": 1,\n      \"type\": \"number\",\n      \"inclusive\": true,\n      \"exact\": false,\n      \"message\": \"Page must be at least 1\",\n      \"path\": [\"page\"]\n    },\n    {\n      \"code\": \"too_big\",\n      \"maximum\": 50,\n      \"type\": \"number\",\n      \"inclusive\": true,\n      \"exact\": false,\n      \"message\": \"Limit must be at most 50\",\n      \"path\": [\"limit\"]\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}

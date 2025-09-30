@@ -181,6 +181,27 @@ export const propertyStatsQuerySchema = z.object({
   dateTo: z.string().datetime("Invalid date format").optional(),
 });
 
+// Public properties query schema
+export const publicPropertiesQuerySchema = z.object({
+  page: z.coerce.number().min(1, "Page must be at least 1").default(1),
+  limit: z.coerce.number().min(1, "Limit must be at least 1").max(50, "Limit must be at most 50").default(12),
+  propertyType: z.nativeEnum(PropertyType).optional(),
+  regencyCode: z.string().optional(),
+  districtCode: z.string().optional(),
+  minPrice: z.coerce.number().min(0, "Minimum price must be non-negative").optional(),
+  maxPrice: z.coerce.number().min(0, "Maximum price must be non-negative").optional(),
+  sortBy: z.enum(["price", "newest"]).default("newest"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+}).refine((data) => {
+  if (data.minPrice && data.maxPrice) {
+    return data.minPrice <= data.maxPrice;
+  }
+  return true;
+}, {
+  message: "Minimum price must be less than or equal to maximum price",
+  path: ["minPrice"]
+});
+
 // Export types for TypeScript
 export type CreatePropertyStep1Input = z.infer<typeof createPropertyStep1Schema>;
 export type CreatePropertyStep2Input = z.infer<typeof createPropertyStep2Schema>;
@@ -193,5 +214,6 @@ export type PropertyApprovalInput = z.infer<typeof propertyApprovalSchema>;
 export type PropertyIdInput = z.infer<typeof propertyIdSchema>;
 export type PropertyImageUploadInput = z.infer<typeof propertyImageUploadSchema>;
 export type PropertySearchInput = z.infer<typeof propertySearchSchema>;
+export type PublicPropertiesQueryInput = z.infer<typeof publicPropertiesQuerySchema>;
 export type BulkPropertyOperationInput = z.infer<typeof bulkPropertyOperationSchema>;
 export type PropertyStatsQueryInput = z.infer<typeof propertyStatsQuerySchema>;

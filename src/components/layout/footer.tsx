@@ -12,7 +12,7 @@ export function Footer() {
             <Link href="/" className="flex items-center space-x-3">
               <Image
                 src="/logo.png"
-                alt="MultiKost"
+                alt="MyHome"
                 width={32}
                 height={32}
                 className="h-6 w-auto"
@@ -111,7 +111,7 @@ export function Footer() {
               <li className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">
-                  info@multikost.com
+                  info@myhome.co.id
                 </span>
               </li>
             </ul>
@@ -122,7 +122,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-muted-foreground">
-              © 2024 MultiKost. All rights reserved.
+              © 2025 myhome. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm">
               <Link href="#" className="text-muted-foreground hover:text-primary">
@@ -141,3 +141,4 @@ export function Footer() {
     </footer>
   );
 }
+

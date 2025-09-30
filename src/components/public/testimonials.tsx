@@ -54,7 +54,7 @@ const testimonials: Testimonial[] = [
     role: "Mahasiswa",
     location: "Yogyakarta",
     rating: 4,
-    comment: "Pelayanan MultiKost sangat membantu dalam mencari kos yang sesuai budget. Proses booking mudah dan transparan. Terima kasih sudah membantu menemukan hunian yang tepat!",
+    comment: "Pelayanan myhome sangat membantu dalam mencari kos yang sesuai budget. Proses booking mudah dan transparan. Terima kasih sudah membantu menemukan hunian yang tepat!",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
     propertyName: "Wisma Dahlia"
   },
@@ -64,7 +64,7 @@ const testimonials: Testimonial[] = [
     role: "Karyawan",
     location: "Surabaya",
     rating: 5,
-    comment: "Aplikasi MultiKost sangat user-friendly. Bisa lihat foto-foto kos dengan jelas, baca review dari penghuni lain, dan langsung booking online. Sangat recommended!",
+    comment: "Aplikasi myhome sangat user-friendly. Bisa lihat foto-foto kos dengan jelas, baca review dari penghuni lain, dan langsung booking online. Sangat recommended!",
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
     propertyName: "Kos Tulip Modern"
   }
@@ -107,7 +107,7 @@ export function Testimonials() {
             Apa Kata Mereka?
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Dengarkan pengalaman nyata dari ribuan penghuni yang telah menemukan hunian impian mereka melalui MultiKost.
+            Dengarkan pengalaman nyata dari ribuan penghuni yang telah menemukan hunian impian mereka melalui myhome.
           </p>
         </div>
 

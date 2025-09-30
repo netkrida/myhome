@@ -12,6 +12,8 @@ import type {
   BulkUpdateRoomAvailabilityDTO,
   BulkUpdateRoomPricingDTO
 } from "../types";
+import type { Result } from "../types/result";
+import { ok, fail, notFound, internalError } from "../types/result";
 
 /**
  * Room Repository
@@ -111,6 +113,26 @@ export class RoomRepository {
         owner: (room.property as any).owner,
       } : undefined as any,
     };
+  }
+
+  /**
+   * Get room by ID with Result wrapper
+   */
+  static async getById(
+    id: string,
+    includeImages: boolean = true,
+    includeProperty: boolean = false
+  ): Promise<Result<RoomDetailItem>> {
+    try {
+      const room = await this.findById(id, includeImages, includeProperty);
+      if (!room) {
+        return notFound("Room not found");
+      }
+      return ok(room);
+    } catch (error) {
+      console.error("Error getting room by ID:", error);
+      return internalError("Failed to get room");
+    }
   }
 
   /**

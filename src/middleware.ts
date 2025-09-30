@@ -12,7 +12,7 @@ const ROLE_DASHBOARDS = {
 
 const PUBLIC_ROUTES = [
   "/", "/login", "/register", "/about", "/contact",
-  "/search", "/properties", "/property", "/api/auth", "/api/test-db", "/api/wilayah", "/api/properties/coordinates"
+  "/search", "/properties", "/property", "/api/auth", "/api/test-db", "/api/wilayah", "/api/properties/coordinates", "/api/public"
 ];
 
 const ADMIN_ROLES = ["SUPERADMIN", "ADMINKOS", "RECEPTIONIST"];

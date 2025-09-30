@@ -74,6 +74,8 @@ model User {
   PropertyStatusHistory PropertyStatusHistory[]
   receptionistProfile   ReceptionistProfile?
   sessions              Session[]
+  bookings              Booking[]
+  payments              Payment[]
 
   @@index([email])
   @@index([role])
@@ -148,6 +150,7 @@ model Property {
   images                PropertyImage[]
   PropertyStatusHistory PropertyStatusHistory[]
   rooms                 Room[]
+  bookings              Booking[]
 
   @@index([status])
   @@index([propertyType])
@@ -184,13 +187,19 @@ model Room {
   quarterlyPrice    Decimal?           @db.Decimal(10, 2)
   yearlyPrice       Decimal?           @db.Decimal(10, 2)
   hasDeposit        Boolean            @default(false)
+  // New deposit fields
+  depositRequired   Boolean            @default(false)
+  depositType       DepositType?       @default(PERCENTAGE)
+  depositValue      Decimal?           @db.Decimal(10, 2)
+  // Legacy field for backward compatibility
+  depositPercentage DepositPercentage?
   facilities        Json
   isAvailable       Boolean            @default(true)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
-  depositPercentage DepositPercentage?
   property          Property           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   images            RoomImage[]
+  bookings          Booking[]
 
   @@unique([propertyId, roomNumber])
   @@index([propertyId])
@@ -228,6 +237,62 @@ model PropertyStatusHistory {
   @@index([createdAt])
   @@index([propertyId])
   @@index([toStatus])
+}
+
+model Booking {
+  id             String        @id @default(cuid())
+  bookingCode    String        @unique @db.VarChar(20)
+  userId         String
+  propertyId     String
+  roomId         String
+  checkInDate    DateTime
+  checkOutDate   DateTime?
+  leaseType      LeaseType
+  totalAmount    Decimal       @db.Decimal(12, 2)
+  depositAmount  Decimal?      @db.Decimal(12, 2)
+  paymentStatus  PaymentStatus @default(PENDING)
+  status         BookingStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  user           User          @relation(fields: [userId], references: [id])
+  property       Property      @relation(fields: [propertyId], references: [id])
+  room           Room          @relation(fields: [roomId], references: [id])
+  payments       Payment[]
+
+  @@index([userId])
+  @@index([propertyId])
+  @@index([roomId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([checkInDate])
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  bookingId        String
+  userId           String
+  midtransOrderId  String        @unique @db.VarChar(100)
+  paymentType      PaymentType
+  paymentMethod    String?       @db.VarChar(50)
+  amount           Decimal       @db.Decimal(12, 2)
+  status           PaymentStatus @default(PENDING)
+  transactionTime  DateTime?
+  transactionId    String?       @db.VarChar(100)
+  paymentToken     String?       @db.VarChar(500)
+  expiryTime       DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  booking          Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user             User          @relation(fields: [userId], references: [id])
+
+  @@index([bookingId])
+  @@index([userId])
+  @@index([status])
+  @@index([midtransOrderId])
 }
 
 enum UserRole {
@@ -270,4 +335,40 @@ enum DepositPercentage {
   THIRTY_PERCENT
   FORTY_PERCENT
   FIFTY_PERCENT
+}
+
+enum BookingStatus {
+  PENDING
+  DEPOSIT_PAID
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
+enum PaymentType {
+  DEPOSIT
+  FULL
+}
+
+enum LeaseType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum DepositType {
+  PERCENTAGE
+  FIXED
 }

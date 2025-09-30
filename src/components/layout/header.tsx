@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { Menu, X, User, LogIn } from "lucide-react";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -58,13 +59,13 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 text-foreground">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center">
           <Image
             src="/logo.png"
-            alt="MultiKost"
+            alt="MyHome"
             width={40}
             height={40}
             className="h-10 w-auto"
@@ -86,6 +87,8 @@ export function Header() {
 
         {/* Desktop Auth Section */}
         <div className="hidden md:flex items-center space-x-4">
+          {/* Theme Toggler */}
+          <AnimatedThemeToggler className="mr-2" />
           {session?.user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -145,8 +148,9 @@ export function Header() {
           )}
         </div>
 
-        {/* Mobile Menu */}
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+  {/* Mobile Menu */}
+  <AnimatedThemeToggler className="md:hidden mr-2" />
+  <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button
               variant="ghost"
@@ -166,7 +170,7 @@ export function Header() {
               >
                 <Image
                   src="/logo.png"
-                  alt="MultiKost"
+                  alt="MyHome"
                   width={32}
                   height={32}
                   className="h-8 w-auto"
@@ -268,3 +272,4 @@ export function Header() {
     </header>
   );
 }
+
