@@ -202,6 +202,11 @@ export const publicPropertiesQuerySchema = z.object({
   path: ["minPrice"]
 });
 
+// Public property detail ID schema
+export const publicPropertyDetailIdSchema = z.object({
+  id: z.string().cuid("Invalid property ID format"),
+});
+
 // Export types for TypeScript
 export type CreatePropertyStep1Input = z.infer<typeof createPropertyStep1Schema>;
 export type CreatePropertyStep2Input = z.infer<typeof createPropertyStep2Schema>;
@@ -215,5 +220,6 @@ export type PropertyIdInput = z.infer<typeof propertyIdSchema>;
 export type PropertyImageUploadInput = z.infer<typeof propertyImageUploadSchema>;
 export type PropertySearchInput = z.infer<typeof propertySearchSchema>;
 export type PublicPropertiesQueryInput = z.infer<typeof publicPropertiesQuerySchema>;
+export type PublicPropertyDetailIdInput = z.infer<typeof publicPropertyDetailIdSchema>;
 export type BulkPropertyOperationInput = z.infer<typeof bulkPropertyOperationSchema>;
 export type PropertyStatsQueryInput = z.infer<typeof propertyStatsQuerySchema>;

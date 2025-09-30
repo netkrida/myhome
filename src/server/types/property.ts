@@ -390,3 +390,53 @@ export interface PublicPropertiesResponse {
   properties: PublicPropertyCardDTO[];
   pagination: PaginationDTO;
 }
+
+// Public Room Detail DTO (for property detail page)
+export interface PublicRoomDetailDTO {
+  id: string;
+  roomNumber: string;
+  floor: number;
+  roomType: string;
+  description?: string;
+  size?: string;
+  monthlyPrice: number;
+  dailyPrice?: number;
+  weeklyPrice?: number;
+  quarterlyPrice?: number;
+  yearlyPrice?: number;
+  depositRequired: boolean;
+  depositType?: 'PERCENTAGE' | 'FIXED';
+  depositValue?: number;
+  facilities: any[]; // Room facilities as JSON
+  isAvailable: boolean;
+  images: PropertyImageDTO[]; // Reuse PropertyImageDTO for room images
+}
+
+// Public Property Detail DTO (for property detail page)
+export interface PublicPropertyDetailDTO {
+  id: string;
+  name: string;
+  buildYear: number;
+  propertyType: PropertyType;
+  description: string;
+  roomTypes: string[];
+  totalRooms: number;
+  availableRooms: number;
+  location: {
+    provinceCode: string;
+    provinceName: string;
+    regencyCode: string;
+    regencyName: string;
+    districtCode: string;
+    districtName: string;
+    fullAddress: string;
+    latitude: number;
+    longitude: number;
+  };
+  facilities: PropertyFacility[];
+  rules: PropertyRule[];
+  images: PropertyImageDTO[];
+  rooms: PublicRoomDetailDTO[];
+  createdAt: Date;
+  updatedAt: Date;
+}

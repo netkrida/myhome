@@ -12,7 +12,8 @@ import type {
   PropertyCoordinate,
   PublicPropertyCardDTO,
   PublicPropertiesQuery,
-  PublicPropertiesResponse
+  PublicPropertiesResponse,
+  PublicPropertyDetailDTO
 } from "../types";
 import { PropertyStatus, PropertyType, ImageCategory, type PropertyFacility } from "../types/property";
 
@@ -690,6 +691,110 @@ export class PropertyRepository {
         hasNext: page < (minPrice !== undefined || maxPrice !== undefined ? filteredTotalPages : totalPages),
         hasPrev: page > 1,
       },
+    };
+  }
+
+  /**
+   * Get public property detail by ID
+   * Only returns APPROVED properties with all related data
+   */
+  static async getPublicPropertyDetail(id: string): Promise<PublicPropertyDetailDTO | null> {
+    console.log("🔍 PropertyRepository.getPublicPropertyDetail - Query:", { id });
+
+    const property = await prisma.property.findUnique({
+      where: {
+        id,
+        status: PropertyStatus.APPROVED // Only approved properties are public
+      },
+      include: {
+        images: {
+          orderBy: { sortOrder: 'asc' }
+        },
+        rooms: {
+          include: {
+            images: {
+              orderBy: { sortOrder: 'asc' }
+            }
+          },
+          orderBy: { roomNumber: 'asc' }
+        }
+      },
+    });
+
+    console.log("🔍 PropertyRepository.getPublicPropertyDetail - Result:", {
+      found: !!property,
+      propertyId: property?.id,
+      propertyName: property?.name,
+      status: property?.status,
+      imagesCount: property?.images?.length || 0,
+      roomsCount: property?.rooms?.length || 0
+    });
+
+    if (!property) return null;
+
+    // Transform to PublicPropertyDetailDTO
+    return {
+      id: property.id,
+      name: property.name,
+      buildYear: property.buildYear,
+      propertyType: property.propertyType as PropertyType,
+      description: property.description,
+      roomTypes: property.roomTypes as string[],
+      totalRooms: property.totalRooms,
+      availableRooms: property.availableRooms,
+      location: {
+        provinceCode: property.provinceCode,
+        provinceName: property.provinceName,
+        regencyCode: property.regencyCode,
+        regencyName: property.regencyName,
+        districtCode: property.districtCode,
+        districtName: property.districtName,
+        fullAddress: property.fullAddress,
+        latitude: property.latitude,
+        longitude: property.longitude,
+      },
+      facilities: property.facilities as any[],
+      rules: property.rules as any[],
+      images: property.images?.map(img => ({
+        id: img.id,
+        category: img.category as any,
+        imageUrl: img.imageUrl,
+        publicId: img.publicId || undefined,
+        caption: img.caption || undefined,
+        sortOrder: img.sortOrder,
+        createdAt: img.createdAt,
+        updatedAt: img.updatedAt,
+      })) || [],
+      rooms: property.rooms?.map(room => ({
+        id: room.id,
+        roomNumber: room.roomNumber,
+        floor: room.floor,
+        roomType: room.roomType,
+        description: room.description || undefined,
+        size: room.size || undefined,
+        monthlyPrice: Number(room.monthlyPrice),
+        dailyPrice: room.dailyPrice ? Number(room.dailyPrice) : undefined,
+        weeklyPrice: room.weeklyPrice ? Number(room.weeklyPrice) : undefined,
+        quarterlyPrice: room.quarterlyPrice ? Number(room.quarterlyPrice) : undefined,
+        yearlyPrice: room.yearlyPrice ? Number(room.yearlyPrice) : undefined,
+        depositRequired: room.depositRequired,
+        depositType: room.depositType || undefined,
+        depositValue: room.depositValue ? Number(room.depositValue) : undefined,
+        facilities: room.facilities as any[],
+        isAvailable: room.isAvailable,
+        images: room.images?.map(img => ({
+          id: img.id,
+          category: img.category as any,
+          imageUrl: img.imageUrl,
+          publicId: img.publicId || undefined,
+          caption: img.caption || undefined,
+          sortOrder: img.sortOrder,
+          createdAt: img.createdAt,
+          updatedAt: img.updatedAt,
+        })) || [],
+      })) || [],
+      createdAt: property.createdAt,
+      updatedAt: property.updatedAt,
     };
   }
 }

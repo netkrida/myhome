@@ -81,6 +81,7 @@ Dokumentasi lengkap untuk semua API endpoints dalam sistem MultiKost. Sistem ini
 
 ### 🌐 Public APIs (No Authentication)
 - `GET /api/public/properties` - Daftar properti untuk homepage
+- `GET /api/public/properties/{id}` - Detail properti untuk halaman detail
 
 ### 🗺️ Location & Geocoding
 - `GET /api/wilayah/provinces` - Daftar provinsi
@@ -266,6 +267,91 @@ Setelah import ke Postman, Anda dapat:
    - Jalankan "Invalid Parameters"
    - Pastikan mendapat response 400 dengan detail error
 
+## 🏠 Public Property Detail API
+
+### GET /api/public/properties/{id}
+
+Mendapatkan detail lengkap properti untuk halaman detail public.
+
+**Parameters:**
+- `id` (path): Property ID (CUID format)
+
+**Response Success (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clm123...",
+    "name": "Kos Putri Melati",
+    "buildYear": 2020,
+    "propertyType": "FEMALE_ONLY",
+    "description": "Kos nyaman untuk putri...",
+    "roomTypes": ["Standard", "VIP"],
+    "totalRooms": 20,
+    "availableRooms": 15,
+    "location": {
+      "provinceCode": "32",
+      "provinceName": "Jawa Barat",
+      "regencyCode": "3273",
+      "regencyName": "Kota Bandung",
+      "districtCode": "327301",
+      "districtName": "Coblong",
+      "fullAddress": "Jl. Dago No. 123, Bandung",
+      "latitude": -6.8915,
+      "longitude": 107.6107
+    },
+    "facilities": [...],
+    "rules": [...],
+    "images": [
+      {
+        "id": "img123...",
+        "category": "BUILDING_PHOTOS",
+        "imageUrl": "https://cloudinary.com/...",
+        "caption": "Tampak depan",
+        "sortOrder": 0
+      }
+    ],
+    "rooms": [
+      {
+        "id": "room123...",
+        "roomNumber": "101",
+        "floor": 1,
+        "roomType": "Standard",
+        "description": "Kamar nyaman dengan AC",
+        "size": "3x4 meter",
+        "monthlyPrice": 1500000,
+        "dailyPrice": 75000,
+        "depositRequired": true,
+        "depositType": "PERCENTAGE",
+        "depositValue": 50,
+        "facilities": [...],
+        "isAvailable": true,
+        "images": [...]
+      }
+    ],
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+**Response Error (400):**
+```json
+{
+  "success": false,
+  "error": "Invalid property ID format",
+  "details": [...]
+}
+```
+
+**Response Error (404):**
+```json
+{
+  "success": false,
+  "error": "Property not found or not available for public viewing"
+}
+```
+
 ## 📝 Notes
 
 - API ini hanya menampilkan properti dengan status `APPROVED`
@@ -273,3 +359,4 @@ Setelah import ke Postman, Anda dapat:
 - Gambar utama diambil dari kategori `BUILDING_PHOTOS` dengan `sortOrder` terkecil
 - Pagination maksimal 50 items per halaman untuk performa optimal
 - Semua filter bersifat opsional dan dapat dikombinasikan
+- API detail properti menampilkan semua data lengkap termasuk semua room dan gambar

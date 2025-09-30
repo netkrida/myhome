@@ -1,14 +1,67 @@
 "use client";
 
-import { useState } from "react";
-import { Search, MapPin, Calendar, Users, Filter, Sparkles } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import type { LucideIcon } from "lucide-react";
+import Image from "next/image";
+import { Search, MapPin, Users, Sparkles, UserRoundCheck, Venus, ChevronLeft, ChevronRight, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+
+type HeroTabBadgeTone = "info" | "danger" | "success";
+
+type HeroTab = {
+  id: string;
+  label: string;
+  icon?: LucideIcon;
+  iconSrc?: string;
+  iconAlt?: string;
+  gradient: string;
+  iconColor: string;
+  badge?: {
+    label: string;
+    tone?: HeroTabBadgeTone;
+  };
+};
+
+const HERO_TAB_ITEMS: HeroTab[] = [
+  {
+    id: "KOS_ALL",
+    label: "Cari Kos",
+    icon: MapPin,
+    iconAlt: "Ikon cari kos",
+    gradient: "from-sky-400 via-blue-400 to-blue-600",
+    iconColor: "text-blue-600",
+  },
+  {
+    id: "KOS_PUTRA",
+    label: "Kos Putra",
+    icon: UserRoundCheck,
+    iconAlt: "Ikon kos putra",
+    gradient: "from-indigo-400 via-blue-500 to-indigo-600",
+    iconColor: "text-indigo-600",
+  },
+  {
+    id: "KOS_PUTRI",
+    label: "Kos Putri",
+    icon: Venus,
+    iconAlt: "Ikon kos putri",
+    gradient: "from-pink-400 via-rose-400 to-pink-600",
+    iconColor: "text-rose-500",
+  },
+  {
+    id: "KOS_CAMPUR",
+    label: "Kos Campur",
+    icon: Users,
+    iconAlt: "Ikon kos campur",
+    gradient: "from-purple-400 via-violet-500 to-purple-600",
+    iconColor: "text-purple-500",
+  },
+];
+
 
 export function HeroSearch() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,6 +69,59 @@ export function HeroSearch() {
   const [propertyType, setPropertyType] = useState("");
   const [priceRange, setPriceRange] = useState("");
   const [activeTab, setActiveTab] = useState("KOS_ALL");
+
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = () => {
+    const node = scrollContainerRef.current;
+
+    if (!node) {
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
+
+    const { scrollLeft, scrollWidth, clientWidth } = node;
+    setCanScrollLeft(scrollLeft > 8);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 8);
+  };
+
+  useEffect(() => {
+    const node = scrollContainerRef.current;
+
+    const handleScroll = () => updateScrollState();
+    const handleResize = () => updateScrollState();
+
+    updateScrollState();
+
+    if (node) {
+      node.addEventListener("scroll", handleScroll);
+    }
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      if (node) {
+        node.removeEventListener("scroll", handleScroll);
+      }
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  const scrollTabs = (direction: "left" | "right") => {
+    const node = scrollContainerRef.current;
+
+    if (!node) {
+      return;
+    }
+
+    const scrollAmount = direction === "left" ? -220 : 220;
+    node.scrollBy({ left: scrollAmount, behavior: "smooth" });
+
+    window.setTimeout(updateScrollState, 260);
+  };
 
   const popularLocations = [
     "Malang", "Yogyakarta", "Bandung", "Surabaya", "Jakarta Selatan", "Semarang", "Depok", "Bogor"
@@ -58,134 +164,213 @@ export function HeroSearch() {
         </div>
 
         {/* Search Card */}
-        <Card className="max-w-5xl mx-auto shadow-2xl border-0 animate-fade-in-up transition-all duration-500">
-          <CardContent className="p-6">
-            {/* Search Tabs */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              <Badge
-                variant={activeTab === "KOS_ALL" ? "default" : "outline"}
-                className={`px-4 py-2 cursor-pointer transition-all ${activeTab === "KOS_ALL" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-gray-50 text-blue-700"}`}
-                onClick={() => setActiveTab("KOS_ALL")}
-              >
-                <MapPin className="h-4 w-4 mr-2" />
-                Cari Kos
-              </Badge>
-              <Badge
-                variant={activeTab === "KOS_PUTRA" ? "default" : "outline"}
-                className={`px-4 py-2 cursor-pointer transition-all ${activeTab === "KOS_PUTRA" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-gray-50 text-blue-700"}`}
-                onClick={() => setActiveTab("KOS_PUTRA")}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Kos Putra
-              </Badge>
-              <Badge
-                variant={activeTab === "KOS_PUTRI" ? "default" : "outline"}
-                className={`px-4 py-2 cursor-pointer transition-all ${activeTab === "KOS_PUTRI" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-gray-50 text-blue-700"}`}
-                onClick={() => setActiveTab("KOS_PUTRI")}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Kos Putri
-              </Badge>
-              <Badge
-                variant={activeTab === "KOS_CAMPUR" ? "default" : "outline"}
-                className={`px-4 py-2 cursor-pointer transition-all ${activeTab === "KOS_CAMPUR" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-gray-50 text-blue-700"}`}
-                onClick={() => setActiveTab("KOS_CAMPUR")}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Kos Campur
-              </Badge>
-            </div>
+        <div className="flex justify-center">
+          <Card className="relative w-full max-w-[1100px] overflow-visible rounded-[36px] border border-white/50 bg-white/95 shadow-2xl backdrop-blur">
+            <div className="absolute left-1/2 -top-12 z-30 flex w-full -translate-x-1/2 justify-center px-4">
+              <div className="flex w-full max-w-[860px] items-center gap-2.5 rounded-full border border-white/70 bg-white/95 px-4 py-2 shadow-xl">
+                <button
+                  type="button"
+                  onClick={() => scrollTabs("left")}
+                  aria-label="Gulir kiri"
+                  disabled={!canScrollLeft}
+                  className={cn(
+                    "hidden sm:flex h-11 w-11 items-center justify-center rounded-full bg-white text-blue-600 shadow-lg shadow-blue-500/10 transition-all duration-300",
+                    "hover:bg-blue-50",
+                    "disabled:opacity-0 disabled:pointer-events-none"
+                  )}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <div
+                  ref={scrollContainerRef}
+                  className="flex w-full flex-1 items-center gap-3 overflow-x-auto px-1 py-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {HERO_TAB_ITEMS.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    const Icon = tab.icon;
 
-            {/* Search Form */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-              {/* Location Input */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Lokasi</label>
-                <div className="relative group">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
-                  <Input
-                    placeholder="Mau ke mana?"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="pl-10 focus:ring-2 focus:ring-blue-500 transition-all"
-                  />
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveTab(tab.id)}
+                        aria-pressed={isActive}
+                        className={cn(
+                          "group relative flex min-w-[130px] items-start gap-2.5 rounded-full px-4 sm:px-5 pt-4 pb-1.5 text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+                          "hover:-translate-y-0.5",
+                          isActive
+                            ? "bg-gradient-to-r from-blue-600 via-sky-500 to-blue-600 text-white shadow-lg shadow-blue-500/30"
+                            : "bg-transparent text-gray-600 hover:bg-blue-50"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "relative flex h-8 w-8 -translate-y-4 items-center justify-center overflow-hidden rounded-full transition-all duration-300 ring-3 ring-white/90",
+                            isActive ? "shadow-lg shadow-blue-500/40" : "shadow-sm"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "absolute inset-0 rounded-full bg-gradient-to-br transition-opacity duration-300",
+                              tab.gradient,
+                              isActive ? "opacity-100" : "opacity-90 group-hover:opacity-100"
+                            )}
+                          />
+                          <span className="absolute inset-x-1.5 top-1 h-1 rounded-full bg-white/70 opacity-70 blur-[1px]" />
+                          <span className="absolute inset-x-2 bottom-0.5 h-1.5 rounded-full bg-black/25 opacity-20 blur-[4px] group-hover:opacity-30" />
+                          {tab.iconSrc ? (
+                            <Image
+                              src={tab.iconSrc}
+                              alt={tab.iconAlt ?? tab.label}
+                              width={24}
+                              height={24}
+                              className="relative z-10 h-6 w-6 object-contain"
+                            />
+                          ) : Icon ? (
+                            <Icon
+                              className={cn(
+                                "relative z-10 h-4 w-4 transition-colors duration-300",
+                                isActive ? "text-white" : tab.iconColor
+                              )}
+                            />
+                          ) : null}
+                        </span>
+                        <span className="flex flex-1 items-start gap-2 -mt-1">
+                          <span
+                            className={cn(
+                              "whitespace-nowrap transition-colors duration-300 leading-tight",
+                              isActive ? "text-white" : "text-gray-700 group-hover:text-blue-600"
+                            )}
+                          >
+                            {tab.label}
+                          </span>
+                          {tab.badge ? (
+                            <span
+                              className={cn(
+                                "mt-0.5 rounded-full px-2 py-[2px] text-xs font-semibold uppercase tracking-tight shadow-sm",
+                                tab.badge.tone === "danger"
+                                  ? "bg-red-500 text-white"
+                                  : tab.badge.tone === "success"
+                                  ? "bg-emerald-500 text-white"
+                                  : "bg-blue-100 text-blue-700"
+                              )}
+                            >
+                              {tab.badge.label}
+                            </span>
+                          ) : null}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => scrollTabs("right")}
+                  aria-label="Gulir kanan"
+                  disabled={!canScrollRight}
+                  className={cn(
+                    "flex h-11 w-11 items-center justify-center rounded-full bg-white text-blue-600 shadow-lg shadow-blue-500/10 transition-all duration-300",
+                    "hover:bg-blue-50",
+                    "disabled:opacity-30 disabled:shadow-none"
+                  )}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <CardContent className="px-6 pt-14 pb-8 md:px-8">
+              <div className="mx-auto w-full max-w-[1280px]">
+                <div className="grid items-center gap-3 rounded-3xl bg-white/95 px-4 py-3 shadow-lg ring-1 ring-blue-100/70 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.2fr_1.2fr_1fr_1fr_auto] lg:gap-2 lg:[&>div]:px-4 lg:[&>div:not(:last-child)]:border-r lg:[&>div:not(:last-child)]:border-blue-100/80">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-500">
+                      <MapPin className="h-4 w-4" />
+                    </span>
+                    <div className="flex w-full flex-col">
+                      <label htmlFor="hero-location" className="text-[11px] font-semibold uppercase tracking-wide text-blue-400">Lokasi</label>
+                      <Input
+                        id="hero-location"
+                        placeholder="Pilih"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        className="h-12 w-full border-none bg-transparent px-0 text-sm font-semibold text-gray-700 placeholder:text-gray-400 focus-visible:border-none focus-visible:outline-none focus-visible:ring-0"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-500">
+                      <Search className="h-4 w-4" />
+                    </span>
+                    <div className="flex w-full flex-col">
+                      <label htmlFor="hero-search" className="text-[11px] font-semibold uppercase tracking-wide text-blue-400">Nama kos</label>
+                      <Input
+                        id="hero-search"
+                        placeholder="Cari"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-12 w-full border-none bg-transparent px-0 text-sm font-semibold text-gray-700 placeholder:text-gray-400 focus-visible:border-none focus-visible:outline-none focus-visible:ring-0"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-500">
+                      <Users className="h-4 w-4" />
+                    </span>
+                    <div className="flex w-full flex-col">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-400">Tipe kos</span>
+                      <Select value={propertyType} onValueChange={setPropertyType}>
+                        <SelectTrigger className="h-12 w-full border-none bg-transparent px-0 text-sm font-semibold text-gray-700 shadow-none focus:ring-0 focus:ring-offset-0 data-[placeholder]:text-gray-400">
+                          <SelectValue placeholder="Pilih" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border border-blue-100">
+                          <SelectItem value="KOS_PUTRA">Kos Putra</SelectItem>
+                          <SelectItem value="KOS_PUTRI">Kos Putri</SelectItem>
+                          <SelectItem value="KOS_CAMPUR">Kos Campur</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-500">
+                      <Wallet className="h-4 w-4" />
+                    </span>
+                    <div className="flex w-full flex-col">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-400">Rentang harga</span>
+                      <Select value={priceRange} onValueChange={setPriceRange}>
+                        <SelectTrigger className="h-12 w-full border-none bg-transparent px-0 text-sm font-semibold text-gray-700 shadow-none focus:ring-0 focus:ring-offset-0 data-[placeholder]:text-gray-400">
+                          <SelectValue placeholder="Pilih" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border border-blue-100">
+                          <SelectItem value="0-1000000">&lt; Rp 1 Juta</SelectItem>
+                          <SelectItem value="1000000-2000000">Rp 1-2 Juta</SelectItem>
+                          <SelectItem value="2000000-3000000">Rp 2-3 Juta</SelectItem>
+                          <SelectItem value="3000000+">&gt; Rp 3 Juta</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex w-full justify-center sm:justify-end">
+                    <Button
+                      onClick={handleSearch}
+                      className="h-12 min-w-[140px] rounded-2xl bg-blue-600 px-6 text-sm font-semibold shadow-lg shadow-blue-500/30 transition-transform hover:-translate-y-0.5 hover:bg-blue-700 sm:w-full lg:w-auto"
+                    >
+                      Cari Kos
+                    </Button>
+                  </div>
                 </div>
               </div>
-
-              {/* Property Type */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Tipe Kos</label>
-                <Select value={propertyType} onValueChange={setPropertyType}>
-                  <SelectTrigger className="focus:ring-2 focus:ring-blue-500 transition-all">
-                    <SelectValue placeholder="Pilih tipe" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="KOS_PUTRA">Kos Putra</SelectItem>
-                    <SelectItem value="KOS_PUTRI">Kos Putri</SelectItem>
-                    <SelectItem value="KOS_CAMPUR">Kos Campur</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Price Range */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Harga</label>
-                <Select value={priceRange} onValueChange={setPriceRange}>
-                  <SelectTrigger className="focus:ring-2 focus:ring-blue-500 transition-all">
-                    <SelectValue placeholder="Range harga" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0-1000000">&lt; Rp 1 Juta</SelectItem>
-                    <SelectItem value="1000000-2000000">Rp 1-2 Juta</SelectItem>
-                    <SelectItem value="2000000-3000000">Rp 2-3 Juta</SelectItem>
-                    <SelectItem value="3000000+">&gt; Rp 3 Juta</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Search Button */}
-              <div className="space-y-2 flex flex-col justify-end">
-                <label className="text-sm font-medium text-gray-700 opacity-0">Search</label>
-                <Button 
-                  onClick={handleSearch}
-                  className="w-full bg-blue-600 hover:bg-blue-700 h-10 transition-all shadow-md hover:scale-105"
-                >
-                  <Search className="h-4 w-4 mr-2" />
-                  Cari Kos
-                </Button>
-              </div>
-            </div>
-
-            {/* Advanced Search */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-800 flex items-center gap-2">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filter Lanjutan
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 bg-white text-gray-800 shadow-lg rounded-lg">
-                  <div className="font-semibold mb-2">Filter Lanjutan</div>
-                  {/* Tambahkan filter lanjutan di sini */}
-                  <div className="space-y-2">
-                    <Input placeholder="Fasilitas (AC, Wifi, dll)" className="w-full" />
-                    <Input placeholder="Jarak ke kampus" className="w-full" />
-                    {/* ...tambahkan filter lain sesuai kebutuhan... */}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              <div className="text-sm text-gray-500 text-center sm:text-right flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-yellow-400 animate-bounce" />
-                Yuk, cek ada promo apa saja yang bisa kamu pakai biar hemat!{" "}
-                <Button variant="link" className="p-0 h-auto text-blue-600 hover:text-blue-700">
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-blue-100/70 pt-4 text-sm text-gray-600">
+                <div className="flex items-center gap-3">
+                  <span className="max-w-xl">
+                    Yuk, cek ada promo apa saja yang bisa kamu pakai biar hemat!
+                  </span>
+                </div>
+                <Button variant="link" className="p-0 text-blue-600 hover:text-blue-700">
                   Cek promonya sekarang!
                 </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Popular Locations */}
         <div className="max-w-5xl mx-auto mt-8">
@@ -234,3 +419,6 @@ export function HeroSearch() {
     </section>
   );
 }
+
+
+
