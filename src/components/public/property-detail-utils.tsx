@@ -60,7 +60,7 @@ const currencyFormatter = new Intl.NumberFormat("id-ID", {
 });
 
 export const magicCardClass =
-  "overflow-hidden rounded-3xl border border-slate-200/60 bg-white/90 shadow-[0_25px_45px_-25px_rgba(15,23,42,0.35)] backdrop-blur";
+  "overflow-hidden rounded-3xl border border-border/70 bg-card/95 text-foreground shadow-[0_25px_45px_-25px_rgba(15,23,42,0.35)] backdrop-blur transition-colors dark:border-border/40 dark:bg-card/70 dark:text-foreground dark:shadow-[0_25px_45px_-25px_rgba(15,23,42,0.65)]";
 
 export function getPropertyTypeMeta(propertyType: PropertyType) {
   return propertyTypeMeta[propertyType];

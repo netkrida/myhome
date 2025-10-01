@@ -22,19 +22,19 @@ interface PropertyDetailRoomsProps {
 export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetailRoomsProps) {
   if (property.rooms.length === 0) {
     return (
-      <section className="space-y-6">
+      <section className="space-y-6 transition-colors">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-900">Daftar Kamar</h2>
-            <p className="text-sm text-slate-500">Pilihan kamar tersedia lengkap dengan fasilitas dan harga.</p>
+            <h2 className="text-2xl font-semibold text-foreground">Daftar Kamar</h2>
+            <p className="text-sm text-muted-foreground">Pilihan kamar tersedia lengkap dengan fasilitas dan harga.</p>
           </div>
-          <Badge className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] border-slate-200 bg-slate-200 text-slate-700">
+          <Badge className="rounded-full border border-border/60 bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             {roomCountLabel}
           </Badge>
         </div>
 
         <Card className={magicCardClass}>
-          <CardContent className="py-14 text-center text-sm text-slate-500">
+          <CardContent className="py-14 text-center text-sm text-muted-foreground">
             Belum ada kamar yang dapat ditampilkan untuk saat ini.
           </CardContent>
         </Card>
@@ -43,17 +43,17 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
   }
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 transition-colors">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-slate-900">Daftar Kamar</h2>
-          <p className="text-sm text-slate-500">Pilihan kamar tersedia lengkap dengan fasilitas dan harga.</p>
+          <h2 className="text-2xl font-semibold text-foreground">Daftar Kamar</h2>
+          <p className="text-sm text-muted-foreground">Pilihan kamar tersedia lengkap dengan fasilitas dan harga.</p>
         </div>
         <Badge
           className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${
             property.availableRooms > 0
-              ? "border-emerald-200 bg-emerald-500 text-white"
-              : "border-slate-200 bg-slate-200 text-slate-700"
+              ? "border-emerald-300/70 bg-emerald-500 text-white dark:border-emerald-400/40 dark:bg-emerald-500/20 dark:text-emerald-200"
+              : "border-border/60 bg-muted text-muted-foreground"
           }`}
         >
           {roomCountLabel}
@@ -70,10 +70,10 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
           const dailyPrice = room.dailyPrice ? formatCurrency(room.dailyPrice) : null;
 
           return (
-            <Card key={room.id} className={`${magicCardClass} overflow-hidden`}> 
-              <CardContent className="flex flex-col gap-6 p-5 md:flex-row md:items-stretch md:gap-8">
+            <Card key={room.id} className={`${magicCardClass} overflow-hidden`}>
+              <CardContent className="flex flex-col gap-6 p-5 transition-colors md:flex-row md:items-stretch md:gap-8">
                 <div className="md:w-64">
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
                     {primaryImage ? (
                       <Image
                         src={primaryImage.imageUrl}
@@ -83,7 +83,7 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                         className="object-cover transition duration-700 hover:scale-105"
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center bg-slate-100 text-slate-400">
+                      <div className="flex h-full items-center justify-center bg-muted text-muted-foreground/60">
                         <BedDouble className="h-10 w-10" />
                       </div>
                     )}
@@ -92,7 +92,7 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                         1/{room.images.length}
                       </div>
                     )}
-                    <Badge className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700">
+                    <Badge className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-card/90 px-3 py-1 text-xs font-semibold text-foreground/80">
                       <Sparkles className="h-3.5 w-3.5 text-blue-500" />
                       {room.isAvailable ? "Best pick" : "Fully booked"}
                     </Badge>
@@ -103,8 +103,8 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                   <div className="space-y-3">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-1">
-                        <h3 className="text-lg font-semibold text-slate-900">{room.roomType}</h3>
-                        <CardDescription className="space-x-2 text-sm text-slate-600">
+                        <h3 className="text-lg font-semibold text-foreground">{room.roomType}</h3>
+                        <CardDescription className="space-x-2 text-sm text-muted-foreground">
                           <span className="inline-flex items-center gap-1">
                             <BedDouble className="h-4 w-4 text-blue-500" />
                             Kamar {room.roomNumber}
@@ -120,20 +120,20 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                             </span>
                           )}
                         </CardDescription>
-                        <div className="inline-flex items-center gap-2 text-sm text-slate-500">
+                        <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4 text-blue-500" />
                           {property.location.districtName}, {property.location.regencyName}
                         </div>
                         {room.description && (
-                          <p className="text-sm text-slate-600">{room.description}</p>
+                          <p className="text-sm text-muted-foreground">{room.description}</p>
                         )}
                       </div>
 
                       <Badge
                         className={`w-fit rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] ${
                           room.isAvailable
-                            ? "border-emerald-200 bg-emerald-500 text-white"
-                            : "border-slate-200 bg-slate-200 text-slate-700"
+                            ? "border-emerald-300/70 bg-emerald-500 text-white dark:border-emerald-400/30 dark:bg-emerald-500/20 dark:text-emerald-200"
+                            : "border-border/60 bg-muted text-muted-foreground"
                         }`}
                       >
                         {room.isAvailable ? "Tersedia" : "Tidak tersedia"}
@@ -141,9 +141,9 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                     </div>
 
                     {highlightFacilities.length > 0 && (
-                      <div className="rounded-2xl border border-slate-200/70 bg-slate-50/60 p-4">
-                        <div className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Fasilitas Unggulan</div>
-                        <ul className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                      <div className="rounded-2xl border border-border/60 bg-muted/40 p-4">
+                        <div className="text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground/80">Fasilitas Unggulan</div>
+                        <ul className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                           {highlightFacilities.map((facility) => (
                             <li key={facility.id} className="flex items-start gap-2">
                               <span className="mt-1 inline-flex h-1.5 w-1.5 rounded-full bg-blue-500" />
@@ -155,14 +155,14 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                     )}
 
                     {roomFacilityEntries.length > 0 && (
-                      <details className="group rounded-2xl border border-slate-200/70 bg-white/70 p-4">
-                        <summary className="cursor-pointer text-sm font-semibold text-blue-600 transition group-open:text-blue-700">
+                      <details className="group rounded-2xl border border-border/60 bg-card/70 p-4">
+                        <summary className="cursor-pointer text-sm font-semibold text-blue-600 transition group-open:text-blue-700 dark:text-blue-300 dark:group-open:text-blue-200">
                           Lihat semua fasilitas
                         </summary>
-                        <div className="mt-3 space-y-4 text-sm text-slate-600">
+                        <div className="mt-3 space-y-4 text-sm text-muted-foreground">
                           {roomFacilityEntries.map(([category, items]) => (
                             <div key={category} className="space-y-2">
-                              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
+                              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground/80">
                                 {resolveFacilityLabel(category)}
                               </div>
                               <div className="flex flex-wrap gap-2">
@@ -170,7 +170,7 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                                   <Badge
                                     key={facility.id}
                                     variant="outline"
-                                    className="rounded-full border-slate-200 bg-white px-3 py-1 text-[13px] text-slate-600"
+                                    className="rounded-full border-border bg-card px-3 py-1 text-[13px] text-muted-foreground"
                                   >
                                     {facility.name}
                                   </Badge>
@@ -183,26 +183,26 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                     )}
                   </div>
 
-                  <div className="grid gap-4 rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm md:grid-cols-[1.2fr_minmax(0,1fr)]">
-                    <div className="space-y-3 text-sm text-slate-600">
+                  <div className="grid gap-4 rounded-2xl border border-border/70 bg-card/90 p-4 shadow-sm transition-colors md:grid-cols-[1.2fr_minmax(0,1fr)]">
+                    <div className="space-y-3 text-sm text-muted-foreground">
                       <div className="flex items-start gap-3">
                         <ShieldCheck className="mt-0.5 h-4 w-4 text-blue-500" />
                         <div>
-                          <div className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Ketentuan Deposit</div>
-                          <div className="mt-1 font-medium text-slate-800">{formatDeposit(room)}</div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground/80">Ketentuan Deposit</div>
+                          <div className="mt-1 font-medium text-foreground">{formatDeposit(room)}</div>
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
                         <DoorOpen className="mt-0.5 h-4 w-4 text-blue-500" />
                         <div>
-                          <div className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Status Kamar</div>
-                          <div className="mt-1 font-medium text-slate-800">
+                          <div className="text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground/80">Status Kamar</div>
+                          <div className="mt-1 font-medium text-foreground">
                             {room.isAvailable ? "Siap disewa" : "Sedang tidak tersedia"}
                           </div>
                         </div>
                       </div>
                       {dailyPrice && (
-                        <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
                           Promo harian mulai {dailyPrice}
                         </div>
                       )}
@@ -212,20 +212,20 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                       <div className="space-y-1">
                         {monthlyPrice ? (
                           <>
-                            <div className="text-xl font-semibold text-rose-600">{monthlyPrice}</div>
-                            <div className="text-xs text-slate-500">/bulan (harga belum termasuk pajak)</div>
+                            <div className="text-xl font-semibold text-rose-600 dark:text-rose-300">{monthlyPrice}</div>
+                            <div className="text-xs text-muted-foreground">/bulan (harga belum termasuk pajak)</div>
                           </>
                         ) : (
-                          <div className="text-sm text-slate-500">Hubungi pemilik untuk harga sewa.</div>
+                          <div className="text-sm text-muted-foreground">Hubungi pemilik untuk harga sewa.</div>
                         )}
                         {dailyPrice && (
-                          <div className="text-[13px] text-slate-500">Tarif harian: {dailyPrice}</div>
+                          <div className="text-[13px] text-muted-foreground">Tarif harian: {dailyPrice}</div>
                         )}
                       </div>
-                      <Button size="lg" className="w-full max-w-[160px] rounded-full bg-blue-600 text-white hover:bg-blue-700">
+                      <Button size="lg" className="w-full max-w-[160px] rounded-full bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
                         Pesan
                       </Button>
-                      <button type="button" className="text-xs font-semibold text-blue-600 transition hover:text-blue-700">
+                      <button type="button" className="text-xs font-semibold text-blue-600 transition hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200">
                         Lihat detail
                       </button>
                     </div>

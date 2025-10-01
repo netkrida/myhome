@@ -26,16 +26,16 @@ export function PropertyDetailFacilities({ property }: PropertyDetailFacilitiesP
     <div className="grid gap-8 lg:grid-cols-2">
       <Card className={magicCardClass}>
         <CardHeader>
-          <CardTitle className="text-2xl">Fasilitas Properti</CardTitle>
-          <CardDescription>Kenyamanan penunjang yang tersedia untuk penghuni.</CardDescription>
+          <CardTitle className="text-2xl text-slate-900 dark:text-slate-100">Fasilitas Properti</CardTitle>
+          <CardDescription className="text-slate-600 dark:text-slate-300">Kenyamanan penunjang yang tersedia untuk penghuni.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {facilityEntries.length === 0 ? (
-            <p className="text-sm text-slate-500">Belum ada data fasilitas.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada data fasilitas.</p>
           ) : (
             facilityEntries.map(([category, items]) => (
               <div key={category} className="space-y-3">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400">
                   {iconForFacilityCategory(category)}
                   {resolveFacilityLabel(category)}
                 </div>
@@ -44,7 +44,7 @@ export function PropertyDetailFacilities({ property }: PropertyDetailFacilitiesP
                     <Badge
                       key={facility.id}
                       variant="outline"
-                      className="rounded-full border-slate-200 bg-white px-3 py-1 text-[13px] font-medium text-slate-600"
+                      className="rounded-full border-slate-200 bg-white px-3 py-1 text-[13px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                     >
                       {facility.name}
                     </Badge>
@@ -58,17 +58,17 @@ export function PropertyDetailFacilities({ property }: PropertyDetailFacilitiesP
 
       <Card className={magicCardClass}>
         <CardHeader>
-          <CardTitle className="text-2xl">Peraturan Penghuni</CardTitle>
-          <CardDescription>Pedoman kenyamanan dan keamanan bersama.</CardDescription>
+          <CardTitle className="text-2xl text-slate-900 dark:text-slate-100">Peraturan Penghuni</CardTitle>
+          <CardDescription className="text-slate-600 dark:text-slate-300">Pedoman kenyamanan dan keamanan bersama.</CardDescription>
         </CardHeader>
         <CardContent>
           {property.rules.length === 0 ? (
-            <p className="text-sm text-slate-500">Belum ada peraturan yang dicantumkan.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada peraturan yang dicantumkan.</p>
           ) : (
-            <ul className="space-y-3 text-sm text-slate-600">
+            <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
               {property.rules.map((rule) => (
                 <li key={rule.id} className="flex items-start gap-3">
-                  <ShieldCheck className="mt-0.5 h-4 w-4 text-blue-500" />
+                  <ShieldCheck className="mt-0.5 h-4 w-4 text-blue-500 dark:text-blue-300" />
                   <span>{rule.name}</span>
                 </li>
               ))}

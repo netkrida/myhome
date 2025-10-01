@@ -22,15 +22,15 @@ interface PublicPropertyCardProps {
 const typeConfig: Record<PropertyType, { label: string; badgeClass: string }> = {
   [PropertyType.MALE_ONLY]: {
     label: "Kos Putra",
-    badgeClass: "bg-blue-50 text-blue-600 border border-blue-100",
+    badgeClass: "bg-blue-50 text-blue-600 border border-blue-100 dark:border-blue-900 dark:bg-blue-900/40 dark:text-blue-100",
   },
   [PropertyType.FEMALE_ONLY]: {
     label: "Kos Putri",
-    badgeClass: "bg-blue-50 text-blue-600 border border-blue-100",
+    badgeClass: "bg-blue-50 text-blue-600 border border-blue-100 dark:border-blue-900 dark:bg-blue-900/40 dark:text-blue-100",
   },
   [PropertyType.MIXED]: {
     label: "Kos Campur",
-    badgeClass: "bg-blue-50 text-blue-600 border border-blue-100",
+    badgeClass: "bg-blue-50 text-blue-600 border border-blue-100 dark:border-blue-900 dark:bg-blue-900/40 dark:text-blue-100",
   },
 };
 
@@ -49,14 +49,14 @@ function getFacilityIcon(name: string) {
   const lower = name.toLowerCase();
 
   if (lower.includes("wifi") || lower.includes("internet")) {
-    return <Wifi className="h-3.5 w-3.5 text-blue-500" />;
+    return <Wifi className="h-3.5 w-3.5 text-blue-500 dark:text-blue-300" />;
   }
 
   if (lower.includes("parkir") || lower.includes("mobil") || lower.includes("motor")) {
-    return <Car className="h-3.5 w-3.5 text-blue-500" />;
+    return <Car className="h-3.5 w-3.5 text-blue-500 dark:text-blue-300" />;
   }
 
-  return <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />;
+  return <CheckCircle2 className="h-3.5 w-3.5 text-blue-500 dark:text-blue-300" />;
 }
 
 export function PublicPropertyCard({
@@ -84,14 +84,14 @@ export function PublicPropertyCard({
   return (
     <Card
       className={cn(
-        "group relative flex h-full w-full max-w-[18rem] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-lg",
+        "group relative flex h-full w-full max-w-[18rem] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-900/90 dark:hover:shadow-[0_20px_40px_-25px_rgba(15,23,42,0.65)]",
         className,
       )}
     >
       <div className="relative h-36 w-full overflow-hidden">
         {property.mainImage && !imageError ? (
           <>
-            {isImageLoading && <div className="absolute inset-0 animate-pulse bg-slate-200" />}
+            {isImageLoading && <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-700/60" />}
             <Image
               src={property.mainImage}
               alt={property.name}
@@ -102,8 +102,8 @@ export function PublicPropertyCard({
             />
           </>
         ) : (
-          <div className="flex h-full items-center justify-center bg-slate-100">
-            <span className="text-sm font-medium text-slate-500">Foto tidak tersedia</span>
+          <div className="flex h-full items-center justify-center bg-slate-100 dark:bg-slate-800">
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Foto tidak tersedia</span>
           </div>
         )}
 
@@ -117,7 +117,7 @@ export function PublicPropertyCard({
             </Badge>
           )}
           {property.availableRooms > 0 && (
-            <Badge className="rounded-full bg-blue-500 px-2.5 py-1 font-semibold text-white">
+            <Badge className="rounded-full bg-blue-500 px-2.5 py-1 font-semibold text-white dark:bg-blue-500/80">
               {property.availableRooms} kamar
             </Badge>
           )}
@@ -127,12 +127,12 @@ export function PublicPropertyCard({
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="space-y-2">
           <Link href={`/property/${property.id}`} className="block">
-            <h3 className="line-clamp-2 text-[15px] font-semibold text-slate-900 transition group-hover:text-blue-700">
+            <h3 className="line-clamp-2 text-[15px] font-semibold text-slate-900 transition group-hover:text-blue-700 dark:text-slate-100 dark:group-hover:text-blue-300">
               {property.name}
             </h3>
           </Link>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <MapPin className="h-3.5 w-3.5 text-blue-500" />
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
+            <MapPin className="h-3.5 w-3.5 text-blue-500 dark:text-blue-300" />
             <span>
               {property.location.districtName}, {property.location.regencyName}
             </span>
@@ -140,14 +140,14 @@ export function PublicPropertyCard({
         </div>
 
         <div className="space-y-1">
-          <div className="text-[11px] font-medium uppercase tracking-wide text-blue-500">Mulai dari</div>
-          <div className="text-xl font-bold text-blue-700">{formatPrice(property.cheapestMonthlyPrice)}</div>
-          <div className="text-[11px] text-slate-400">Harga belum termasuk pajak</div>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-blue-500 dark:text-blue-300">Mulai dari</div>
+          <div className="text-xl font-bold text-blue-700 dark:text-blue-300">{formatPrice(property.cheapestMonthlyPrice)}</div>
+          <div className="text-[11px] text-slate-400 dark:text-slate-500">Harga belum termasuk pajak</div>
         </div>
 
         {facilities.length > 0 && (
           <div className="space-y-2">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Fasilitas utama
             </div>
             <div className="flex flex-wrap gap-2">
@@ -155,7 +155,7 @@ export function PublicPropertyCard({
                 <Badge
                   key={facility.id}
                   variant="outline"
-                  className="flex items-center gap-1 rounded-full border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600"
+                  className="flex items-center gap-1 rounded-full border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                 >
                   {getFacilityIcon(facility.name)}
                   <span>{facility.name}</span>
@@ -168,7 +168,7 @@ export function PublicPropertyCard({
         <div className="mt-auto flex items-center justify-between">
           <Button
             variant="outline"
-            className="h-9 rounded-full border-blue-100 bg-white px-4 text-xs font-semibold text-blue-600 hover:bg-blue-50"
+            className="h-9 rounded-full border-blue-100 bg-white px-4 text-xs font-semibold text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-200 dark:hover:bg-blue-900/30"
             asChild
           >
             <Link href={`/property/${property.id}`}>Lihat Detail</Link>
@@ -178,7 +178,7 @@ export function PublicPropertyCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full border border-blue-100 text-blue-600 hover:bg-blue-50"
+                className="h-8 w-8 rounded-full border border-blue-100 text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-200 dark:hover:bg-blue-900/30"
                 onClick={(event) => {
                   event.preventDefault();
                   onFavorite(property);
@@ -191,7 +191,7 @@ export function PublicPropertyCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full border border-blue-100 text-blue-600 hover:bg-blue-50"
+                className="h-8 w-8 rounded-full border border-blue-100 text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-200 dark:hover:bg-blue-900/30"
                 onClick={(event) => {
                   event.preventDefault();
                   onShare(property);
