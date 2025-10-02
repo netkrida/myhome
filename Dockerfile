@@ -14,16 +14,19 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
 FROM base AS deps
 RUN apk add --no-cache libc6-compat openssl
 COPY package.json package-lock.json* ./
-RUN npm ci
+# Copy Prisma schema before npm ci (needed for postinstall prisma generate)
+COPY prisma ./prisma
+# Install dependencies without running postinstall scripts first
+RUN npm ci --ignore-scripts
+# Then generate Prisma client explicitly
+RUN npx prisma generate
 
 ################################################################################
 # Build the Next.js application with standalone output
 ################################################################################
 FROM deps AS builder
 COPY . .
-# Generate Prisma client
-RUN npx prisma generate
-# Build the application
+# Build the application (Prisma client already generated in deps stage)
 RUN npm run build
 
 ################################################################################
