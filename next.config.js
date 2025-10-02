@@ -6,6 +6,9 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
+  // Enable standalone output for Docker deployment
+  output: 'standalone',
+
   // Disable ESLint during builds
   eslint: {
     ignoreDuringBuilds: true,
