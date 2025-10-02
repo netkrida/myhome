@@ -319,8 +319,7 @@ export interface PublicPropertyRoomsQuery {
   isAvailable?: boolean;
   minPrice?: number;
   maxPrice?: number;
-  floor?: number;
-  sortBy?: 'roomNumber' | 'floor' | 'monthlyPrice';
+  sortBy?: 'monthlyPrice' | 'roomType';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -340,8 +339,6 @@ export interface PublicPropertyRoomsResponse {
 // Public Room Card DTO (for property rooms list)
 export interface PublicRoomCardDTO {
   id: string;
-  roomNumber: string;
-  floor: number;
   roomType: string;
   description?: string;
   size?: string;
@@ -390,3 +387,73 @@ export const COMMON_ROOM_TYPES: RoomTypeConfig[] = [
     suggestedPriceRange: { min: 1200000, max: 2500000 }
   }
 ];
+
+// Room availability info for individual room
+export interface RoomAvailabilityInfo {
+  id: string;
+  roomNumber: string;
+  floor: number;
+  isAvailable: boolean;
+  isOccupied: boolean;
+  currentBooking?: {
+    id: string;
+    bookingCode: string;
+    checkInDate: Date;
+    checkOutDate?: Date;
+    status: string;
+    customerName: string;
+  };
+  mainImage?: string;
+}
+
+// Room type detail with availability breakdown
+export interface RoomTypeDetailDTO {
+  roomType: string;
+  description?: string;
+  totalRooms: number;
+  availableRooms: number;
+  occupiedRooms: number;
+  pricing: {
+    monthlyPrice: number;
+    dailyPrice?: number;
+    weeklyPrice?: number;
+    quarterlyPrice?: number;
+    yearlyPrice?: number;
+  };
+  depositInfo: {
+    depositRequired: boolean;
+    depositType?: 'PERCENTAGE' | 'FIXED';
+    depositValue?: number;
+  };
+  facilities: RoomFacility[];
+  rooms: RoomAvailabilityInfo[];
+  mainImage?: string;
+}
+
+// Property basic info for room types response
+export interface PropertyBasicInfo {
+  id: string;
+  name: string;
+  propertyType: string;
+  fullAddress: string;
+  totalRooms: number;
+  availableRooms: number;
+}
+
+// Main response for property room types API
+export interface PropertyRoomTypesResponse {
+  property: PropertyBasicInfo;
+  roomTypes: RoomTypeDetailDTO[];
+  summary: {
+    totalRoomTypes: number;
+    totalRooms: number;
+    totalAvailable: number;
+    totalOccupied: number;
+  };
+}
+
+// Query parameters for property room types API
+export interface PropertyRoomTypesQuery {
+  includeOccupied?: boolean; // Include occupied rooms in response
+  roomType?: string; // Filter by specific room type
+}

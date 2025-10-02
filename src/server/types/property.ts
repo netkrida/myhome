@@ -394,8 +394,6 @@ export interface PublicPropertiesResponse {
 // Public Room Detail DTO within property detail context
 export interface PublicPropertyRoomDTO {
   id: string;
-  roomNumber: string;
-  floor: number;
   roomType: string;
   description?: string;
   size?: string;

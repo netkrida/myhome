@@ -140,8 +140,6 @@ Mengambil daftar room dari properti tertentu dengan filtering dan pagination.
     "rooms": [
       {
         "id": "room_123",
-        "roomNumber": "A101",
-        "floor": 1,
         "roomType": "Kamar AC",
         "description": "Kamar nyaman dengan AC",
         "size": "3x4m",
@@ -196,8 +194,7 @@ Mengambil daftar room dari properti tertentu dengan filtering dan pagination.
 - `limit`: Minimum 1, maksimum 50
 - `minPrice`, `maxPrice`: Tidak boleh negatif
 - `minPrice` harus ≤ `maxPrice` jika keduanya ada
-- `floor`: Minimum 1
-- `sortBy`: Hanya menerima nilai yang diizinkan
+- `sortBy`: Hanya menerima nilai yang diizinkan (monthlyPrice, roomType)
 - `sortOrder`: Hanya `asc` atau `desc`
 
 ## 🚀 Usage Examples

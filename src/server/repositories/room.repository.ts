@@ -14,7 +14,12 @@ import type {
   PublicRoomDetailDTO,
   PublicPropertyRoomsQuery,
   PublicPropertyRoomsResponse,
-  PublicRoomCardDTO
+  PublicRoomCardDTO,
+  PropertyRoomTypesResponse,
+  PropertyRoomTypesQuery,
+  RoomTypeDetailDTO,
+  RoomAvailabilityInfo,
+  PropertyBasicInfo
 } from "../types";
 import type { Result } from "../types/result";
 import { ok, fail, notFound, internalError } from "../types/result";
@@ -596,8 +601,7 @@ export class RoomRepository {
       isAvailable,
       minPrice,
       maxPrice,
-      floor,
-      sortBy = "roomNumber",
+      sortBy = "monthlyPrice",
       sortOrder = "asc",
     } = filters;
 
@@ -619,10 +623,6 @@ export class RoomRepository {
         ...(minPrice !== undefined ? { gte: minPrice } : {}),
         ...(maxPrice !== undefined ? { lte: maxPrice } : {}),
       };
-    }
-
-    if (floor !== undefined) {
-      where.floor = floor;
     }
 
     // Get total count
@@ -656,8 +656,6 @@ export class RoomRepository {
 
     const roomCards: PublicRoomCardDTO[] = rooms.map(room => ({
       id: room.id,
-      roomNumber: room.roomNumber,
-      floor: room.floor,
       roomType: room.roomType,
       description: room.description || undefined,
       size: room.size || undefined,
@@ -792,16 +790,219 @@ export class RoomRepository {
    * Check if room number exists in property
    */
   static async roomNumberExists(propertyId: string, roomNumber: string, excludeRoomId?: string): Promise<boolean> {
-    const where: Prisma.RoomWhereInput = { 
-      propertyId, 
-      roomNumber 
+    const where: Prisma.RoomWhereInput = {
+      propertyId,
+      roomNumber
     };
-    
+
     if (excludeRoomId) {
       where.id = { not: excludeRoomId };
     }
 
     const room = await prisma.room.findFirst({ where });
     return !!room;
+  }
+
+  /**
+   * Get property room types with availability information
+   * Only returns data from APPROVED properties
+   */
+  static async getPropertyRoomTypes(
+    propertyId: string,
+    filters: PropertyRoomTypesQuery = {}
+  ): Promise<PropertyRoomTypesResponse | null> {
+    console.log("🔍 RoomRepository.getPropertyRoomTypes - Query:", { propertyId, filters });
+
+    // First check if property exists and is approved
+    const property = await prisma.property.findUnique({
+      where: {
+        id: propertyId,
+        status: 'APPROVED' // Only approved properties are public
+      },
+      select: {
+        id: true,
+        name: true,
+        propertyType: true,
+        fullAddress: true,
+        totalRooms: true,
+        availableRooms: true
+      }
+    });
+
+    if (!property) {
+      console.log("🔍 RoomRepository.getPropertyRoomTypes - Property not found or not approved:", { propertyId });
+      return null;
+    }
+
+    // Build room filter
+    const roomWhere: Prisma.RoomWhereInput = {
+      propertyId,
+    };
+
+    if (filters.roomType) {
+      roomWhere.roomType = filters.roomType;
+    }
+
+    // Get all rooms with their current bookings
+    const rooms = await prisma.room.findMany({
+      where: roomWhere,
+      include: {
+        images: {
+          where: { category: 'ROOM_PHOTOS' },
+          orderBy: { sortOrder: 'asc' },
+          take: 1, // Only main image for performance
+        },
+        bookings: {
+          where: {
+            status: {
+              in: ['CONFIRMED', 'CHECKED_IN', 'DEPOSIT_PAID'] // Active booking statuses
+            },
+            OR: [
+              {
+                checkOutDate: null // Monthly/long-term bookings without checkout date
+              },
+              {
+                checkOutDate: {
+                  gte: new Date() // Bookings that haven't ended yet
+                }
+              }
+            ]
+          },
+          include: {
+            user: {
+              select: {
+                name: true
+              }
+            }
+          },
+          orderBy: { checkInDate: 'desc' },
+          take: 1 // Only current/latest booking
+        }
+      },
+      orderBy: [
+        { roomType: 'asc' },
+        { roomNumber: 'asc' }
+      ]
+    });
+
+    console.log("🔍 RoomRepository.getPropertyRoomTypes - Rooms found:", {
+      propertyId,
+      roomsCount: rooms.length
+    });
+
+    // Group rooms by room type
+    const roomTypeMap = new Map<string, any[]>();
+
+    rooms.forEach(room => {
+      if (!roomTypeMap.has(room.roomType)) {
+        roomTypeMap.set(room.roomType, []);
+      }
+      roomTypeMap.get(room.roomType)!.push(room);
+    });
+
+    // Build room type details
+    const roomTypes: RoomTypeDetailDTO[] = [];
+    let totalAvailable = 0;
+    let totalOccupied = 0;
+
+    for (const [roomType, roomsInType] of roomTypeMap) {
+      const firstRoom = roomsInType[0]; // Use first room for pricing and facilities
+
+      const roomAvailabilityInfos: RoomAvailabilityInfo[] = [];
+      let availableCount = 0;
+      let occupiedCount = 0;
+
+      roomsInType.forEach(room => {
+        const hasActiveBooking = room.bookings && room.bookings.length > 0;
+        const isOccupied = hasActiveBooking;
+        const isAvailable = room.isAvailable && !isOccupied;
+
+        if (isAvailable) availableCount++;
+        if (isOccupied) occupiedCount++;
+
+        const roomInfo: RoomAvailabilityInfo = {
+          id: room.id,
+          roomNumber: room.roomNumber,
+          floor: room.floor,
+          isAvailable,
+          isOccupied,
+          mainImage: room.images[0]?.imageUrl,
+        };
+
+        // Add current booking info if exists
+        if (hasActiveBooking) {
+          const booking = room.bookings[0];
+          roomInfo.currentBooking = {
+            id: booking.id,
+            bookingCode: booking.bookingCode,
+            checkInDate: booking.checkInDate,
+            checkOutDate: booking.checkOutDate || undefined,
+            status: booking.status,
+            customerName: booking.user.name || 'Unknown'
+          };
+        }
+
+        // Include room based on filter
+        if (!filters.includeOccupied && isOccupied) {
+          return; // Skip occupied rooms if not requested
+        }
+
+        roomAvailabilityInfos.push(roomInfo);
+      });
+
+      totalAvailable += availableCount;
+      totalOccupied += occupiedCount;
+
+      const roomTypeDetail: RoomTypeDetailDTO = {
+        roomType,
+        description: firstRoom.description || undefined,
+        totalRooms: roomsInType.length,
+        availableRooms: availableCount,
+        occupiedRooms: occupiedCount,
+        pricing: {
+          monthlyPrice: Number(firstRoom.monthlyPrice),
+          dailyPrice: firstRoom.dailyPrice ? Number(firstRoom.dailyPrice) : undefined,
+          weeklyPrice: firstRoom.weeklyPrice ? Number(firstRoom.weeklyPrice) : undefined,
+          quarterlyPrice: firstRoom.quarterlyPrice ? Number(firstRoom.quarterlyPrice) : undefined,
+          yearlyPrice: firstRoom.yearlyPrice ? Number(firstRoom.yearlyPrice) : undefined,
+        },
+        depositInfo: {
+          depositRequired: firstRoom.depositRequired,
+          depositType: firstRoom.depositType || undefined,
+          depositValue: firstRoom.depositValue ? Number(firstRoom.depositValue) : undefined,
+        },
+        facilities: firstRoom.facilities as any[],
+        rooms: roomAvailabilityInfos,
+        mainImage: firstRoom.images[0]?.imageUrl,
+      };
+
+      roomTypes.push(roomTypeDetail);
+    }
+
+    const response: PropertyRoomTypesResponse = {
+      property: {
+        id: property.id,
+        name: property.name,
+        propertyType: property.propertyType,
+        fullAddress: property.fullAddress,
+        totalRooms: property.totalRooms,
+        availableRooms: property.availableRooms,
+      },
+      roomTypes,
+      summary: {
+        totalRoomTypes: roomTypes.length,
+        totalRooms: rooms.length,
+        totalAvailable,
+        totalOccupied,
+      },
+    };
+
+    console.log("🔍 RoomRepository.getPropertyRoomTypes - Result:", {
+      propertyId,
+      roomTypesCount: roomTypes.length,
+      summary: response.summary
+    });
+
+    return response;
   }
 }

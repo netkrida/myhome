@@ -36,10 +36,10 @@ Tidak diperlukan untuk API public sederhana ini.
 ### 2. GET /api/public/properties/{id}/rooms
 **Purpose**: Mengambil daftar room dari property dengan filtering dan pagination  
 **Access**: Public (no authentication)  
-**Features**: 
+**Features**:
 - Pagination (default: page=1, limit=12)
-- Filtering (roomType, isAvailable, price range, floor)
-- Sorting (roomNumber, floor, monthlyPrice)
+- Filtering (roomType, isAvailable, price range)
+- Sorting (monthlyPrice, roomType)
 
 ## 🔒 Security Features
 
@@ -86,8 +86,6 @@ interface PublicRoomDetailDTO {
 ```typescript
 interface PublicRoomCardDTO {
   id: string;
-  roomNumber: string;
-  floor: number;
   roomType: string;
   description?: string;
   size?: string;

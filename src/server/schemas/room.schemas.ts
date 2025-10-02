@@ -146,8 +146,7 @@ export const publicPropertyRoomsQuerySchema = z.object({
   isAvailable: z.coerce.boolean().optional(),
   minPrice: z.coerce.number().min(0, "Minimum price must be non-negative").optional(),
   maxPrice: z.coerce.number().min(0, "Maximum price must be non-negative").optional(),
-  floor: z.coerce.number().min(1, "Floor must be at least 1").optional(),
-  sortBy: z.enum(["roomNumber", "floor", "monthlyPrice"]).default("roomNumber"),
+  sortBy: z.enum(["monthlyPrice", "roomType"]).default("monthlyPrice"),
   sortOrder: z.enum(["asc", "desc"]).default("asc"),
 }).refine((data) => {
   if (data.minPrice && data.maxPrice) {
@@ -249,6 +248,16 @@ export const roomTypeConfigSchema = z.object({
   }).optional(),
 });
 
+// Property room types schemas
+export const propertyRoomTypesIdSchema = z.object({
+  id: z.string().cuid("Invalid property ID format"),
+});
+
+export const propertyRoomTypesQuerySchema = z.object({
+  includeOccupied: z.string().optional().transform((val) => val === 'true'),
+  roomType: z.string().min(1, "Room type cannot be empty").optional(),
+});
+
 // Export types for TypeScript
 export type CreateRoomStep1Input = z.infer<typeof createRoomStep1Schema>;
 export type CreateRoomStep2Input = z.infer<typeof createRoomStep2Schema>;
@@ -266,3 +275,5 @@ export type BulkUpdateRoomPricingInput = z.infer<typeof bulkUpdateRoomPricingSch
 export type RoomFilterInput = z.infer<typeof roomFilterSchema>;
 export type RoomStatsQueryInput = z.infer<typeof roomStatsQuerySchema>;
 export type RoomTypeConfigInput = z.infer<typeof roomTypeConfigSchema>;
+export type PropertyRoomTypesIdInput = z.infer<typeof propertyRoomTypesIdSchema>;
+export type PropertyRoomTypesQueryInput = z.infer<typeof propertyRoomTypesQuerySchema>;

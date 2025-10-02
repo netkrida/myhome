@@ -767,8 +767,6 @@ export class PropertyRepository {
       })) || [],
       rooms: property.rooms?.map(room => ({
         id: room.id,
-        roomNumber: room.roomNumber,
-        floor: room.floor,
         roomType: room.roomType,
         description: room.description || undefined,
         size: room.size || undefined,

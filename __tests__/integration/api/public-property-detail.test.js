@@ -135,12 +135,14 @@ runner.test('Should return property details for valid approved property', async 
   if (property.rooms.length > 0) {
     const room = property.rooms[0];
     assert(room.id, 'Room should have an ID');
-    assert(room.roomNumber, 'Room should have a roomNumber');
     assert(room.roomType, 'Room should have a roomType');
     assert(typeof room.monthlyPrice === 'number', 'Room should have monthlyPrice number');
     assert(typeof room.isAvailable === 'boolean', 'Room should have isAvailable boolean');
     assert(Array.isArray(room.facilities), 'Room should have facilities array');
     assert(Array.isArray(room.images), 'Room should have images array');
+    // Ensure roomNumber and floor are not present
+    assert(room.roomNumber === undefined, 'Room should not have roomNumber field');
+    assert(room.floor === undefined, 'Room should not have floor field');
   }
   
   console.log(`   📋 Property: ${property.name} (${property.rooms.length} rooms, ${property.images.length} images)`);

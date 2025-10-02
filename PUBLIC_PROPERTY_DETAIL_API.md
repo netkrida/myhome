@@ -85,8 +85,6 @@ Mengambil detail lengkap properti berdasarkan ID.
     "rooms": [
       {
         "id": "room123",
-        "roomNumber": "101",
-        "floor": 1,
         "roomType": "Kamar Standard",
         "description": "Kamar nyaman dengan AC",
         "size": "3x4 meter",
