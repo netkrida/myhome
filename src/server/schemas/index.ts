@@ -8,6 +8,9 @@ export * from "./auth";
 // AdminKos registration schemas
 export * from "./adminkos-registration";
 
+// Customer registration schemas
+export * from "./customer-registration";
+
 // User schemas (excluding duplicates from auth.ts)
 export {
   createUserSchema,

@@ -1,0 +1,331 @@
+{
+  "info": {
+    "name": "MultiKost - Public Rooms API",
+    "description": "API untuk menampilkan detail room dan daftar room dari properti di halaman public. API ini mengikuti 3-tier architecture dan menyediakan data untuk halaman detail room dan property rooms.\n\n## Base URL\n`http://localhost:3000` (Development)\n\n## Authentication\nTidak memerlukan authentication - API ini bersifat public.\n\n## Response Format\nSemua response menggunakan format JSON dengan struktur:\n```json\n{\n  \"success\": boolean,\n  \"data\": object | array,\n  \"error\": string (jika ada error)\n}\n```",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "property_id",
+      "value": "clm123abc456def",
+      "type": "string",
+      "description": "Sample property ID - replace with actual property ID"
+    },
+    {
+      "key": "room_id",
+      "value": "clr123abc456def",
+      "type": "string",
+      "description": "Sample room ID - replace with actual room ID"
+    }
+  ],
+  "item": [
+    {
+      "name": "Public Room Detail",
+      "item": [
+        {
+          "name": "Get Room Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has success field\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"Response has room data\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('roomNumber');",
+                  "    pm.expect(jsonData.data).to.have.property('roomType');",
+                  "    pm.expect(jsonData.data).to.have.property('monthlyPrice');",
+                  "    pm.expect(jsonData.data).to.have.property('property');",
+                  "});",
+                  "",
+                  "pm.test(\"Room has property information\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.property).to.have.property('id');",
+                  "    pm.expect(jsonData.data.property).to.have.property('name');",
+                  "    pm.expect(jsonData.data.property).to.have.property('location');",
+                  "    pm.expect(jsonData.data.property).to.have.property('owner');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/rooms/{{room_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "rooms", "{{room_id}}"]
+            },
+            "description": "Mengambil detail lengkap room berdasarkan ID. Hanya menampilkan room dari properti yang sudah diapprove."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Room Detail - Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has error message\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData.success).to.be.false;",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/rooms/invalid_room_id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "rooms", "invalid_room_id"]
+            },
+            "description": "Test case untuk room yang tidak ditemukan atau tidak tersedia untuk public."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoint untuk mengambil detail room individual"
+    },
+    {
+      "name": "Public Property Rooms",
+      "item": [
+        {
+          "name": "Get Property Rooms - Basic",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has success field\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"Response has rooms and pagination\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData.data).to.have.property('rooms');",
+                  "    pm.expect(jsonData.data).to.have.property('pagination');",
+                  "    pm.expect(jsonData.data.rooms).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test(\"Pagination has required fields\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var pagination = jsonData.data.pagination;",
+                  "    pm.expect(pagination).to.have.property('page');",
+                  "    pm.expect(pagination).to.have.property('limit');",
+                  "    pm.expect(pagination).to.have.property('total');",
+                  "    pm.expect(pagination).to.have.property('totalPages');",
+                  "    pm.expect(pagination).to.have.property('hasNext');",
+                  "    pm.expect(pagination).to.have.property('hasPrev');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties/{{property_id}}/rooms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties", "{{property_id}}", "rooms"]
+            },
+            "description": "Mengambil daftar room dari properti dengan parameter default."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Property Rooms - With Pagination",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties/{{property_id}}/rooms?page=1&limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties", "{{property_id}}", "rooms"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Mengambil daftar room dengan pagination custom."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Property Rooms - With Filters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties/{{property_id}}/rooms?roomType=AC&isAvailable=true&minPrice=1000000&maxPrice=2000000&floor=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties", "{{property_id}}", "rooms"],
+              "query": [
+                {
+                  "key": "roomType",
+                  "value": "AC"
+                },
+                {
+                  "key": "isAvailable",
+                  "value": "true"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "1000000"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "2000000"
+                },
+                {
+                  "key": "floor",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Mengambil daftar room dengan berbagai filter."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Property Rooms - With Sorting",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties/{{property_id}}/rooms?sortBy=monthlyPrice&sortOrder=asc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties", "{{property_id}}", "rooms"],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "monthlyPrice"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": "Mengambil daftar room dengan sorting berdasarkan harga."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Property Rooms - Property Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has error message\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData.success).to.be.false;",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/public/properties/invalid_property_id/rooms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "properties", "invalid_property_id", "rooms"]
+            },
+            "description": "Test case untuk properti yang tidak ditemukan atau tidak tersedia untuk public."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoint untuk mengambil daftar room dari properti tertentu"
+    }
+  ]
+}

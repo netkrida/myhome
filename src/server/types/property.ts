@@ -391,8 +391,8 @@ export interface PublicPropertiesResponse {
   pagination: PaginationDTO;
 }
 
-// Public Room Detail DTO (for property detail page)
-export interface PublicRoomDetailDTO {
+// Public Room Detail DTO within property detail context
+export interface PublicPropertyRoomDTO {
   id: string;
   roomNumber: string;
   floor: number;
@@ -436,7 +436,7 @@ export interface PublicPropertyDetailDTO {
   facilities: PropertyFacility[];
   rules: PropertyRule[];
   images: PropertyImageDTO[];
-  rooms: PublicRoomDetailDTO[];
+  rooms: PublicPropertyRoomDTO[];
   createdAt: Date;
   updatedAt: Date;
 }

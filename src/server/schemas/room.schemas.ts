@@ -131,6 +131,36 @@ export const roomListQuerySchema = z.object({
   path: ["maxPrice"],
 });
 
+// Public room detail ID schema
+export const publicRoomDetailIdSchema = z.object({
+  id: z.string().min(1, "Room ID is required"),
+});
+
+export type PublicRoomDetailIdInput = z.infer<typeof publicRoomDetailIdSchema>;
+
+// Public property rooms query schema
+export const publicPropertyRoomsQuerySchema = z.object({
+  page: z.coerce.number().min(1, "Page must be at least 1").default(1),
+  limit: z.coerce.number().min(1, "Limit must be at least 1").max(50, "Limit must be at most 50").default(12),
+  roomType: z.string().optional(),
+  isAvailable: z.coerce.boolean().optional(),
+  minPrice: z.coerce.number().min(0, "Minimum price must be non-negative").optional(),
+  maxPrice: z.coerce.number().min(0, "Maximum price must be non-negative").optional(),
+  floor: z.coerce.number().min(1, "Floor must be at least 1").optional(),
+  sortBy: z.enum(["roomNumber", "floor", "monthlyPrice"]).default("roomNumber"),
+  sortOrder: z.enum(["asc", "desc"]).default("asc"),
+}).refine((data) => {
+  if (data.minPrice && data.maxPrice) {
+    return data.minPrice <= data.maxPrice;
+  }
+  return true;
+}, {
+  message: "Minimum price cannot exceed maximum price",
+  path: ["maxPrice"],
+});
+
+export type PublicPropertyRoomsQueryInput = z.infer<typeof publicPropertyRoomsQuerySchema>;
+
 // Room availability update schema
 export const updateRoomAvailabilitySchema = z.object({
   isAvailable: z.boolean(),

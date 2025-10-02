@@ -271,7 +271,92 @@ export interface RoomFilterParams {
   floor?: number;
 }
 
+// Public Room Detail DTO (for public room detail page)
+export interface PublicRoomDetailDTO {
+  id: string;
+  roomNumber: string;
+  floor: number;
+  roomType: string;
+  description?: string;
+  size?: string;
+  monthlyPrice: number;
+  dailyPrice?: number;
+  weeklyPrice?: number;
+  quarterlyPrice?: number;
+  yearlyPrice?: number;
+  depositRequired: boolean;
+  depositType?: 'PERCENTAGE' | 'FIXED';
+  depositValue?: number;
+  facilities: RoomFacility[];
+  isAvailable: boolean;
+  images: RoomImageDTO[];
+  property: {
+    id: string;
+    name: string;
+    propertyType: string;
+    location: {
+      provinceName: string;
+      regencyName: string;
+      districtName: string;
+      fullAddress: string;
+    };
+    owner: {
+      id: string;
+      name?: string;
+      email?: string;
+      phoneNumber?: string;
+    };
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
 
+// Public Property Rooms Query Parameters
+export interface PublicPropertyRoomsQuery {
+  page?: number;
+  limit?: number;
+  roomType?: string;
+  isAvailable?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+  floor?: number;
+  sortBy?: 'roomNumber' | 'floor' | 'monthlyPrice';
+  sortOrder?: 'asc' | 'desc';
+}
+
+// Public Property Rooms Response
+export interface PublicPropertyRoomsResponse {
+  rooms: PublicRoomCardDTO[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+// Public Room Card DTO (for property rooms list)
+export interface PublicRoomCardDTO {
+  id: string;
+  roomNumber: string;
+  floor: number;
+  roomType: string;
+  description?: string;
+  size?: string;
+  monthlyPrice: number;
+  dailyPrice?: number;
+  weeklyPrice?: number;
+  quarterlyPrice?: number;
+  yearlyPrice?: number;
+  depositRequired: boolean;
+  depositType?: 'PERCENTAGE' | 'FIXED';
+  depositValue?: number;
+  facilities: RoomFacility[];
+  isAvailable: boolean;
+  mainImage?: string;
+}
 
 // Room Type Configuration
 export interface RoomTypeConfig {

@@ -16,3 +16,6 @@ export * from "./booking.repository";
 
 // Payment repository
 export * from "./payment.repository";
+
+// Customer repository
+export * from "./customer.repository";

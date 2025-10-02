@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Bath, BedDouble, Car, CheckCircle2 } from "lucide-react";
-import type { PropertyImageDTO, PublicRoomDetailDTO } from "@/server/types/property";
+import type { PropertyImageDTO, PublicPropertyRoomDTO } from "@/server/types/property";
 import { ImageCategory, PropertyType } from "@/server/types/property";
 
 export type DetailFacility = { id: string; name: string; category?: string };
@@ -126,7 +126,7 @@ export function formatCurrency(value?: number | null) {
   return currencyFormatter.format(value);
 }
 
-export function formatDeposit(room: PublicRoomDetailDTO) {
+export function formatDeposit(room: PublicPropertyRoomDTO) {
   if (!room.depositRequired) {
     return "Tidak perlu deposit";
   }
@@ -142,7 +142,7 @@ export function formatDeposit(room: PublicRoomDetailDTO) {
   return "Deposit diperlukan";
 }
 
-export function getPricingEntries(room: PublicRoomDetailDTO): PricingEntry[] {
+export function getPricingEntries(room: PublicPropertyRoomDTO): PricingEntry[] {
   return [
     { label: "Bulanan", value: room.monthlyPrice, highlight: true },
     { label: "Harian", value: room.dailyPrice },

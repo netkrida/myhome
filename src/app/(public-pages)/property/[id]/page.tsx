@@ -1,5 +1,4 @@
-﻿import { cache } from "react";
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PublicHeader } from "@/components/layout/public-header";
@@ -10,14 +9,14 @@ import { PropertyDetailOverview } from "@/components/public/property-detail-over
 import { PropertyDetailFacilities } from "@/components/public/property-detail-facilities";
 import { PropertyDetailGallery } from "@/components/public/property-detail-gallery";
 import { PropertyDetailRooms } from "@/components/public/property-detail-rooms";
-import type { PublicPropertyDetailDTO, PropertyImageDTO, PublicRoomDetailDTO } from "@/server/types/property";
+import type { PublicPropertyDetailDTO, PropertyImageDTO, PublicPropertyRoomDTO } from "@/server/types/property";
 
 type PropertyImageApiDTO = Omit<PropertyImageDTO, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
 };
 
-type PublicRoomDetailApiDTO = Omit<PublicRoomDetailDTO, "images"> & {
+type PublicRoomDetailApiDTO = Omit<PublicPropertyRoomDTO, "images"> & {
   images: PropertyImageApiDTO[];
 };
 
@@ -65,14 +64,14 @@ function transformPropertyDetail(payload: PublicPropertyDetailApiDTO): PublicPro
   };
 }
 
-const getPropertyDetail = cache(async (id: string): Promise<PublicPropertyDetailDTO | null> => {
+async function getPropertyDetail(id: string): Promise<PublicPropertyDetailDTO | null> {
   if (!id) return null;
 
   try {
     const baseUrl = resolveBaseUrl();
     const url = new URL(`/api/public/properties/${encodeURIComponent(id)}`, baseUrl);
     const response = await fetch(url.toString(), {
-      next: { revalidate: 300 },
+      cache: "no-store",
     });
 
     if (!response.ok) {
@@ -92,7 +91,7 @@ const getPropertyDetail = cache(async (id: string): Promise<PublicPropertyDetail
     console.error("[property-detail] Unexpected error", error);
     return null;
   }
-});
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;

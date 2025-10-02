@@ -26,3 +26,6 @@ export * from "./room";
 
 // Booking types
 export * from "./booking";
+
+// Campus types
+export * from "./campus";

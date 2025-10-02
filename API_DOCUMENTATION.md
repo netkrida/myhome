@@ -82,6 +82,8 @@ Dokumentasi lengkap untuk semua API endpoints dalam sistem MultiKost. Sistem ini
 ### 🌐 Public APIs (No Authentication)
 - `GET /api/public/properties` - Daftar properti untuk homepage
 - `GET /api/public/properties/{id}` - Detail properti untuk halaman detail
+- `GET /api/public/properties/{id}/rooms` - Daftar room dari properti tertentu
+- `GET /api/public/rooms/{id}` - Detail room individual
 
 ### 🗺️ Location & Geocoding
 - `GET /api/wilayah/provinces` - Daftar provinsi

@@ -10,7 +10,11 @@ import type {
   RoomDetailItem,
   PaginationDTO,
   BulkUpdateRoomAvailabilityDTO,
-  BulkUpdateRoomPricingDTO
+  BulkUpdateRoomPricingDTO,
+  PublicRoomDetailDTO,
+  PublicPropertyRoomsQuery,
+  PublicPropertyRoomsResponse,
+  PublicRoomCardDTO
 } from "../types";
 import type { Result } from "../types/result";
 import { ok, fail, notFound, internalError } from "../types/result";
@@ -452,6 +456,235 @@ export class RoomRepository {
       where: { propertyId },
       orderBy: { roomNumber: "asc" },
     });
+  }
+
+  /**
+   * Get public room detail by ID
+   * Only returns rooms from APPROVED properties
+   */
+  static async getPublicRoomDetail(id: string): Promise<PublicRoomDetailDTO | null> {
+    console.log("🔍 RoomRepository.getPublicRoomDetail - Query:", { id });
+
+    const room = await prisma.room.findFirst({
+      where: {
+        id,
+        property: {
+          status: 'APPROVED', // Only approved properties are public
+        },
+      },
+      include: {
+        images: {
+          orderBy: { sortOrder: 'asc' }
+        },
+        property: {
+          select: {
+            id: true,
+            name: true,
+            propertyType: true,
+            status: true,
+            provinceCode: true,
+            provinceName: true,
+            regencyCode: true,
+            regencyName: true,
+            districtCode: true,
+            districtName: true,
+            fullAddress: true,
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phoneNumber: true
+              }
+            }
+          }
+        }
+      },
+    });
+
+    console.log("🔍 RoomRepository.getPublicRoomDetail - Result:", {
+      found: !!room,
+      roomId: room?.id,
+      roomNumber: room?.roomNumber,
+      propertyStatus: room?.property?.status,
+      imagesCount: room?.images?.length || 0
+    });
+
+    // Check if room exists and property is approved
+    if (!room || !room.property || room.property.status !== 'APPROVED') {
+      return null;
+    }
+
+    // Transform to PublicRoomDetailDTO
+    return {
+      id: room.id,
+      roomNumber: room.roomNumber,
+      floor: room.floor,
+      roomType: room.roomType,
+      description: room.description || undefined,
+      size: room.size || undefined,
+      monthlyPrice: Number(room.monthlyPrice),
+      dailyPrice: room.dailyPrice ? Number(room.dailyPrice) : undefined,
+      weeklyPrice: room.weeklyPrice ? Number(room.weeklyPrice) : undefined,
+      quarterlyPrice: room.quarterlyPrice ? Number(room.quarterlyPrice) : undefined,
+      yearlyPrice: room.yearlyPrice ? Number(room.yearlyPrice) : undefined,
+      depositRequired: room.depositRequired,
+      depositType: room.depositType || undefined,
+      depositValue: room.depositValue ? Number(room.depositValue) : undefined,
+      facilities: room.facilities as any[],
+      isAvailable: room.isAvailable,
+      images: room.images?.map(img => ({
+        id: img.id,
+        category: img.category as any,
+        imageUrl: img.imageUrl,
+        publicId: img.publicId || undefined,
+        caption: img.caption || undefined,
+        sortOrder: img.sortOrder,
+        createdAt: img.createdAt,
+        updatedAt: img.updatedAt,
+      })) || [],
+      property: {
+        id: room.property.id,
+        name: room.property.name,
+        propertyType: room.property.propertyType,
+        location: {
+          provinceName: room.property.provinceName,
+          regencyName: room.property.regencyName,
+          districtName: room.property.districtName,
+          fullAddress: room.property.fullAddress,
+        },
+        owner: {
+          id: room.property.owner.id,
+          name: room.property.owner.name || undefined,
+          email: room.property.owner.email || undefined,
+          phoneNumber: room.property.owner.phoneNumber || undefined,
+        },
+      },
+      createdAt: room.createdAt,
+      updatedAt: room.updatedAt,
+    };
+  }
+
+  /**
+   * Get public property rooms with filtering and pagination
+   * Only returns rooms from APPROVED properties
+   */
+  static async getPublicPropertyRooms(
+    propertyId: string,
+    filters: PublicPropertyRoomsQuery
+  ): Promise<PublicPropertyRoomsResponse | null> {
+    console.log("🔍 RoomRepository.getPublicPropertyRooms - Query:", { propertyId, filters });
+
+    // First check if property exists and is approved
+    const property = await prisma.property.findUnique({
+      where: {
+        id: propertyId,
+        status: 'APPROVED' // Only approved properties are public
+      },
+      select: { id: true, name: true, status: true }
+    });
+
+    if (!property) {
+      console.log("🔍 RoomRepository.getPublicPropertyRooms - Property not found or not approved:", { propertyId });
+      return null;
+    }
+
+    const {
+      page = 1,
+      limit = 12,
+      roomType,
+      isAvailable,
+      minPrice,
+      maxPrice,
+      floor,
+      sortBy = "roomNumber",
+      sortOrder = "asc",
+    } = filters;
+
+    // Build where clause
+    const where: Prisma.RoomWhereInput = {
+      propertyId,
+    };
+
+    if (roomType) {
+      where.roomType = { contains: roomType, mode: "insensitive" };
+    }
+
+    if (typeof isAvailable === 'boolean') {
+      where.isAvailable = isAvailable;
+    }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      where.monthlyPrice = {
+        ...(minPrice !== undefined ? { gte: minPrice } : {}),
+        ...(maxPrice !== undefined ? { lte: maxPrice } : {}),
+      };
+    }
+
+    if (floor !== undefined) {
+      where.floor = floor;
+    }
+
+    // Get total count
+    const total = await prisma.room.count({ where });
+
+    // Calculate pagination
+    const totalPages = Math.ceil(total / limit);
+    const skip = (page - 1) * limit;
+
+    // Get rooms
+    const rooms = await prisma.room.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder },
+      include: {
+        images: {
+          where: { category: 'ROOM_PHOTOS' },
+          orderBy: { sortOrder: 'asc' },
+          take: 1, // Only main image for card view
+        },
+      },
+    });
+
+    console.log("🔍 RoomRepository.getPublicPropertyRooms - Result:", {
+      propertyId,
+      roomsCount: rooms.length,
+      total,
+      pagination: { page, limit, totalPages }
+    });
+
+    const roomCards: PublicRoomCardDTO[] = rooms.map(room => ({
+      id: room.id,
+      roomNumber: room.roomNumber,
+      floor: room.floor,
+      roomType: room.roomType,
+      description: room.description || undefined,
+      size: room.size || undefined,
+      monthlyPrice: Number(room.monthlyPrice),
+      dailyPrice: room.dailyPrice ? Number(room.dailyPrice) : undefined,
+      weeklyPrice: room.weeklyPrice ? Number(room.weeklyPrice) : undefined,
+      quarterlyPrice: room.quarterlyPrice ? Number(room.quarterlyPrice) : undefined,
+      yearlyPrice: room.yearlyPrice ? Number(room.yearlyPrice) : undefined,
+      depositRequired: room.depositRequired,
+      depositType: room.depositType || undefined,
+      depositValue: room.depositValue ? Number(room.depositValue) : undefined,
+      facilities: room.facilities as any[],
+      isAvailable: room.isAvailable,
+      mainImage: room.images[0]?.imageUrl,
+    }));
+
+    return {
+      rooms: roomCards,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
 
   /**

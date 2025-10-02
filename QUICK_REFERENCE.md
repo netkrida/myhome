@@ -25,6 +25,9 @@
 ### 🌐 Public APIs (No Auth Required)
 ```
 GET {{base_url}}/api/public/properties?page=1&limit=5
+GET {{base_url}}/api/public/properties/{id}
+GET {{base_url}}/api/public/properties/{id}/rooms?page=1&limit=10
+GET {{base_url}}/api/public/rooms/{id}
 GET {{base_url}}/api/wilayah/provinces
 GET {{base_url}}/api/health
 ```

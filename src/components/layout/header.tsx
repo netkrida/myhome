@@ -4,11 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
-import { Menu, X, User, LogIn } from "lucide-react";
+import { Menu, LogIn } from "lucide-react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { AuthRoleSelectionDialog } from "@/components/auth/auth-role-selection-dialog";
 
 
 const getNavigationItems = (isCustomer: boolean) => {
@@ -44,7 +51,7 @@ const getNavigationItems = (isCustomer: boolean) => {
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { data: session } = useSession();
 
   const isCustomer = session?.user?.role === "CUSTOMER";
@@ -60,7 +67,7 @@ export function Header() {
 
   return (
   <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 text-foreground">
-      <div className="container flex h-16 items-center justify-between">
+  <div className="container flex h-14 items-center justify-between md:h-16">
         {/* Logo */}
         <Link href="/" className="flex items-center">
           <Image
@@ -86,7 +93,7 @@ export function Header() {
         </nav>
 
         {/* Desktop Auth Section */}
-        <div className="hidden md:flex items-center space-x-4">
+  <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
           {/* Theme Toggler */}
           <AnimatedThemeToggler className="mr-2" />
           {session?.user ? (
@@ -141,10 +148,13 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button variant="ghost" onClick={() => setIsLoginModalOpen(true)}>
-              <LogIn className="mr-2 h-4 w-4" />
-              Masuk
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button variant="ghost" onClick={() => setIsAuthModalOpen(true)}>
+                <LogIn className="mr-2 h-4 w-4" />
+                Masuk
+              </Button>
+              <Button onClick={() => setIsAuthModalOpen(true)}>Daftar</Button>
+            </div>
           )}
         </div>
 
@@ -160,8 +170,13 @@ export function Header() {
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="pr-0">
-            <div className="flex flex-col space-y-4">
+          <SheetContent side="right" className="pr-0 w-[85vw] max-w-sm">
+            <SheetHeader className="px-4 pt-6 pb-2">
+              <SheetTitle className="text-base font-semibold">
+                Menu
+              </SheetTitle>
+            </SheetHeader>
+            <div className="flex flex-col space-y-3 px-4 pb-6">
               {/* Mobile Logo */}
               <Link
                 href="/"
@@ -178,7 +193,7 @@ export function Header() {
               </Link>
 
               {/* Mobile Navigation */}
-              <nav className="flex flex-col space-y-3">
+              <nav className="flex flex-col space-y-2">
                 {navigationItems.map((item) => (
                   <Link
                     key={item.name}
@@ -192,7 +207,7 @@ export function Header() {
               </nav>
 
               {/* Mobile Auth Section */}
-              <div className="flex flex-col space-y-3 pt-4 border-t">
+              <div className="flex flex-col space-y-2.5 pt-3 border-t">
                 {session?.user ? (
                   <>
                     <div className="flex items-center space-x-2">
@@ -249,17 +264,28 @@ export function Header() {
                     />
                   </>
                 ) : (
-                  <Button
-                    variant="ghost"
-                    className="justify-start"
-                    onClick={() => {
-                      setIsOpen(false);
-                      setIsLoginModalOpen(true);
-                    }}
-                  >
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Masuk
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={() => {
+                        setIsOpen(false);
+                        setIsAuthModalOpen(true);
+                      }}
+                    >
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Masuk
+                    </Button>
+                    <Button
+                      className="justify-start"
+                      onClick={() => {
+                        setIsOpen(false);
+                        setIsAuthModalOpen(true);
+                      }}
+                    >
+                      Daftar
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
@@ -268,7 +294,7 @@ export function Header() {
       </div>
 
       {/* Login Modal */}
-      
+      <AuthRoleSelectionDialog open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
     </header>
   );
 }

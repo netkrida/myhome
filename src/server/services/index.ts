@@ -11,6 +11,9 @@ export * from "./user.service";
 // AdminKos registration service
 export * from "./adminkos-registration.service";
 
+// Customer registration service
+export * from "./customer-registration.service";
+
 // Wilayah service
 export * from "./wilayah.service";
 
@@ -25,3 +28,6 @@ export * from "./booking.service";
 
 // Payment service
 export * from "./payment.service";
+
+// Campus service
+export * from "./campus.service";

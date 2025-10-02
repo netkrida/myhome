@@ -5,7 +5,8 @@ import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Search, User, Heart, Bell, ChevronDown } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Menu, Search, Heart, Bell, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,13 +14,64 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import { LogoutButton } from "@/components/auth/logout-button";
+import { AuthRoleSelectionDialog } from "@/components/auth/auth-role-selection-dialog";
+
+function getInitials(name?: string | null) {
+  if (!name) return "CU";
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+  return initials.slice(0, 2) || "CU";
+}
+
+const customerMenuItems = [
+  { label: "Booking", href: "/dashboard/customer/booking" },
+  { label: "History Transaksi", href: "/dashboard/customer/history-transaction" },
+  { label: "Profil", href: "/dashboard/customer/my-profile" },
+  { label: "Pengaturan", href: "/dashboard/customer/settings" },
+];
+
+const getRoleMenuItems = (role?: string | null) => {
+  if (!role) return [];
+  if (role === "CUSTOMER") {
+    return customerMenuItems;
+  }
+
+  const roleLower = role.toLowerCase();
+  return [
+    { label: "Dashboard", href: `/dashboard/${roleLower}` },
+    { label: "Profil", href: "/profile" },
+    { label: "Pengaturan", href: "/settings" },
+  ];
+};
 
 export function PublicHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { data: session } = useSession();
+
+  const isAuthenticated = !!session?.user;
+  const menuItems = getRoleMenuItems(session?.user?.role);
 
   const navigationItems: Array<{
     label: string;
@@ -35,11 +87,8 @@ export function PublicHeader() {
     // { label: "Lainnya", href: "/more", badge: null, hasDropdown: true },
   ];
 
-  const userMenuItems = [
-    { label: "Your Orders", href: "/orders" },
-  ];
-
   return (
+    <>
   <header className="sticky top-0 z-50 w-full border-b bg-background shadow-sm text-foreground">
   <div className="container mx-auto px-4">
         {/* Top Bar */}
@@ -67,14 +116,14 @@ export function PublicHeader() {
                         <ChevronDown className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
                         <Link href="/search">Cari Kos</Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem asChild>
                         <Link href="/about">Tentang Kami</Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem asChild>
                         <Link href="/contact">Kontak</Link>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -82,7 +131,7 @@ export function PublicHeader() {
                 ) : (
                   <Link
                     href={item.href}
-                    className="flex items-center space-x-1 text-foreground hover:text-primary transition-colors text-sm"
+                    className="flex items-center space-x-1 text-sm text-foreground transition-colors hover:text-primary"
                   >
                     <span>{item.label}</span>
                     {item.badge && (
@@ -97,81 +146,186 @@ export function PublicHeader() {
           </nav>
 
           {/* Right Side Actions */}
-          <div className="flex items-center space-x-4">
-            {/* Theme Toggler */}
-            <AnimatedThemeToggler className="mr-2" />
-            {/* Search Button - Mobile */}
+          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
+            <AnimatedThemeToggler className="mr-1 sm:mr-2" />
+
             <Button
               variant="ghost"
               size="icon"
               className="lg:hidden"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              onClick={() => setIsSearchOpen((prev) => !prev)}
             >
               <Search className="h-5 w-5" />
             </Button>
 
-            {/* User Menu - Desktop */}
-            <div className="hidden lg:flex items-center space-x-3">
-              {userMenuItems.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="text-xs text-foreground hover:text-primary transition-colors"
+            {isAuthenticated && (
+              <div className="hidden md:flex items-center space-x-2">
+                <Button variant="ghost" size="sm" className="relative h-8 w-8">
+                  <Bell className="h-4 w-4" />
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 text-[10px]">
+                    3
+                  </Badge>
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 w-8">
+                  <Heart className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="hidden md:flex h-9 w-9 items-center justify-center rounded-full p-0"
+                  >
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage
+                        src={session?.user?.image || ""}
+                        alt={session?.user?.name || "Customer"}
+                      />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {getInitials(session?.user?.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={session?.user?.image || ""}
+                          alt={session?.user?.name || "Customer"}
+                        />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          {getInitials(session?.user?.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold leading-tight">
+                          {session?.user?.name || "Customer"}
+                        </span>
+                        {session?.user?.email && (
+                          <span className="text-xs text-muted-foreground">
+                            {session?.user?.email}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {menuItems.map((item) => (
+                    <DropdownMenuItem key={item.href} asChild>
+                      <Link href={item.href}>{item.label}</Link>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <LogoutButton variant="dropdown" />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="hidden md:flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => setIsAuthModalOpen(true)}
                 >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+                  Masuk
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-primary text-xs hover:bg-primary/80"
+                  onClick={() => setIsAuthModalOpen(true)}
+                >
+                  Daftar
+                </Button>
+              </div>
+            )}
 
-            {/* Notifications */}
-            <Button variant="ghost" size="sm" className="relative h-8 w-8">
-              <Bell className="h-4 w-4" />
-              <Badge className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 text-xs">
-                3
-              </Badge>
-            </Button>
-
-            {/* Favorites */}
-            <Button variant="ghost" size="sm" className="h-8 w-8">
-              <Heart className="h-4 w-4" />
-            </Button>
-
-            {/* Auth Buttons */}
-            <div className="hidden md:flex items-center space-x-2">
-              <Button variant="outline" size="sm" className="text-xs" asChild>
-                <Link href="/login">Masuk</Link>
-              </Button>
-              <Button size="sm" className="bg-primary hover:bg-primary/80 text-xs" asChild>
-                <Link href="/register">Daftar</Link>
-              </Button>
-            </div>
-
-            {/* Mobile Menu */}
-            <Sheet>
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="lg:hidden">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-80">
-                <div className="flex flex-col space-y-6 mt-6">
-                  {/* Mobile Auth */}
-                  <div className="flex flex-col space-y-2">
-                    <Button variant="outline" asChild>
-                      <Link href="/login">Masuk</Link>
-                    </Button>
-                    <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                      <Link href="/register">Daftar</Link>
-                    </Button>
-                  </div>
+              <SheetContent side="right" className="w-80 px-0">
+                <SheetHeader className="px-4 pt-6 pb-2">
+                  <SheetTitle className="text-base font-semibold">Menu</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col space-y-4 px-4 pb-6">
+                  {!isAuthenticated ? (
+                    <div className="flex flex-col space-y-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          setIsAuthModalOpen(true);
+                        }}
+                      >
+                        Masuk
+                      </Button>
+                      <Button
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          setIsAuthModalOpen(true);
+                        }}
+                      >
+                        Daftar
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col space-y-3">
+                      <div className="flex items-center space-x-3 rounded-lg border p-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage
+                            src={session?.user?.image || ""}
+                            alt={session?.user?.name || "Customer"}
+                          />
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {getInitials(session?.user?.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold">
+                            {session?.user?.name || "Customer"}
+                          </span>
+                          {session?.user?.email && (
+                            <span className="text-xs text-muted-foreground">
+                              {session?.user?.email}
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-                  {/* Mobile Navigation */}
-                  <nav className="flex flex-col space-y-4">
+                      <nav className="flex flex-col space-y-2">
+                        {menuItems.map((item) => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className="text-sm font-medium transition-colors hover:text-primary"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                        <LogoutButton
+                          variant="link"
+                          className="text-left text-sm font-medium text-destructive"
+                        />
+                      </nav>
+                    </div>
+                  )}
+
+                  <nav className="flex flex-col space-y-3">
                     {navigationItems.map((item) => (
                       <Link
                         key={item.label}
                         href={item.href}
-                        className="flex items-center justify-between py-2 text-foreground hover:text-primary transition-colors"
+                        className="flex items-center justify-between py-2 text-foreground transition-colors hover:text-primary"
+                        onClick={() => setIsMobileMenuOpen(false)}
                       >
                         <span>{item.label}</span>
                         {item.badge && (
@@ -182,21 +336,6 @@ export function PublicHeader() {
                       </Link>
                     ))}
                   </nav>
-
-                  {/* Mobile User Menu */}
-                  <div className="border-t pt-4">
-                    <div className="flex flex-col space-y-3">
-                      {userMenuItems.map((item) => (
-                        <Link
-                          key={item.label}
-                          href={item.href}
-                          className="text-sm text-foreground hover:text-primary transition-colors"
-                        >
-                          {item.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </SheetContent>
             </Sheet>
@@ -218,6 +357,8 @@ export function PublicHeader() {
         )}
       </div>
     </header>
+    <AuthRoleSelectionDialog open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
+    </>
   );
 }
 
