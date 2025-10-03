@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  app:
+    image: myhome-myhomeapp:latest
+    restart: always
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      AUTH_SECRET: ${AUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    networks:
+      - dokploy_network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.myhome.rule=Host(`myhome.co.id`)"
+      - "traefik.http.routers.myhome.entrypoints=websecure"
+      - "traefik.http.routers.myhome.tls.certresolver=letsencrypt"
+      - "traefik.http.services.myhome.loadbalancer.server.port=3000"
+
+networks:
+  dokploy_network:
+    external: true

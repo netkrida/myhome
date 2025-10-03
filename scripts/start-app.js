@@ -41,27 +41,36 @@ function logWarning(message) {
 async function validateEnvironment() {
   return new Promise((resolve, reject) => {
     logInfo('Validating environment variables...');
-    
-    const validateScript = path.join(__dirname, 'validate-env.js');
-    const validator = spawn('node', [validateScript], {
-      stdio: 'inherit',
-      env: process.env
-    });
-    
-    validator.on('close', (code) => {
-      if (code === 0) {
-        logSuccess('Environment validation completed successfully');
-        resolve();
-      } else {
-        logError('Environment validation failed');
-        reject(new Error(`Environment validation failed with code ${code}`));
-      }
-    });
-    
-    validator.on('error', (error) => {
-      logError(`Failed to run environment validation: ${error.message}`);
-      reject(error);
-    });
+
+    try {
+      // Try to require the validation module directly
+      const { validateEnvironment: validate } = require('./validate-env.js');
+      validate();
+      logSuccess('Environment validation completed successfully');
+      resolve();
+    } catch (error) {
+      // Fallback to spawn if require fails
+      const validateScript = path.join(__dirname, 'validate-env.js');
+      const validator = spawn('node', [validateScript], {
+        stdio: 'inherit',
+        env: process.env
+      });
+
+      validator.on('close', (code) => {
+        if (code === 0) {
+          logSuccess('Environment validation completed successfully');
+          resolve();
+        } else {
+          logError('Environment validation failed');
+          reject(new Error(`Environment validation failed with code ${code}`));
+        }
+      });
+
+      validator.on('error', (error) => {
+        logError(`Failed to run environment validation: ${error.message}`);
+        reject(error);
+      });
+    }
   });
 }
 
