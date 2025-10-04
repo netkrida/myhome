@@ -1,60 +1,115 @@
+# 🐳 Docker Compose untuk MyHome Production
+# Setup lengkap dengan database PostgreSQL dan aplikasi Next.js
+
 version: '3.8'
 
 services:
-  # Next.js Application
+  # Database PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: myhome-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-db_myhome}
+      POSTGRES_USER: ${POSTGRES_USER:-myhome}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-@myhome_123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - myhome-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-myhome} -d ${POSTGRES_DB:-db_myhome}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Aplikasi MyHome
   web:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "${PORT:-3000}:3000"
+    container_name: myhome-app
+    restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - DIRECT_URL=${DIRECT_URL}
-      - AUTH_SECRET=${AUTH_SECRET}
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - AUTH_DISCORD_ID=${AUTH_DISCORD_ID}
-      - AUTH_DISCORD_SECRET=${AUTH_DISCORD_SECRET}
-      - PORT=3000
+      # Core Environment
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      
+      # Database Connection
+      DATABASE_URL: postgresql://${POSTGRES_USER:-myhome}:${POSTGRES_PASSWORD:-@myhome_123}@db:5432/${POSTGRES_DB:-db_myhome}?schema=public
+      DIRECT_URL: postgresql://${POSTGRES_USER:-myhome}:${POSTGRES_PASSWORD:-@myhome_123}@db:5432/${POSTGRES_DB:-db_myhome}?schema=public
+      
+      # Authentication
+      AUTH_SECRET: ${AUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://myhome.co.id}
+      
+      # OAuth (Optional)
+      AUTH_DISCORD_ID: ${AUTH_DISCORD_ID:-}
+      AUTH_DISCORD_SECRET: ${AUTH_DISCORD_SECRET:-}
+      
+      # Cloudinary (Image Upload)
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-dg0ybxdbt}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-836543447587342}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      
+      # Midtrans (Payment Gateway)
+      MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:-}
+      MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY:-}
+      MIDTRANS_IS_PRODUCTION: ${MIDTRANS_IS_PRODUCTION:-false}
+      
+      # Application Settings
+      NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-MyHome}
+    ports:
+      - "3000:3000"
     depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
+    networks:
+      - myhome-network
+    volumes:
+      # Mount untuk logs (optional)
+      - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-    networks:
-      - app-network
+      start_period: 60s
 
-  # PostgreSQL Database
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-multikost}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+  # Redis untuk caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: myhome-redis
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-multikost}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
     networks:
-      - app-network
+      - myhome-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: redis-server --appendonly yes
 
+# Networks
+networks:
+  myhome-network:
+    driver: bridge
+    name: myhome-network
+
+# Volumes
 volumes:
   postgres_data:
     driver: local
-
-networks:
-  app-network:
-    driver: bridge
+    name: myhome-postgres-data
+  redis_data:
+    driver: local
+    name: myhome-redis-data

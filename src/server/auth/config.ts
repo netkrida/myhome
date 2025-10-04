@@ -263,12 +263,34 @@ export const authConfig = {
     },
   },
 
-  // Cookie configuration for consistent naming
+  // Cookie configuration for NextAuth v5 (Auth.js) compatibility
   cookies: {
     sessionToken: {
       name: process.env.NODE_ENV === "production"
-        ? `__Secure-next-auth.session-token`
-        : `next-auth.session-token`,
+        ? `__Secure-authjs.session-token`
+        : `authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+    callbackUrl: {
+      name: process.env.NODE_ENV === "production"
+        ? `__Secure-authjs.callback-url`
+        : `authjs.callback-url`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+    csrfToken: {
+      name: process.env.NODE_ENV === "production"
+        ? `__Secure-authjs.csrf-token`
+        : `authjs.csrf-token`,
       options: {
         httpOnly: true,
         sameSite: 'lax',

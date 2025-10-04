@@ -1,0 +1,102 @@
+[
+  {
+    "location": [-6.2088, 106.8456],
+    "size": 0.1,
+    "country": "Indonesia"
+  },
+  {
+    "location": [40.7128, -74.0060],
+    "size": 0.08,
+    "country": "United States"
+  },
+  {
+    "location": [19.0760, 72.8777],
+    "size": 0.07,
+    "country": "India"
+  },
+  {
+    "location": [-23.5505, -46.6333],
+    "size": 0.06,
+    "country": "Brazil"
+  },
+  {
+    "location": [52.5200, 13.4050],
+    "size": 0.05,
+    "country": "Germany"
+  },
+  {
+    "location": [35.6762, 139.6503],
+    "size": 0.05,
+    "country": "Japan"
+  },
+  {
+    "location": [51.5074, -0.1278],
+    "size": 0.04,
+    "country": "United Kingdom"
+  },
+  {
+    "location": [48.8566, 2.3522],
+    "size": 0.04,
+    "country": "France"
+  },
+  {
+    "location": [-33.8688, 151.2093],
+    "size": 0.03,
+    "country": "Australia"
+  },
+  {
+    "location": [43.6532, -79.3832],
+    "size": 0.03,
+    "country": "Canada"
+  },
+  {
+    "location": [37.5665, 126.9780],
+    "size": 0.03,
+    "country": "South Korea"
+  },
+  {
+    "location": [52.3676, 4.9041],
+    "size": 0.02,
+    "country": "Netherlands"
+  },
+  {
+    "location": [1.3521, 103.8198],
+    "size": 0.02,
+    "country": "Singapore"
+  },
+  {
+    "location": [13.7563, 100.5018],
+    "size": 0.02,
+    "country": "Thailand"
+  },
+  {
+    "location": [3.1390, 101.6869],
+    "size": 0.02,
+    "country": "Malaysia"
+  },
+  {
+    "location": [55.7558, 37.6176],
+    "size": 0.02,
+    "country": "Russia"
+  },
+  {
+    "location": [39.9042, 116.4074],
+    "size": 0.06,
+    "country": "China"
+  },
+  {
+    "location": [19.4326, -99.1332],
+    "size": 0.04,
+    "country": "Mexico"
+  },
+  {
+    "location": [41.9028, 12.4964],
+    "size": 0.03,
+    "country": "Italy"
+  },
+  {
+    "location": [40.4168, -3.7038],
+    "size": 0.03,
+    "country": "Spain"
+  }
+]

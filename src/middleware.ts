@@ -12,7 +12,7 @@ const ROLE_DASHBOARDS = {
 
 const PUBLIC_ROUTES = [
   "/", "/login", "/register", "/about", "/contact",
-  "/search", "/properties", "/property", "/rooms", "/api/auth", "/api/test-db", "/api/wilayah", "/api/properties/coordinates", "/api/public"
+  "/search", "/properties", "/property", "/rooms", "/api/auth", "/api/test-db", "/api/wilayah", "/api/properties/coordinates", "/api/public", "/api/analytics", "/data"
 ];
 
 const ADMIN_ROLES = ["SUPERADMIN", "ADMINKOS", "RECEPTIONIST"];
@@ -38,21 +38,34 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Get token using consistent cookie naming with NextAuth config
-  const token = await getToken({
+  // Get token - try NextAuth v5 format first, then fallback to v4 format
+  let token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
     cookieName: process.env.NODE_ENV === "production"
-      ? "__Secure-next-auth.session-token"
-      : "next-auth.session-token"
+      ? "__Secure-authjs.session-token"
+      : "authjs.session-token"
   });
+
+  // Fallback to NextAuth v4 format if v5 format not found
+  if (!token) {
+    console.log("🔍 Middleware - NextAuth v5 token not found, trying v4 format");
+    token = await getToken({
+      req: request,
+      secret: process.env.AUTH_SECRET,
+      cookieName: process.env.NODE_ENV === "production"
+        ? "__Secure-next-auth.session-token"
+        : "next-auth.session-token"
+    });
+  }
 
   console.log("🔍 Middleware - Token:", {
     hasToken: !!token,
     role: token?.role,
     email: token?.email,
     cookies: request.cookies.getAll().map(c => c.name),
-    authSecret: !!process.env.AUTH_SECRET
+    authSecret: !!process.env.AUTH_SECRET,
+    tokenSource: token ? "found" : "not_found"
   });
 
   const isPublic = PUBLIC_ROUTES.some(route => 
@@ -137,14 +150,26 @@ export default async function middleware(request: NextRequest) {
   // Handle API routes with basic role check
   if (pathname.startsWith("/api/")) {
     const userRole = token.role as string;
-    
+
     // Simple API access control
     if (pathname.startsWith("/api/users") && !["SUPERADMIN", "ADMINKOS"].includes(userRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    
+
     if (pathname.startsWith("/api/properties") && !["SUPERADMIN", "ADMINKOS"].includes(userRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Analytics API - only SUPERADMIN can access (except /api/analytics/track which is public)
+    if (pathname.startsWith("/api/analytics") && !pathname.startsWith("/api/analytics/track")) {
+      if (userRole !== "SUPERADMIN") {
+        console.log("🔒 Middleware - Analytics access denied:", {
+          pathname,
+          userRole,
+          required: "SUPERADMIN"
+        });
+        return NextResponse.json({ error: "Forbidden - SUPERADMIN access required" }, { status: 403 });
+      }
     }
   }
 
