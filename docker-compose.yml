@@ -1,115 +1,63 @@
-# 🐳 Docker Compose untuk MyHome Production
-# Setup lengkap dengan database PostgreSQL dan aplikasi Next.js
-
-version: '3.8'
+version: "3.9"
 
 services:
-  # Database PostgreSQL
-  db:
-    image: postgres:15-alpine
-    container_name: myhome-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-db_myhome}
-      POSTGRES_USER: ${POSTGRES_USER:-myhome}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-@myhome_123}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-    ports:
-      - "5432:5432"
-    networks:
-      - myhome-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-myhome} -d ${POSTGRES_DB:-db_myhome}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-
-  # Aplikasi MyHome
-  web:
+  app:
+    container_name: myhome-app
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: myhome-app
     restart: unless-stopped
+    env_file:
+      - .env.production
     environment:
-      # Core Environment
       NODE_ENV: production
+      NEXTAUTH_URL: https://myhome.co.id
       HOST: 0.0.0.0
       PORT: 3000
-      
-      # Database Connection
-      DATABASE_URL: postgresql://${POSTGRES_USER:-myhome}:${POSTGRES_PASSWORD:-@myhome_123}@db:5432/${POSTGRES_DB:-db_myhome}?schema=public
-      DIRECT_URL: postgresql://${POSTGRES_USER:-myhome}:${POSTGRES_PASSWORD:-@myhome_123}@db:5432/${POSTGRES_DB:-db_myhome}?schema=public
-      
-      # Authentication
-      AUTH_SECRET: ${AUTH_SECRET}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://myhome.co.id}
-      
-      # OAuth (Optional)
-      AUTH_DISCORD_ID: ${AUTH_DISCORD_ID:-}
-      AUTH_DISCORD_SECRET: ${AUTH_DISCORD_SECRET:-}
-      
-      # Cloudinary (Image Upload)
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-dg0ybxdbt}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-836543447587342}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
-      
-      # Midtrans (Payment Gateway)
-      MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:-}
-      MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY:-}
-      MIDTRANS_IS_PRODUCTION: ${MIDTRANS_IS_PRODUCTION:-false}
-      
-      # Application Settings
-      NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-MyHome}
+      NEXT_TELEMETRY_DISABLED: 1
+    command: ["sh", "-c", "npm run prisma:migrate:deploy && node server.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "3000:3000"
-    depends_on:
-      db:
-        condition: service_healthy
     networks:
-      - myhome-network
-    volumes:
-      # Mount untuk logs (optional)
-      - ./logs:/app/logs
+      - myhome
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      test: ["CMD-SHELL", "curl --fail http://localhost:3000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.myhome.rule=Host(`myhome.co.id`)"
+      - "traefik.http.routers.myhome.entrypoints=websecure"
+      - "traefik.http.routers.myhome.tls=true"
+      - "traefik.http.routers.myhome.tls.certresolver=dockploy"
+      - "traefik.http.services.myhome.loadbalancer.server.port=3000"
 
-  # Redis untuk caching (optional)
-  redis:
-    image: redis:7-alpine
-    container_name: myhome-redis
+  postgres:
+    image: postgres:16-alpine
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    environment:
+      POSTGRES_DB: db_myhome
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: myhome123
     volumes:
-      - redis_data:/data
-    networks:
-      - myhome-network
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    command: redis-server --appendonly yes
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    networks:
+      - myhome
 
-# Networks
-networks:
-  myhome-network:
-    driver: bridge
-    name: myhome-network
-
-# Volumes
 volumes:
   postgres_data:
-    driver: local
-    name: myhome-postgres-data
-  redis_data:
-    driver: local
-    name: myhome-redis-data
+
+networks:
+  myhome:
+    driver: bridge

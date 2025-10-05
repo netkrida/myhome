@@ -1,55 +1,40 @@
-# 🚀 Docker Compose khusus untuk Dockploy
-# Konfigurasi yang disederhanakan untuk deployment di Dockploy
-
-version: '3.8'
+version: "3.9"
 
 services:
-  # Aplikasi MyHome
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: myhome-app
     restart: unless-stopped
+    command: ["sh", "-c", "npm run prisma:migrate:deploy && node server.js"]
     environment:
-      # Core Environment
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: 3000
-      
-      # Database Connection (akan di-set oleh Dockploy)
-      DATABASE_URL: ${DATABASE_URL}
-      DIRECT_URL: ${DIRECT_URL:-${DATABASE_URL}}
-      
-      # Authentication (REQUIRED)
+      NEXT_TELEMETRY_DISABLED: 1
       AUTH_SECRET: ${AUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
-      
-      # OAuth (Optional)
-      AUTH_DISCORD_ID: ${AUTH_DISCORD_ID:-}
-      AUTH_DISCORD_SECRET: ${AUTH_DISCORD_SECRET:-}
-      
-      # Cloudinary (Image Upload)
+      DATABASE_URL: ${DATABASE_URL}
+      DIRECT_URL: ${DIRECT_URL:-${DATABASE_URL}}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-dg0ybxdbt}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-836543447587342}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
-      
-      # Midtrans (Payment Gateway)
       MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:-}
       MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY:-}
       MIDTRANS_IS_PRODUCTION: ${MIDTRANS_IS_PRODUCTION:-false}
-      
-      # Application Settings
       NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-MyHome}
-      
-      # Disable telemetry
-      NEXT_TELEMETRY_DISABLED: 1
     ports:
       - "3000:3000"
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      test: ["CMD-SHELL", "curl --fail http://localhost:3000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
-    # Dockploy akan handle networking dan volumes
+      retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.myhome.rule=Host(`myhome.co.id`)"
+      - "traefik.http.routers.myhome.entrypoints=websecure"
+      - "traefik.http.routers.myhome.tls=true"
+      - "traefik.http.routers.myhome.tls.certresolver=dockploy"
+      - "traefik.http.services.myhome.loadbalancer.server.port=3000"
