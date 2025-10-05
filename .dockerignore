@@ -139,7 +139,7 @@ temp/
 *.tsbuildinfo
 
 # Prisma (kecuali schema dan migrations)
-prisma/migrations/
+# prisma/migrations/
 # prisma/seed.ts
 prisma/seeders/
 
