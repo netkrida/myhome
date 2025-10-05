@@ -140,11 +140,11 @@ temp/
 
 # Prisma (kecuali schema dan migrations)
 prisma/migrations/
-prisma/seed.ts
+# prisma/seed.ts
 prisma/seeders/
 
 # Public assets yang tidak diperlukan untuk build
-public/data/
+# public/data/
 
 # Backup files
 *.backup
