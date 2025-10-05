@@ -106,11 +106,26 @@ export async function POST(request: NextRequest) {
 
     if (!result.success) {
       const errorResult = result as any;
-      const errorMessage = typeof errorResult.error === 'string'
+      const errorMessage = typeof errorResult.error === "string"
         ? errorResult.error
         : errorResult.error?.message || "Failed to create rooms";
+
+      const responsePayload: Record<string, unknown> = {
+        error: errorMessage,
+      };
+
+      if (errorResult.error && typeof errorResult.error === "object") {
+        if (errorResult.error.code) {
+          responsePayload.code = errorResult.error.code;
+        }
+
+        if (errorResult.error.details) {
+          responsePayload.details = errorResult.error.details;
+        }
+      }
+
       return NextResponse.json(
-        { error: errorMessage },
+        responsePayload,
         { status: errorResult.statusCode || 500 }
       );
     }

@@ -126,7 +126,12 @@ export function AnalyticsGlobe({ countries, cities, period }: AnalyticsGlobeProp
 
     if (topCountries.length > 0) {
       // Just pick the first country to avoid complex calculations that cause blinking
-  const [countryName, count] = topCountries[0]!;
+      const firstCountry = topCountries[0];
+      if (!firstCountry) {
+        return;
+      }
+
+      const [countryName, count] = firstCountry;
 
       // Only update if country actually changed
       setHoveredCountry(prev => {
@@ -198,7 +203,7 @@ export function AnalyticsGlobe({ countries, cities, period }: AnalyticsGlobeProp
     glowColor: [0.95, 0.95, 0.95], // Very light gray glow
     markers: globeData,
     scale: scale,
-  offset: [0, 0],
+    offset: [0, 0],
   }), [theta, scale, globeData, phi]); // Remove hoveredCountry from dependencies to prevent re-render
 
   const formatPeriod = (period: string) => {

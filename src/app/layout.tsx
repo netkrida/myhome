@@ -6,6 +6,7 @@ import { HydrationFix } from "@/components/hydration-fix";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthErrorHandler } from "@/components/auth/auth-error-handler";
+import { ConditionalAnalyticsTracker } from "@/components/analytics/analytics-tracker";
 
 export const metadata: Metadata = {
   title: "MultiKost - Find Your Perfect Boarding House",
@@ -31,6 +32,10 @@ export default function RootLayout({
         <SessionProvider>
           <AuthErrorHandler>
             <HydrationFix />
+            <ConditionalAnalyticsTracker
+              debug={process.env.NODE_ENV === 'development'}
+              enableInDevelopment={true}
+            />
             {children}
             <Toaster />
           </AuthErrorHandler>

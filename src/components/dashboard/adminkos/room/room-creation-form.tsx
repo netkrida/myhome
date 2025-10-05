@@ -256,18 +256,38 @@ export function RoomCreationForm({ className }: RoomCreationFormProps) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Room creation failed:", errorData);
-        
-        // Show more detailed error message if available
-        if (errorData.details && Array.isArray(errorData.details)) {
-          const detailMessages = errorData.details.map((detail: any) => 
-            `${detail.path?.join?.('.') || 'field'}: ${detail.message}`
-          ).join(', ');
-          throw new Error(`Validation failed: ${detailMessages}`);
+        const errorText = await response.text();
+        let parsedError: any = null;
+
+        try {
+          parsedError = errorText ? JSON.parse(errorText) : null;
+        } catch (parseError) {
+          console.error("Failed to parse room creation error response:", parseError);
         }
-        
-        throw new Error(errorData.error || "Failed to create rooms");
+
+        console.error("Room creation failed:", parsedError || errorText);
+
+        if (parsedError) {
+          // Zod schema errors from API layer
+          if (Array.isArray(parsedError.details)) {
+            const detailMessages = parsedError.details.map((detail: any) =>
+              `${detail.path?.join?.(".") || "field"}: ${detail.message}`
+            ).join(", ");
+            throw new Error(`Validasi gagal: ${detailMessages}`);
+          }
+
+          // Domain validation errors from RoomService
+          if (Array.isArray(parsedError.details?.errors)) {
+            const detailMessages = parsedError.details.errors.join(", ");
+            throw new Error(`Validasi gagal: ${detailMessages}`);
+          }
+
+          if (parsedError.error) {
+            throw new Error(parsedError.error);
+          }
+        }
+
+        throw new Error(errorText || "Failed to create rooms");
       }
 
       await response.json();
