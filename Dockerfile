@@ -10,7 +10,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma          
 RUN npm ci --include=dev
+
 
 # Build the Next.js application using the standalone output
 FROM base AS builder
