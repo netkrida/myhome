@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  app:
+    container_name: myhome-app-dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 3000
+      NEXT_TELEMETRY_DISABLED: 1
+    # Command untuk reset database dan seed sebelum start
+    command: ["sh", "-c", "npm run db:reset:docker && node server.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - myhome-dev
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: myhome-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: db_myhome_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: myhome123
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5433:5432"
+    networks:
+      - myhome-dev
+
+volumes:
+  postgres_dev_data:
+
+networks:
+  myhome-dev:
+    driver: bridge
+

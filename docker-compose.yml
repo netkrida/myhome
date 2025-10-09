@@ -11,11 +11,30 @@ services:
       - .env.production
     environment:
       NODE_ENV: production
-      NEXTAUTH_URL: https://myhome.co.id
       HOST: 0.0.0.0
       PORT: 3000
       NEXT_TELEMETRY_DISABLED: 1
-    command: ["sh", "-c", "npm run prisma:migrate:deploy && node server.js"]
+    # Command akan menjalankan init script berdasarkan DB_INIT_MODE dari .env.production
+    # DB_INIT_MODE options:
+    # - "migrate" (default): hanya migrate (production default)
+    # - "reset": reset database dan seed (development/testing)
+    # - "init": migrate + seed (first deployment)
+    command:
+      - sh
+      - -c
+      - |
+        if [ "$DB_INIT_MODE" = "reset" ]; then
+          echo "🔄 Running database reset..."
+          npm run db:reset:docker
+        elif [ "$DB_INIT_MODE" = "init" ]; then
+          echo "🚀 Running database init..."
+          npm run db:init:docker
+        else
+          echo "📦 Running database migrate..."
+          npm run prisma:migrate:deploy
+        fi
+        echo "🚀 Starting application..."
+        node server.js
     depends_on:
       postgres:
         condition: service_healthy
