@@ -22,22 +22,7 @@ services:
     # - "migrate" (default): hanya migrate (production default)
     # - "reset": reset database dan seed (development/testing)
     # - "init": migrate + seed (first deployment)
-    command:
-      - sh
-      - -c
-      - |
-        if [ "$DB_INIT_MODE" = "reset" ]; then
-          echo "🔄 Running database reset..."
-          npm run db:reset:docker
-        elif [ "$DB_INIT_MODE" = "init" ]; then
-          echo "🚀 Running database init..."
-          npm run db:init:docker
-        else
-          echo "📦 Running database migrate..."
-          npm run prisma:migrate:deploy
-        fi
-        echo "🚀 Starting application..."
-        node server.js
+      command: sh -c "npx prisma migrate deploy && npm run db:seed && node server.js"
     depends_on:
       postgres:
         condition: service_healthy
