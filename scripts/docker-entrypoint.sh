@@ -1,59 +1,134 @@
-#!/bin/sh
+#!/usr/bin/env sh
 set -e
 
 echo "============================================"
-echo "🔍 Starting database initialization..."
+echo "� Booting MyHome Container"
 echo "============================================"
+echo "📝 Environment: NODE_ENV=${NODE_ENV:-production}"
+echo "📝 Port: ${PORT:-3000}"
+echo ""
 
-# Print environment info for debugging
-echo "📝 Environment:"
-echo "   NODE_ENV: ${NODE_ENV}"
-echo "   DATABASE_URL: ${DATABASE_URL:0:30}..." # Only show first 30 chars for security
+# Validate DATABASE_URL
+if [ -z "$DATABASE_URL" ]; then
+  echo "❌ ERROR: DATABASE_URL is not set."
+  echo "   Please configure DATABASE_URL in Dockploy environment variables."
+  exit 1
+fi
 
-#!/bin/sh
-set -e
+echo "✅ DATABASE_URL is configured"
+echo "   Connection: ${DATABASE_URL:0:35}..." # Show first 35 chars for security
+echo ""
 
-echo "🔍 Starting database initialization..."
+# Wait for PostgreSQL to be ready
+echo "============================================"
+echo "⏳ Waiting for PostgreSQL..."
+echo "============================================"
+MAX_RETRIES=30
+RETRY_COUNT=0
 
-# Wait for postgres to be ready
-echo "⏳ Waiting for PostgreSQL to be ready..."
 until echo "SELECT 1" | npx prisma db execute --stdin > /dev/null 2>&1; do
-  echo "⏳ PostgreSQL is unavailable - sleeping"
+  RETRY_COUNT=$((RETRY_COUNT + 1))
+  if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+    echo "❌ PostgreSQL is not available after ${MAX_RETRIES} attempts"
+    echo "   Please check:"
+    echo "   - Database service is running"
+    echo "   - DATABASE_URL is correct"
+    echo "   - Network connectivity between containers"
+    exit 1
+  fi
+  echo "⏳ PostgreSQL is unavailable (attempt ${RETRY_COUNT}/${MAX_RETRIES}) - retrying in 2s..."
   sleep 2
 done
 
 echo "✅ PostgreSQL is ready!"
 echo ""
 
-# Run migrations
+# Step 1: Prisma Generate
 echo "============================================"
-echo "📦 Running database migrations..."
+echo "📦 Step 1: Generating Prisma Client..."
 echo "============================================"
-npx prisma migrate deploy
+npx prisma generate
 
 if [ $? -eq 0 ]; then
-  echo "✅ Migrations completed successfully!"
+  echo "✅ Prisma Client generated successfully!"
 else
-  echo "❌ Migration failed!"
+  echo "❌ Prisma generate failed!"
   exit 1
 fi
-
 echo ""
 
-# Run seed
+# Step 2: Database Schema Sync (migrate or push)
 echo "============================================"
-echo "🌱 Running database seed..."
+echo "📦 Step 2: Syncing Database Schema..."
 echo "============================================"
-npm run db:seed
 
-if [ $? -eq 0 ]; then
-  echo "✅ Seed completed successfully!"
+# Check if migrations directory exists and has migration files
+if [ -d "./prisma/migrations" ] && [ -n "$(ls -A ./prisma/migrations 2>/dev/null | grep -v migration_lock.toml)" ]; then
+  echo "📂 Migrations found. Running prisma migrate deploy..."
+  npx prisma migrate deploy
+
+  if [ $? -eq 0 ]; then
+    echo "✅ Migrations applied successfully!"
+  else
+    echo "❌ Migration failed!"
+    exit 1
+  fi
 else
-  echo "⚠️  Seed failed, but continuing..."
-fi
+  echo "📂 No migrations found. Running prisma db push..."
+  npx prisma db push --accept-data-loss
 
+  if [ $? -eq 0 ]; then
+    echo "✅ Database schema pushed successfully!"
+  else
+    echo "❌ Database push failed!"
+    exit 1
+  fi
+fi
 echo ""
+
+# Step 3: Database Seeding
 echo "============================================"
-echo "🚀 Starting application..."
+echo "🌱 Step 3: Seeding Database..."
 echo "============================================"
-exec node server.js
+
+# Check if seed script exists in package.json
+if npm run | grep -q "db:seed"; then
+  echo "🌱 Running seed via npm run db:seed..."
+  npm run db:seed || {
+    echo "⚠️  Seed failed (this is OK if data already exists)"
+    echo "   Continuing with application startup..."
+  }
+elif grep -q '"prisma"[[:space:]]*:' package.json && grep -q '"seed"' package.json; then
+  echo "🌱 Running seed via npx prisma db seed..."
+  npx prisma db seed || {
+    echo "⚠️  Seed failed (this is OK if data already exists)"
+    echo "   Continuing with application startup..."
+  }
+else
+  echo "ℹ️  No seed script configured. Skipping seeding."
+fi
+echo ""
+
+# Step 4: Start Application
+echo "============================================"
+echo "🚀 Step 4: Starting Application..."
+echo "============================================"
+
+# Determine start command
+if npm run | grep -q "start:docker"; then
+  echo "🎯 Starting with: npm run start:docker"
+  exec npm run start:docker
+elif npm run | grep -q "^start$"; then
+  echo "🎯 Starting with: npm run start"
+  exec npm run start
+elif [ -f "./server.js" ]; then
+  echo "🎯 Starting with: node server.js"
+  exec node server.js
+elif [ -f "./dist/main.js" ]; then
+  echo "🎯 Starting with: node dist/main.js"
+  exec node dist/main.js
+else
+  echo "❌ ERROR: No start command found!"
+  echo "   Please ensure package.json has a 'start' script."
+  exit 1
+fi
