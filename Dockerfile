@@ -24,7 +24,7 @@ RUN npm run build
 
 # Production runtime image
 FROM base AS runner
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl bash
 WORKDIR /app
 ENV PORT=3000
 ENV HOST=0.0.0.0
@@ -37,8 +37,12 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
+# Copy entrypoint script
+COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Ensure the lightweight runtime runs as non-root
 USER node
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["/usr/local/bin/docker-entrypoint.sh"]

@@ -17,8 +17,7 @@ services:
       # Cron Config (tambahan untuk cleanup)
       CRON_SECRET: ${CRON_SECRET}
       BOOKING_UNPAID_GRACE_MINUTES: ${BOOKING_UNPAID_GRACE_MINUTES:-30}
-    # Command otomatis menjalankan migrate dan seed setiap deploy
-    command: sh -c "npx prisma migrate deploy && npm run db:seed && node server.js"
+    # Entrypoint script akan otomatis menjalankan migrate, seed, dan start app
     depends_on:
       postgres:
         condition: service_healthy
