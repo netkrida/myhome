@@ -8,10 +8,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Install dependencies with caching support
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl
 COPY package.json package-lock.json* ./
-COPY prisma ./prisma          
+COPY prisma ./prisma
 RUN npm ci --include=dev
+RUN npx prisma generate
 
 
 # Build the Next.js application using the standalone output

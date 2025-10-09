@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: myhome-app
     restart: unless-stopped
-    command: ["sh", "-c", "npm run prisma:migrate:deploy && node server.js"]
+    command: ["sh", "-c", "npm run prisma:migrate:deploy && npm run db:seed && node server.js"]
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
@@ -22,8 +22,10 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:-}
       MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY:-}
-      MIDTRANS_IS_PRODUCTION: ${MIDTRANS_IS_PRODUCTION:-false}
+      MIDTRANS_IS_PRODUCTION: ${MIDTRANS_IS_PRODUCTION:-true}
       NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-MyHome}
+      CRON_SECRET: ${CRON_SECRET}
+      BOOKING_UNPAID_GRACE_MINUTES: ${BOOKING_UNPAID_GRACE_MINUTES:-30}
     ports:
       - "3000:3000"
     healthcheck:

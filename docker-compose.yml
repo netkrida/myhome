@@ -14,6 +14,9 @@ services:
       HOST: 0.0.0.0
       PORT: 3000
       NEXT_TELEMETRY_DISABLED: 1
+      # Cron Config (tambahan untuk cleanup)
+      CRON_SECRET: ${CRON_SECRET}
+      BOOKING_UNPAID_GRACE_MINUTES: ${BOOKING_UNPAID_GRACE_MINUTES:-30}
     # Command akan menjalankan init script berdasarkan DB_INIT_MODE dari .env.production
     # DB_INIT_MODE options:
     # - "migrate" (default): hanya migrate (production default)
@@ -55,13 +58,30 @@ services:
       - "traefik.http.routers.myhome.tls.certresolver=dockploy"
       - "traefik.http.services.myhome.loadbalancer.server.port=3000"
 
+  # Cron Service untuk Cleanup Expired Bookings
+  cron:
+    container_name: myhome-cron
+    build:
+      context: ./docker/cron
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      CRON_SECRET: ${CRON_SECRET}
+      APP_URL: http://app:3000
+      TZ: ${TZ:-UTC}
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - myhome
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: db_myhome
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: myhome123
+      POSTGRES_PASSWORD: myhom_123
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

@@ -312,6 +312,7 @@ model Booking {
   @@index([status])
   @@index([paymentStatus])
   @@index([checkInDate])
+  @@index([createdAt])
 }
 
 model Payment {
@@ -338,6 +339,8 @@ model Payment {
   @@index([userId])
   @@index([status])
   @@index([midtransOrderId])
+  @@index([status, expiryTime])
+  @@index([expiryTime])
 }
 
 enum UserRole {

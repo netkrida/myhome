@@ -1,0 +1,8 @@
+# Crontab untuk Cleanup Expired Bookings
+# Format: minute hour day month weekday command
+#
+# Jadwal: Setiap 5 menit
+# */5 * * * * = Menit ke-0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55 setiap jam
+
+*/5 * * * * /usr/local/bin/cleanup.sh >> /proc/1/fd/1 2>&1
+
