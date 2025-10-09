@@ -4,6 +4,57 @@ Kumpulan script untuk membantu deployment MyHome di Dockploy.
 
 ## 📁 File Scripts
 
+### 🗄️ Database Management Scripts
+
+#### `docker-db-reset.sh`
+Script untuk reset database dan jalankan seed di Docker environment.
+
+**Fungsi:**
+- Generate Prisma Client
+- Reset database (drop all tables)
+- Run migrations
+- Run seed data
+
+**⚠️ WARNING:** Script ini akan **MENGHAPUS SEMUA DATA** di database!
+
+**Cara menjalankan:**
+```bash
+# Via npm script (recommended)
+npm run db:reset:docker
+
+# Direct
+sh scripts/docker-db-reset.sh
+
+# Di Docker container
+docker-compose exec app npm run db:reset:docker
+```
+
+---
+
+#### `docker-db-init.sh`
+Script untuk initialize database dengan migrations dan seed di Docker environment.
+
+**Fungsi:**
+- Generate Prisma Client
+- Run migrations (deploy)
+- Run seed data
+
+**Use case:** First deployment atau fresh installation
+
+**Cara menjalankan:**
+```bash
+# Via npm script (recommended)
+npm run db:init:docker
+
+# Direct
+sh scripts/docker-db-init.sh
+
+# Di Docker container
+docker-compose exec app npm run db:init:docker
+```
+
+---
+
 ### 🚀 `deploy-dockploy.sh`
 Script helper untuk mempersiapkan dan memvalidasi deployment di Dockploy.
 
