@@ -17,12 +17,8 @@ services:
       # Cron Config (tambahan untuk cleanup)
       CRON_SECRET: ${CRON_SECRET}
       BOOKING_UNPAID_GRACE_MINUTES: ${BOOKING_UNPAID_GRACE_MINUTES:-30}
-    # Command akan menjalankan init script berdasarkan DB_INIT_MODE dari .env.production
-    # DB_INIT_MODE options:
-    # - "migrate" (default): hanya migrate (production default)
-    # - "reset": reset database dan seed (development/testing)
-    # - "init": migrate + seed (first deployment)
-      command: sh -c "npx prisma migrate deploy && npm run db:seed && node server.js"
+    # Command otomatis menjalankan migrate dan seed setiap deploy
+    command: sh -c "npx prisma migrate deploy && npm run db:seed && node server.js"
     depends_on:
       postgres:
         condition: service_healthy
