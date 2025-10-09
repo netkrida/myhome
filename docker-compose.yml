@@ -18,9 +18,7 @@ services:
       CRON_SECRET: ${CRON_SECRET}
       BOOKING_UNPAID_GRACE_MINUTES: ${BOOKING_UNPAID_GRACE_MINUTES:-30}
     # Entrypoint script akan otomatis menjalankan migrate, seed, dan start app
-    depends_on:
-      postgres:
-        condition: service_healthy
+    # Note: Menggunakan database eksternal dari Dockploy, bukan service postgres di compose
     ports:
       - "3000:3000"
     networks:
@@ -55,27 +53,28 @@ services:
     networks:
       - myhome
 
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: db_myhome
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: myhom_123
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "5432:5432"
-    networks:
-      - myhome
+  # Service postgres di-comment karena menggunakan database Dockploy eksternal
+  # postgres:
+  #   image: postgres:16-alpine
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: db_myhome
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: myhom_123
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   ports:
+  #     - "5432:5432"
+  #   networks:
+  #     - myhome
 
-volumes:
-  postgres_data:
+# volumes:
+#   postgres_data:
 
 networks:
   myhome:
