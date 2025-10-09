@@ -15,11 +15,11 @@ export const roomFacilitySchema = z.object({
 
 // Base room pricing schema (without refine for partial support)
 export const baseRoomPricingSchema = z.object({
-  monthlyPrice: z.number().min(0, "Monthly price cannot be negative"),
-  dailyPrice: z.number().min(0, "Daily price cannot be negative").optional(),
-  weeklyPrice: z.number().min(0, "Weekly price cannot be negative").optional(),
-  quarterlyPrice: z.number().min(0, "Quarterly price cannot be negative").optional(),
-  yearlyPrice: z.number().min(0, "Yearly price cannot be negative").optional(),
+  monthlyPrice: z.number().positive("Monthly price must be greater than 0"),
+  dailyPrice: z.number().positive("Daily price must be greater than 0").optional(),
+  weeklyPrice: z.number().positive("Weekly price must be greater than 0").optional(),
+  quarterlyPrice: z.number().positive("Quarterly price must be greater than 0").optional(),
+  yearlyPrice: z.number().positive("Yearly price must be greater than 0").optional(),
 });
 
 // Room pricing schema with validation

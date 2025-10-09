@@ -29,7 +29,7 @@ export default function HomePage() {
         <h2 className="mb-12 text-center text-3xl font-bold">
           Why Choose myhome?
         </h2>
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader>
               <IconMapPin className="mb-4 h-12 w-12 text-primary" />
@@ -65,7 +65,7 @@ export default function HomePage() {
       {/* Stats */}
       <section className="bg-primary py-16 text-primary-foreground">
         <div className="container mx-auto px-4">
-          <div className="grid gap-8 text-center md:grid-cols-4">
+          <div className="grid gap-8 text-center sm:grid-cols-2 xl:grid-cols-4">
             <div>
               <div className="mb-2 text-4xl font-bold">1,000+</div>
               <div className="text-primary-foreground/80">Properties Listed</div>

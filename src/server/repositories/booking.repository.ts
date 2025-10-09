@@ -346,6 +346,8 @@ export class BookingRepository {
 
   /**
    * Get bookings for a specific room within date range
+   * Excludes UNPAID, CANCELLED, and EXPIRED bookings
+   * UNPAID bookings are not considered valid until payment is successful
    */
   static async getBookingsForRoom(
     roomId: string,
@@ -357,7 +359,9 @@ export class BookingRepository {
         where: {
           roomId,
           status: {
-            notIn: [BookingStatus.CANCELLED, BookingStatus.EXPIRED]
+            // Exclude UNPAID (not paid yet), CANCELLED, and EXPIRED bookings
+            // Only count bookings that have been paid (DEPOSIT_PAID, CONFIRMED, CHECKED_IN, COMPLETED)
+            notIn: [BookingStatus.UNPAID, BookingStatus.CANCELLED, BookingStatus.EXPIRED]
           },
           OR: [
             {
@@ -427,6 +431,55 @@ export class BookingRepository {
     } catch (error) {
       console.error("Error deleting booking:", error);
       return internalError("Failed to delete booking");
+    }
+  }
+
+  /**
+   * Check if room is available for booking in date range
+   * Returns true if room is available (no conflicting paid bookings)
+   */
+  static async isRoomAvailable(
+    roomId: string,
+    startDate: Date,
+    endDate: Date,
+    excludeBookingId?: string
+  ): Promise<Result<boolean>> {
+    try {
+      const conflictingBookings = await prisma.booking.count({
+        where: {
+          roomId,
+          id: excludeBookingId ? { not: excludeBookingId } : undefined,
+          status: {
+            // Only check against paid bookings (exclude UNPAID, CANCELLED, EXPIRED)
+            notIn: [BookingStatus.UNPAID, BookingStatus.CANCELLED, BookingStatus.EXPIRED]
+          },
+          OR: [
+            {
+              checkInDate: {
+                gte: startDate,
+                lt: endDate
+              }
+            },
+            {
+              checkOutDate: {
+                gt: startDate,
+                lte: endDate
+              }
+            },
+            {
+              AND: [
+                { checkInDate: { lte: startDate } },
+                { checkOutDate: { gte: endDate } }
+              ]
+            }
+          ]
+        }
+      });
+
+      return ok(conflictingBookings === 0);
+    } catch (error) {
+      console.error("Error checking room availability:", error);
+      return internalError("Failed to check room availability");
     }
   }
 

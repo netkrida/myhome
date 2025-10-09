@@ -7,13 +7,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { CustomerAPI } from "@/server/api/customer.api";
+import { CustomerLayout } from "@/components/layout/customer-layout";
 
 export default async function CustomerSettingsPage() {
 	noStore();
 
 	const result = await CustomerAPI.getProfile();
 
-	if (!result.success || !result.data) {
+	// fix: discriminated union Result type - guard before accessing error
+	if (!result.success) {
 		console.error("Failed to load customer settings", result.error);
 		notFound();
 	}
@@ -21,13 +23,14 @@ export default async function CustomerSettingsPage() {
 	const profile = result.data;
 
 	return (
-		<div className="space-y-8">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-3xl font-bold tracking-tight">Pengaturan Akun</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
-					Kelola informasi akun, keamanan, dan preferensi notifikasi kamu di satu tempat.
-				</p>
-			</div>
+		<CustomerLayout>
+			<div className="space-y-8">
+				<div className="flex flex-col gap-2">
+					<h1 className="text-3xl font-bold tracking-tight">Pengaturan Akun</h1>
+					<p className="max-w-2xl text-sm text-muted-foreground">
+						Kelola informasi akun, keamanan, dan preferensi notifikasi kamu di satu tempat.
+					</p>
+				</div>
 
 			<div className="grid gap-6 lg:grid-cols-3">
 				<Card className="lg:col-span-2">
@@ -115,5 +118,6 @@ export default async function CustomerSettingsPage() {
 				</CardContent>
 			</Card>
 		</div>
+		</CustomerLayout>
 	);
 }

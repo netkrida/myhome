@@ -1,4 +1,5 @@
-import { type Room, type RoomImage, type Prisma } from "@prisma/client";
+// fix(prisma): RoomImage tidak ada di schema, hapus import
+import { type Room, type Prisma } from "@prisma/client";
 import { prisma } from "../db/client";
 import { ImageCategory } from "../types/property";
 import type {
@@ -30,20 +31,46 @@ import { ok, fail, notFound, internalError } from "../types/result";
  */
 export class RoomRepository {
   /**
+   * Helper: Get images for a room from RoomTypeImage (shared images)
+   */
+  private static async getRoomImages(room: { propertyId: string; roomType: string }) {
+    // Get shared images from RoomTypeImage
+    const roomTypeImages = await prisma.roomTypeImage.findMany({
+      where: {
+        propertyId: room.propertyId,
+        roomType: room.roomType,
+      },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    return roomTypeImages.map(img => ({
+      id: img.id,
+      category: img.category as any,
+      imageUrl: img.imageUrl,
+      publicId: img.publicId || undefined,
+      caption: img.caption || undefined,
+      sortOrder: img.sortOrder,
+      createdAt: img.createdAt,
+      updatedAt: img.updatedAt,
+    }));
+  }
+
+  /**
    * Find room by ID with optional includes
    */
   static async findById(
-    id: string, 
+    id: string,
     includeImages: boolean = true,
     includeProperty: boolean = false
   ): Promise<RoomDetailItem | null> {
     const include: Prisma.RoomInclude = {};
-    
-    if (includeImages) {
-      include.images = {
-        orderBy: { sortOrder: 'asc' }
-      };
-    }
+
+    // Don't include images in query, we'll fetch separately
+    // if (includeImages) {
+    //   include.images = {
+    //     orderBy: { sortOrder: 'asc' }
+    //   };
+    // }
     
     if (includeProperty) {
       include.property = {
@@ -77,6 +104,9 @@ export class RoomRepository {
 
     if (!room) return null;
 
+    // Get images using helper (with fallback)
+    const images = includeImages ? await this.getRoomImages(room) : [];
+
     // Transform to RoomDetailItem
     return {
       id: room.id,
@@ -99,16 +129,7 @@ export class RoomRepository {
       isAvailable: room.isAvailable,
       createdAt: room.createdAt,
       updatedAt: room.updatedAt,
-      images: room.images?.map(img => ({
-        id: img.id,
-        category: img.category as any,
-        imageUrl: img.imageUrl,
-        publicId: img.publicId || undefined,
-        caption: img.caption || undefined,
-        sortOrder: img.sortOrder,
-        createdAt: img.createdAt,
-        updatedAt: img.updatedAt,
-      })) || [],
+      images,
       property: room.property ? {
         id: room.property.id,
         name: room.property.name,
@@ -183,46 +204,73 @@ export class RoomRepository {
           },
         });
         rooms.push(room);
+      }
 
-        // Create room images for this room type
-        const roomTypePhotos = step1.roomTypePhotos[roomConfig.roomType];
-        if (roomTypePhotos) {
-          const imageData: any[] = [];
+      // Create shared room type images (ONCE per room type, not per room)
+      // This prevents duplication - all rooms of same type share same images
+      const processedRoomTypes = new Set<string>();
 
-          // Front view photos - use ROOM_PHOTOS category
-          roomTypePhotos.frontViewPhotos.forEach((url, index) => {
-            imageData.push({
-              roomId: room.id,
-              category: ImageCategory.ROOM_PHOTOS,
-              imageUrl: url,
-              sortOrder: index,
+      for (const roomConfig of step4.rooms) {
+        const roomType = roomConfig.roomType;
+
+        // Skip if we already processed this room type
+        if (processedRoomTypes.has(roomType)) {
+          continue;
+        }
+        processedRoomTypes.add(roomType);
+
+        // Check if images already exist for this room type
+        const existingTypeImages = await tx.roomTypeImage.findFirst({
+          where: {
+            propertyId,
+            roomType,
+          },
+        });
+
+        // Only create images if they don't exist yet
+        if (!existingTypeImages) {
+          const roomTypePhotos = step1.roomTypePhotos[roomType];
+          if (roomTypePhotos) {
+            const imageData: any[] = [];
+
+            // Front view photos - use ROOM_PHOTOS category
+            roomTypePhotos.frontViewPhotos.forEach((url, index) => {
+              imageData.push({
+                propertyId,
+                roomType,
+                category: ImageCategory.ROOM_PHOTOS,
+                imageUrl: url,
+                sortOrder: index,
+              });
             });
-          });
 
-          // Interior photos - use ROOM_PHOTOS category
-          roomTypePhotos.interiorPhotos.forEach((url, index) => {
-            imageData.push({
-              roomId: room.id,
-              category: ImageCategory.ROOM_PHOTOS,
-              imageUrl: url,
-              sortOrder: index + 1000, // Offset to distinguish from front view photos
+            // Interior photos - use ROOM_PHOTOS category
+            roomTypePhotos.interiorPhotos.forEach((url, index) => {
+              imageData.push({
+                propertyId,
+                roomType,
+                category: ImageCategory.ROOM_PHOTOS,
+                imageUrl: url,
+                sortOrder: roomTypePhotos.frontViewPhotos.length + index,
+              });
             });
-          });
 
-          // Bathroom photos - use BATHROOM_PHOTOS category
-          roomTypePhotos.bathroomPhotos.forEach((url, index) => {
-            imageData.push({
-              roomId: room.id,
-              category: ImageCategory.BATHROOM_PHOTOS,
-              imageUrl: url,
-              sortOrder: index,
+            // Bathroom photos - use BATHROOM_PHOTOS category
+            roomTypePhotos.bathroomPhotos.forEach((url, index) => {
+              imageData.push({
+                propertyId,
+                roomType,
+                category: ImageCategory.BATHROOM_PHOTOS,
+                imageUrl: url,
+                sortOrder: index,
+              });
             });
-          });
 
-          if (imageData.length > 0) {
-            await tx.roomImage.createMany({
-              data: imageData,
-            });
+            if (imageData.length > 0) {
+              await tx.roomTypeImage.createMany({
+                data: imageData,
+              });
+            }
           }
         }
       }
@@ -416,29 +464,51 @@ export class RoomRepository {
             name: true,
           },
         },
-        images: {
-          where: { category: 'ROOM_PHOTOS' },
-          orderBy: { sortOrder: 'asc' },
-          take: 1,
-        },
       },
     });
 
-    const roomListItems: RoomListItem[] = rooms.map(room => ({
-      id: room.id,
-      roomNumber: room.roomNumber,
-      floor: room.floor,
-      roomType: room.roomType,
-      monthlyPrice: Number(room.monthlyPrice),
-      isAvailable: room.isAvailable,
-      size: room.size || undefined,
-      property: {
-        id: room.property.id,
-        name: room.property.name,
+    // Get unique room types from results
+    const uniqueRoomTypes = new Set(rooms.map(r => ({ propertyId: r.propertyId, roomType: r.roomType })));
+
+    // Get shared images for all room types (efficient batch query)
+    const roomTypeImages = await prisma.roomTypeImage.findMany({
+      where: {
+        OR: Array.from(uniqueRoomTypes).map(({ propertyId, roomType }) => ({
+          propertyId,
+          roomType,
+          category: 'ROOM_PHOTOS',
+        })),
       },
-      mainImage: room.images[0]?.imageUrl,
-      createdAt: room.createdAt,
-    }));
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    // Create map: propertyId_roomType -> first image
+    const imageMap = new Map<string, string>();
+    for (const img of roomTypeImages) {
+      const key = `${img.propertyId}_${img.roomType}`;
+      if (!imageMap.has(key)) {
+        imageMap.set(key, img.imageUrl);
+      }
+    }
+
+    const roomListItems: RoomListItem[] = rooms.map(room => {
+      const imageKey = `${room.propertyId}_${room.roomType}`;
+      return {
+        id: room.id,
+        roomNumber: room.roomNumber,
+        floor: room.floor,
+        roomType: room.roomType,
+        monthlyPrice: Number(room.monthlyPrice),
+        isAvailable: room.isAvailable,
+        size: room.size || undefined,
+        property: {
+          id: room.property.id,
+          name: room.property.name,
+        },
+        mainImage: imageMap.get(imageKey),
+        createdAt: room.createdAt,
+      };
+    });
 
     return {
       rooms: roomListItems,
@@ -478,9 +548,6 @@ export class RoomRepository {
         },
       },
       include: {
-        images: {
-          orderBy: { sortOrder: 'asc' }
-        },
         property: {
           select: {
             id: true,
@@ -507,18 +574,21 @@ export class RoomRepository {
       },
     });
 
+    // Check if room exists and property is approved
+    if (!room || !room.property || room.property.status !== 'APPROVED') {
+      return null;
+    }
+
+    // Get images using helper (with fallback)
+    const images = await this.getRoomImages(room);
+
     console.log("🔍 RoomRepository.getPublicRoomDetail - Result:", {
       found: !!room,
       roomId: room?.id,
       roomNumber: room?.roomNumber,
       propertyStatus: room?.property?.status,
-      imagesCount: room?.images?.length || 0
+      imagesCount: images.length
     });
-
-    // Check if room exists and property is approved
-    if (!room || !room.property || room.property.status !== 'APPROVED') {
-      return null;
-    }
 
     // Transform to PublicRoomDetailDTO
     return {
@@ -538,16 +608,7 @@ export class RoomRepository {
       depositValue: room.depositValue ? Number(room.depositValue) : undefined,
       facilities: room.facilities as any[],
       isAvailable: room.isAvailable,
-      images: room.images?.map(img => ({
-        id: img.id,
-        category: img.category as any,
-        imageUrl: img.imageUrl,
-        publicId: img.publicId || undefined,
-        caption: img.caption || undefined,
-        sortOrder: img.sortOrder,
-        createdAt: img.createdAt,
-        updatedAt: img.updatedAt,
-      })) || [],
+      images,
       property: {
         id: room.property.id,
         name: room.property.name,
@@ -638,13 +699,6 @@ export class RoomRepository {
       skip,
       take: limit,
       orderBy: { [sortBy]: sortOrder },
-      include: {
-        images: {
-          where: { category: 'ROOM_PHOTOS' },
-          orderBy: { sortOrder: 'asc' },
-          take: 1, // Only main image for card view
-        },
-      },
     });
 
     console.log("🔍 RoomRepository.getPublicPropertyRooms - Result:", {
@@ -653,6 +707,23 @@ export class RoomRepository {
       total,
       pagination: { page, limit, totalPages }
     });
+
+    // Get shared images for all room types in this property
+    const roomTypeImages = await prisma.roomTypeImage.findMany({
+      where: {
+        propertyId,
+        category: 'ROOM_PHOTOS',
+      },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    // Create map: roomType -> first image
+    const imageMap = new Map<string, string>();
+    for (const img of roomTypeImages) {
+      if (!imageMap.has(img.roomType)) {
+        imageMap.set(img.roomType, img.imageUrl);
+      }
+    }
 
     const roomCards: PublicRoomCardDTO[] = rooms.map(room => ({
       id: room.id,
@@ -669,7 +740,7 @@ export class RoomRepository {
       depositValue: room.depositValue ? Number(room.depositValue) : undefined,
       facilities: room.facilities as any[],
       isAvailable: room.isAvailable,
-      mainImage: room.images[0]?.imageUrl,
+      mainImage: imageMap.get(room.roomType),
     }));
 
     return {
@@ -847,11 +918,6 @@ export class RoomRepository {
     const rooms = await prisma.room.findMany({
       where: roomWhere,
       include: {
-        images: {
-          where: { category: 'ROOM_PHOTOS' },
-          orderBy: { sortOrder: 'asc' },
-          take: 1, // Only main image for performance
-        },
         bookings: {
           where: {
             status: {
@@ -890,6 +956,23 @@ export class RoomRepository {
       roomsCount: rooms.length
     });
 
+    // Get shared images for all room types in this property
+    const roomTypeImages = await prisma.roomTypeImage.findMany({
+      where: {
+        propertyId,
+        category: 'ROOM_PHOTOS',
+      },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    // Create map: roomType -> first image
+    const roomTypeImageMap = new Map<string, string>();
+    for (const img of roomTypeImages) {
+      if (!roomTypeImageMap.has(img.roomType)) {
+        roomTypeImageMap.set(img.roomType, img.imageUrl);
+      }
+    }
+
     // Group rooms by room type
     const roomTypeMap = new Map<string, any[]>();
 
@@ -926,7 +1009,7 @@ export class RoomRepository {
           floor: room.floor,
           isAvailable,
           isOccupied,
-          mainImage: room.images[0]?.imageUrl,
+          mainImage: roomTypeImageMap.get(room.roomType),
         };
 
         // Add current booking info if exists

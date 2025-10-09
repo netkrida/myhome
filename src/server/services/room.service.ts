@@ -61,30 +61,40 @@ export class RoomService {
       errors.push("Pricing information is required");
     } else {
       Object.entries(roomData.step3.pricing).forEach(([roomType, pricing]) => {
-        if (!pricing.monthlyPrice || pricing.monthlyPrice <= 0) {
+        // Monthly price is required and must be greater than 0
+        if (typeof pricing.monthlyPrice !== 'number' || pricing.monthlyPrice <= 0) {
           errors.push(`${roomType}: Monthly price is required and must be greater than 0`);
         }
 
         // Validate alternative rentals if enabled
         if (roomData.step3.hasAlternativeRentals && roomData.step3.alternativeRentals) {
-          if (roomData.step3.alternativeRentals.daily && (!pricing.dailyPrice || pricing.dailyPrice <= 0)) {
-            errors.push(`${roomType}: Daily price is required when daily rental is enabled`);
+          if (roomData.step3.alternativeRentals.daily) {
+            if (typeof pricing.dailyPrice !== 'number' || pricing.dailyPrice <= 0) {
+              errors.push(`${roomType}: Daily price is required when daily rental is enabled`);
+            }
           }
-          if (roomData.step3.alternativeRentals.weekly && (!pricing.weeklyPrice || pricing.weeklyPrice <= 0)) {
-            errors.push(`${roomType}: Weekly price is required when weekly rental is enabled`);
+          if (roomData.step3.alternativeRentals.weekly) {
+            if (typeof pricing.weeklyPrice !== 'number' || pricing.weeklyPrice <= 0) {
+              errors.push(`${roomType}: Weekly price is required when weekly rental is enabled`);
+            }
           }
-          if (roomData.step3.alternativeRentals.quarterly && (!pricing.quarterlyPrice || pricing.quarterlyPrice <= 0)) {
-            errors.push(`${roomType}: Quarterly price is required when quarterly rental is enabled`);
+          if (roomData.step3.alternativeRentals.quarterly) {
+            if (typeof pricing.quarterlyPrice !== 'number' || pricing.quarterlyPrice <= 0) {
+              errors.push(`${roomType}: Quarterly price is required when quarterly rental is enabled`);
+            }
           }
-          if (roomData.step3.alternativeRentals.yearly && (!pricing.yearlyPrice || pricing.yearlyPrice <= 0)) {
-            errors.push(`${roomType}: Yearly price is required when yearly rental is enabled`);
+          if (roomData.step3.alternativeRentals.yearly) {
+            if (typeof pricing.yearlyPrice !== 'number' || pricing.yearlyPrice <= 0) {
+              errors.push(`${roomType}: Yearly price is required when yearly rental is enabled`);
+            }
           }
         }
       });
     }
 
-    // Validate deposit settings
-    if (roomData.step3.hasDeposit && !roomData.step3.depositPercentage) {
+    // Validate deposit settings - deposit is OPTIONAL
+    // Only validate if hasDeposit is true
+    if (roomData.step3.hasDeposit === true && !roomData.step3.depositPercentage) {
       errors.push("Deposit percentage is required when deposit is enabled");
     }
 

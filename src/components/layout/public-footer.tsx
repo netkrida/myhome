@@ -4,9 +4,9 @@ import { Building2, Mail, Phone, MapPin } from "lucide-react";
 
 export function PublicFooter() {
   return (
-    <footer className="bg-background text-foreground py-12 border-t">
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-4 gap-8">
+    <footer className="bg-background text-foreground border-t py-12">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="flex items-center mb-4">
               <Image
@@ -14,7 +14,7 @@ export function PublicFooter() {
                 alt="MyHome"
                 width={160}
                 height={48}
-                className="h-10 w-auto"
+                className="h-9 w-auto sm:h-10"
               />
             </div>
             <p className="text-muted-foreground">
@@ -46,15 +46,15 @@ export function PublicFooter() {
             <h3 className="font-semibold mb-4">Kontak Kami</h3>
             <ul className="space-y-2 text-muted-foreground">
               <li className="flex items-center">
-                <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                <Mail className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                 info@myhome.co.id
               </li>
               <li className="flex items-center">
-                <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                <Phone className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                 +62 21 1234 5678
               </li>
               <li className="flex items-center">
-                <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                <MapPin className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                 Jakarta, Indonesia
               </li>
             </ul>

@@ -17,6 +17,10 @@ import {
   IconHeart,
   IconHistory,
   IconBell,
+  IconWallet,
+  IconCreditCard,
+  IconReport,
+  IconUpload,
   IconActivity,
 } from "@tabler/icons-react"
 
@@ -54,20 +58,6 @@ export function DashboardSidebar({ variant = "sidebar" }: DashboardSidebarProps)
             title: "User Management",
             url: "/dashboard/superadmin/users",
             icon: IconUsers,
-            items: [
-              {
-                title: "All Users",
-                url: "/dashboard/superadmin/users",
-              },
-              {
-                title: "Admin Kos",
-                url: "/dashboard/superadmin/users/adminkos",
-              },
-              {
-                title: "Customers",
-                url: "/dashboard/superadmin/users/customers",
-              },
-            ],
           },
           {
             title: "Properties",
@@ -75,9 +65,14 @@ export function DashboardSidebar({ variant = "sidebar" }: DashboardSidebarProps)
             icon: IconBuilding,
           },
           {
-            title: "Analytics",
-            url: "/dashboard/superadmin/analytics",
+            title: "Transaction",
+            url: "/dashboard/superadmin/transactions",
             icon: IconChartBar,
+          },
+          {
+            title: "Submission",
+            url: "/dashboard/superadmin/submission",
+            icon: IconUpload,
           },
           {
             title: "Reports",
@@ -102,31 +97,11 @@ export function DashboardSidebar({ variant = "sidebar" }: DashboardSidebarProps)
             title: "My Properties",
             url: "/dashboard/adminkos/properties",
             icon: IconBuilding,
-            items: [
-              {
-                title: "All Properties",
-                url: "/dashboard/adminkos/properties",
-              },
-              {
-                title: "Add Property",
-                url: "/dashboard/adminkos/properties/add",
-              },
-            ],
           },
           {
             title: "Rooms",
             url: "/dashboard/adminkos/rooms",
             icon: IconBed,
-            items: [
-              {
-                title: "All Rooms",
-                url: "/dashboard/adminkos/rooms",
-              },
-              {
-                title: "Add Room",
-                url: "/dashboard/adminkos/rooms/add",
-              },
-            ],
           },
           {
             title: "Bookings",
@@ -135,13 +110,18 @@ export function DashboardSidebar({ variant = "sidebar" }: DashboardSidebarProps)
           },
           {
             title: "Receptionists",
-            url: "/dashboard/adminkos/receptionists",
+            url: "/dashboard/adminkos/receptionist",
             icon: IconUserCheck,
           },
           {
-            title: "Analytics",
-            url: "/dashboard/adminkos/analytics",
-            icon: IconChartBar,
+            title: "Transaction",
+            url: "/dashboard/adminkos/transaction",
+            icon: IconWallet,
+          },
+          {
+            title: "Withdraw",
+            url: "/dashboard/adminkos/withdraw",
+            icon: IconWallet,
           },
           {
             title: "Settings",

@@ -66,21 +66,21 @@ export function Header() {
   };
 
   return (
-  <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 text-foreground">
-  <div className="container flex h-14 items-center justify-between md:h-16">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 text-foreground">
+      <div className="container flex h-14 items-center justify-between gap-2 px-4 sm:h-16 sm:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center">
           <Image
             src="/logo.png"
             alt="MyHome"
-            width={40}
-            height={40}
-            className="h-10 w-auto"
+            width={36}
+            height={36}
+            className="h-9 w-auto sm:h-10"
           />
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
+        <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
           {navigationItems.map((item) => (
             <Link
               key={item.name}
@@ -93,9 +93,9 @@ export function Header() {
         </nav>
 
         {/* Desktop Auth Section */}
-  <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
+        <div className="hidden md:flex items-center space-x-2 lg:space-x-3">
           {/* Theme Toggler */}
-          <AnimatedThemeToggler className="mr-2" />
+          <AnimatedThemeToggler className="mr-1" />
           {session?.user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -149,8 +149,12 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <div className="flex items-center space-x-2">
-              <Button variant="ghost" onClick={() => setIsAuthModalOpen(true)}>
-                <LogIn className="mr-2 h-4 w-4" />
+              <Button
+                variant="ghost"
+                className="gap-1.5"
+                onClick={() => setIsAuthModalOpen(true)}
+              >
+                <LogIn className="h-3.5 w-3.5" />
                 Masuk
               </Button>
               <Button onClick={() => setIsAuthModalOpen(true)}>Daftar</Button>
@@ -158,25 +162,26 @@ export function Header() {
           )}
         </div>
 
-  {/* Mobile Menu */}
-  <AnimatedThemeToggler className="md:hidden mr-2" />
-  <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              className="px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
-            >
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Toggle Menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="pr-0 w-[85vw] max-w-sm">
-            <SheetHeader className="px-4 pt-6 pb-2">
-              <SheetTitle className="text-base font-semibold">
-                Menu
-              </SheetTitle>
-            </SheetHeader>
-            <div className="flex flex-col space-y-3 px-4 pb-6">
+        {/* Mobile Actions */}
+        <div className="flex items-center gap-1 md:hidden">
+          <AnimatedThemeToggler className="mr-1" />
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                className="px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+              >
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="pr-0 w-[82vw] max-w-xs sm:max-w-sm">
+              <SheetHeader className="px-4 pt-6 pb-2">
+                <SheetTitle className="text-base font-semibold">
+                  Menu
+                </SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col space-y-3 px-4 pb-6">
               {/* Mobile Logo */}
               <Link
                 href="/"
@@ -273,7 +278,7 @@ export function Header() {
                         setIsAuthModalOpen(true);
                       }}
                     >
-                      <LogIn className="mr-2 h-4 w-4" />
+                      <LogIn className="mr-2 h-3.5 w-3.5" />
                       Masuk
                     </Button>
                     <Button
@@ -290,7 +295,8 @@ export function Header() {
               </div>
             </div>
           </SheetContent>
-        </Sheet>
+          </Sheet>
+        </div>
       </div>
 
       {/* Login Modal */}

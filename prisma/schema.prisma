@@ -74,8 +74,11 @@ model User {
   PropertyStatusHistory PropertyStatusHistory[]
   receptionistProfile   ReceptionistProfile?
   sessions              Session[]
-  bookings              Booking[]
-  payments              Payment[]
+  bookings                Booking[]
+  payments                Payment[]
+  createdShiftAssignments ShiftAssignment[]     @relation("ShiftCreator")
+  approvedBankAccounts    BankAccount[]
+  processedPayouts        Payout[]
 
   @@index([email])
   @@index([role])
@@ -90,21 +93,55 @@ model VerificationToken {
 }
 
 model AdminKosProfile {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String          @id @default(cuid())
+  userId         String          @unique
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankAccounts   BankAccount[]
+  payouts        Payout[]
+  ledgerAccounts LedgerAccount[]
+  ledgerEntries  LedgerEntry[]
 }
 
 model ReceptionistProfile {
-  id        String    @id @default(cuid())
-  userId    String    @unique
-  startDate DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  shift     Shift?
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String            @id @default(cuid())
+  userId         String            @unique
+  propertyId     String?
+  startDate      DateTime?
+  defaultShift   Shift?
+  gender         String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property       Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  shiftAssignments ShiftAssignment[]
+
+  @@index([propertyId])
+  @@index([userId])
+}
+
+model ShiftAssignment {
+  id                  String              @id @default(cuid())
+  receptionistId      String
+  propertyId          String
+  shiftType           Shift
+  date                DateTime            @db.Date
+  startTime           String              @db.VarChar(5) // HH:mm format
+  endTime             String              @db.VarChar(5) // HH:mm format
+  notes               String?             @db.Text
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  createdBy           String
+  receptionist        ReceptionistProfile @relation(fields: [receptionistId], references: [id], onDelete: Cascade)
+  property            Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  creator             User                @relation("ShiftCreator", fields: [createdBy], references: [id])
+
+  @@unique([receptionistId, date, shiftType])
+  @@index([receptionistId])
+  @@index([propertyId])
+  @@index([date])
+  @@index([shiftType])
 }
 
 model CustomerProfile {
@@ -152,7 +189,10 @@ model Property {
   images                PropertyImage[]
   PropertyStatusHistory PropertyStatusHistory[]
   rooms                 Room[]
+  roomTypeImages        RoomTypeImage[]
   bookings              Booking[]
+  receptionists         ReceptionistProfile[]
+  shiftAssignments      ShiftAssignment[]
 
   @@index([status])
   @@index([propertyType])
@@ -200,7 +240,6 @@ model Room {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   property          Property           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  images            RoomImage[]
   bookings          Booking[]
 
   @@unique([propertyId, roomNumber])
@@ -209,19 +248,23 @@ model Room {
   @@index([isAvailable])
 }
 
-model RoomImage {
-  id        String        @id @default(cuid())
-  roomId    String
-  category  ImageCategory
-  imageUrl  String        @db.VarChar(500)
-  publicId  String?       @db.VarChar(255)
-  caption   String?       @db.VarChar(255)
-  sortOrder Int           @default(0)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  room      Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+// Shared images for room types (to avoid duplication)
+// All rooms with same type in same property share these images
+model RoomTypeImage {
+  id         String        @id @default(cuid())
+  propertyId String
+  roomType   String        @db.VarChar(100)
+  category   ImageCategory
+  imageUrl   String        @db.VarChar(500)
+  publicId   String?       @db.VarChar(255)
+  caption    String?       @db.VarChar(255)
+  sortOrder  Int           @default(0)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  property   Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  @@index([roomId, category])
+  @@index([propertyId, roomType])
+  @@index([propertyId, roomType, category])
 }
 
 model PropertyStatusHistory {
@@ -253,7 +296,7 @@ model Booking {
   totalAmount    Decimal       @db.Decimal(12, 2)
   depositAmount  Decimal?      @db.Decimal(12, 2)
   paymentStatus  PaymentStatus @default(PENDING)
-  status         BookingStatus @default(PENDING)
+  status         BookingStatus @default(UNPAID)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -340,13 +383,13 @@ enum DepositPercentage {
 }
 
 enum BookingStatus {
-  PENDING
-  DEPOSIT_PAID
-  CONFIRMED
-  CHECKED_IN
-  COMPLETED
-  CANCELLED
-  EXPIRED
+  UNPAID        // Booking created but payment not completed yet
+  DEPOSIT_PAID  // Deposit payment successful
+  CONFIRMED     // Full payment successful
+  CHECKED_IN    // Customer has checked in
+  COMPLETED     // Booking completed (checked out)
+  CANCELLED     // Booking cancelled by user or admin
+  EXPIRED       // Payment expired, booking invalid
 }
 
 enum PaymentStatus {
@@ -425,4 +468,147 @@ model PageView {
   @@index([sessionId])
   @@index([page])
   @@index([createdAt])
+}
+
+// Bank Account for AdminKos
+model BankAccount {
+  id              String              @id @default(cuid())
+  adminKosId      String
+  bankCode        String              @db.VarChar(10) // Code from Kemenkeu API
+  bankName        String              @db.VarChar(255)
+  accountNumber   String              @db.VarChar(50)
+  accountName     String              @db.VarChar(255)
+  status          BankAccountStatus   @default(PENDING)
+  rejectionReason String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  adminKos        AdminKosProfile     @relation(fields: [adminKosId], references: [id], onDelete: Cascade)
+  approver        User?               @relation(fields: [approvedBy], references: [id])
+  payouts         Payout[]
+
+  @@index([adminKosId])
+  @@index([status])
+}
+
+// Payout (Withdraw) Request
+model Payout {
+  id              String            @id @default(cuid())
+  adminKosId      String
+  bankAccountId   String
+  amount          Decimal           @db.Decimal(12, 2)
+  source          PayoutSource      @default(SALES)
+  balanceBefore   Decimal           @db.Decimal(12, 2)
+  balanceAfter    Decimal           @db.Decimal(12, 2)
+  status          PayoutStatus      @default(PENDING)
+  notes           String?
+  rejectionReason String?
+  processedBy     String?
+  processedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  adminKos        AdminKosProfile   @relation(fields: [adminKosId], references: [id], onDelete: Cascade)
+  bankAccount     BankAccount       @relation(fields: [bankAccountId], references: [id])
+  processor       User?             @relation(fields: [processedBy], references: [id])
+  attachments     PayoutAttachment[]
+
+  @@index([adminKosId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Payout Attachment (Bukti Transfer)
+model PayoutAttachment {
+  id        String   @id @default(cuid())
+  payoutId  String
+  fileUrl   String   @db.VarChar(500)
+  fileName  String   @db.VarChar(255)
+  fileType  String   @db.VarChar(50) // image/jpeg, application/pdf, etc
+  publicId  String?  @db.VarChar(255) // Cloudinary public ID
+  createdAt DateTime @default(now())
+  payout    Payout   @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+
+  @@index([payoutId])
+}
+
+// Enums
+enum BankAccountStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum PayoutSource {
+  SALES
+  DEPOSIT
+  OTHER
+}
+
+// Ledger System Enums
+enum LedgerAccountType {
+  INCOME   // pemasukan
+  EXPENSE  // pengeluaran
+  OTHER
+}
+
+enum LedgerRefType {
+  PAYMENT     // otomatis dari Payment SUCCESS
+  PAYOUT      // otomatis dari Payout APPROVED/COMPLETED
+  MANUAL      // input manual admin
+  ADJUSTMENT  // penyesuaian saldo
+}
+
+// Akun/kategori pembukuan per AdminKos
+model LedgerAccount {
+  id         String            @id @default(cuid())
+  adminKosId String
+  code       String?           @db.VarChar(30)  // opsional, unik per admin
+  name       String            @db.VarChar(100)
+  type       LedgerAccountType
+  isSystem   Boolean           @default(false)  // true untuk "Pembayaran Kos"
+  isArchived Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  adminKos   AdminKosProfile   @relation(fields: [adminKosId], references: [id], onDelete: Cascade)
+  entries    LedgerEntry[]
+
+  @@unique([adminKosId, name])
+  @@index([adminKosId, type])
+}
+
+// Buku kas (single-entry) agar simpel & cepat
+model LedgerEntry {
+  id            String         @id @default(cuid())
+  adminKosId    String
+  accountId     String
+  // direction: IN = debit kas (masuk), OUT = kredit kas (keluar)
+  direction     String         @db.VarChar(3) // "IN" | "OUT"
+  amount        Decimal        @db.Decimal(14,2)
+  date          DateTime       @default(now())
+  note          String?        @db.VarChar(500)
+
+  // Jejak referensi
+  refType       LedgerRefType
+  refId         String?        @db.VarChar(100) // Payment.id / Payout.id / manual id
+  propertyId    String?        // opsional tagging per properti
+
+  createdBy     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  adminKos      AdminKosProfile @relation(fields: [adminKosId], references: [id], onDelete: Cascade)
+  account       LedgerAccount   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([adminKosId, direction])
+  @@index([adminKosId, date])
+  @@index([refType, refId])
 }

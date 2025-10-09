@@ -27,6 +27,7 @@ export interface CreateUserDTO {
   password?: string; // For non-OAuth registrations
   image?: string;
   phoneNumber?: string;
+  isActive?: boolean;
 }
 
 // User update DTO

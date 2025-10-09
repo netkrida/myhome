@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
@@ -109,7 +109,7 @@ export function RoomDetailContent({ propertyId, roomType, includeOccupied = true
     <div className="space-y-8">
       {/* Header */}
       <div className="space-y-4">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <Button variant="ghost" size="sm" asChild>
             <Link href={`/property/${propertyId}`}>
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -122,11 +122,11 @@ export function RoomDetailContent({ propertyId, roomType, includeOccupied = true
           <h1 className="text-3xl font-bold text-foreground">
             Detail Kamar - {property.name}
           </h1>
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
             <MapPin className="h-4 w-4" />
             <span>{property.fullAddress}</span>
           </div>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-sm sm:gap-4">
             <Badge variant="outline" className="gap-1">
               <Building className="h-3 w-3" />
               {property.propertyType === 'MALE_ONLY' ? 'Khusus Pria' : 
@@ -180,9 +180,10 @@ export function RoomDetailContent({ propertyId, roomType, includeOccupied = true
         {roomTypes.map((roomTypeData) => (
           <div key={roomTypeData.roomType} className="space-y-4">
             <RoomTypeInfo roomType={roomTypeData} />
-            <RoomMapping 
+            <RoomMapping
               roomType={roomTypeData}
               propertyName={property.name}
+              propertyId={property.id}
             />
           </div>
         ))}
@@ -211,3 +212,4 @@ export function RoomDetailContent({ propertyId, roomType, includeOccupied = true
     </div>
   );
 }
+

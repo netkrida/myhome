@@ -39,13 +39,13 @@ import { useMultiStepForm } from "@/components/ui/multi-step-form";
 // Create a form-specific schema with required booleans
 const formSchema = z.object({
   pricing: z.record(z.string(), z.object({
-    monthlyPrice: z.number().min(0, "Monthly price cannot be negative"),
-    dailyPrice: z.number().min(0, "Daily price cannot be negative").optional(),
-    weeklyPrice: z.number().min(0, "Weekly price cannot be negative").optional(),
-    quarterlyPrice: z.number().min(0, "Quarterly price cannot be negative").optional(),
-    yearlyPrice: z.number().min(0, "Yearly price cannot be negative").optional(),
+    monthlyPrice: z.number().positive("Harga bulanan harus lebih dari 0"),
+    dailyPrice: z.number().positive("Harga harian harus lebih dari 0").optional().nullable(),
+    weeklyPrice: z.number().positive("Harga mingguan harus lebih dari 0").optional().nullable(),
+    quarterlyPrice: z.number().positive("Harga 3 bulan harus lebih dari 0").optional().nullable(),
+    yearlyPrice: z.number().positive("Harga tahunan harus lebih dari 0").optional().nullable(),
   })).refine((data) => Object.keys(data).length > 0, {
-    message: "At least one room type pricing is required",
+    message: "Minimal satu tipe kamar harus memiliki harga",
   }),
   hasAlternativeRentals: z.boolean(),
   alternativeRentals: z.object({
@@ -54,7 +54,7 @@ const formSchema = z.object({
     quarterly: z.boolean(),
     yearly: z.boolean(),
   }),
-  hasDeposit: z.boolean(),  
+  hasDeposit: z.boolean(),
   depositPercentage: z.nativeEnum(DepositPercentage).optional(),
 });
 
@@ -126,9 +126,15 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
 
   // Create proper default values for all room types
   const createDefaultPricing = () => {
-    const pricing: Record<string, { monthlyPrice: number }> = {};
+    const pricing: Record<string, any> = {};
     roomTypes.forEach(roomType => {
-      pricing[roomType] = { monthlyPrice: 0 };
+      pricing[roomType] = {
+        monthlyPrice: undefined,
+        dailyPrice: undefined,
+        weeklyPrice: undefined,
+        quarterlyPrice: undefined,
+        yearlyPrice: undefined,
+      };
     });
     return pricing;
   };
@@ -157,13 +163,27 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
   const depositPercentage = form.watch("depositPercentage");
 
   // Memoize the converted data to prevent unnecessary re-renders
-  const convertedData = useMemo(() => ({
-    pricing,
-    hasAlternativeRentals: hasAlternativeRentalsValue,
-    alternativeRentals: hasAlternativeRentalsValue ? alternativeRentals : undefined,
-    hasDeposit: hasDepositValue,
-    depositPercentage,
-  }), [pricing, hasAlternativeRentalsValue, alternativeRentals, hasDepositValue, depositPercentage]);
+  const convertedData = useMemo(() => {
+    // Clean pricing data - remove undefined/null values for optional fields
+    const cleanedPricing: Record<string, any> = {};
+    Object.entries(pricing).forEach(([roomType, prices]) => {
+      cleanedPricing[roomType] = {
+        monthlyPrice: prices.monthlyPrice,
+        ...(prices.dailyPrice !== undefined && prices.dailyPrice !== null && { dailyPrice: prices.dailyPrice }),
+        ...(prices.weeklyPrice !== undefined && prices.weeklyPrice !== null && { weeklyPrice: prices.weeklyPrice }),
+        ...(prices.quarterlyPrice !== undefined && prices.quarterlyPrice !== null && { quarterlyPrice: prices.quarterlyPrice }),
+        ...(prices.yearlyPrice !== undefined && prices.yearlyPrice !== null && { yearlyPrice: prices.yearlyPrice }),
+      };
+    });
+
+    return {
+      pricing: cleanedPricing,
+      hasAlternativeRentals: hasAlternativeRentalsValue,
+      alternativeRentals: hasAlternativeRentalsValue ? alternativeRentals : undefined,
+      hasDeposit: hasDepositValue,
+      depositPercentage,
+    };
+  }, [pricing, hasAlternativeRentalsValue, alternativeRentals, hasDepositValue, depositPercentage]);
 
   // Memoize the form data for persistence
   const formDataForPersistence = useMemo(() => ({
@@ -318,10 +338,19 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
                           <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
                             type="number"
-                            placeholder="0"
+                            placeholder="Masukkan harga bulanan"
                             className="pl-10"
                             value={field.value || ""}
-                            onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              // Only set value if it's a valid positive number
+                              if (value === "" || value === "0") {
+                                field.onChange(undefined);
+                              } else {
+                                const numValue = Number(value);
+                                field.onChange(numValue > 0 ? numValue : undefined);
+                              }
+                            }}
                           />
                         </div>
                       </FormControl>
@@ -403,10 +432,19 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
                                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                       <Input
                                         type="number"
-                                        placeholder="0"
+                                        placeholder={`Masukkan harga ${period.label.toLowerCase()}`}
                                         className="pl-10"
                                         value={field.value || ""}
-                                        onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          // Only set value if it's a valid positive number
+                                          if (value === "" || value === "0") {
+                                            field.onChange(undefined);
+                                          } else {
+                                            const numValue = Number(value);
+                                            field.onChange(numValue > 0 ? numValue : undefined);
+                                          }
+                                        }}
                                       />
                                     </div>
                                   </FormControl>

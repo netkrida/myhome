@@ -59,21 +59,73 @@ export class BookingService {
     return checkOutDate;
   }
 
+  private static normalizePrice(value: unknown): number | undefined {
+    if (value === null || value === undefined) {
+      return undefined;
+    }
+
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : undefined;
+    }
+
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+
+    if (typeof value === "object") {
+      const decimalLike = value as { toNumber?: () => number; valueOf?: () => unknown };
+      if (decimalLike) {
+        if (typeof decimalLike.toNumber === "function") {
+          const parsed = decimalLike.toNumber();
+          if (Number.isFinite(parsed)) {
+            return parsed;
+          }
+        }
+
+        if (typeof decimalLike.valueOf === "function") {
+          const primitive = decimalLike.valueOf();
+          if (typeof primitive === "number" && Number.isFinite(primitive)) {
+            return primitive;
+          }
+          if (typeof primitive === "string") {
+            const parsed = Number(primitive);
+            if (Number.isFinite(parsed)) {
+              return parsed;
+            }
+          }
+        }
+      }
+    }
+
+    const fallback = Number(value);
+    return Number.isFinite(fallback) ? fallback : undefined;
+  }
   /**
    * Get price per unit based on lease type
    */
   static getPricePerUnit(room: any, leaseType: LeaseType): number {
+    const pricing = room?.pricing ?? room;
+
+    const monthlyPrice = this.normalizePrice(pricing?.monthlyPrice ?? room?.monthlyPrice);
+    const dailyPrice = this.normalizePrice(pricing?.dailyPrice ?? room?.dailyPrice);
+    const weeklyPrice = this.normalizePrice(pricing?.weeklyPrice ?? room?.weeklyPrice);
+    const quarterlyPrice = this.normalizePrice(pricing?.quarterlyPrice ?? room?.quarterlyPrice);
+    const yearlyPrice = this.normalizePrice(pricing?.yearlyPrice ?? room?.yearlyPrice);
+
+    const baseMonthly = monthlyPrice;
+
     switch (leaseType) {
       case LeaseType.DAILY:
-        return room.dailyPrice || room.monthlyPrice / 30;
+        return dailyPrice ?? (baseMonthly !== undefined ? baseMonthly / 30 : Number.NaN);
       case LeaseType.WEEKLY:
-        return room.weeklyPrice || (room.monthlyPrice / 30) * 7;
+        return weeklyPrice ?? (baseMonthly !== undefined ? (baseMonthly / 30) * 7 : Number.NaN);
       case LeaseType.MONTHLY:
-        return room.monthlyPrice;
+        return baseMonthly ?? Number.NaN;
       case LeaseType.QUARTERLY:
-        return room.quarterlyPrice || room.monthlyPrice * 3;
+        return quarterlyPrice ?? (baseMonthly !== undefined ? baseMonthly * 3 : Number.NaN);
       case LeaseType.YEARLY:
-        return room.yearlyPrice || room.monthlyPrice * 12;
+        return yearlyPrice ?? (baseMonthly !== undefined ? baseMonthly * 12 : Number.NaN);
       default:
         throw new Error(`Unsupported lease type: ${leaseType}`);
     }
@@ -89,7 +141,11 @@ export class BookingService {
   ): BookingCalculation {
     const duration = this.calculateLeaseDuration(leaseType, checkInDate);
     const pricePerUnit = this.getPricePerUnit(room, leaseType);
-    
+
+    if (!Number.isFinite(pricePerUnit) || pricePerUnit <= 0) {
+      throw new Error(`Invalid pricing data for ${leaseType} lease type`);
+    }
+
     let baseAmount: number;
     let totalAmount: number;
     
@@ -117,12 +173,17 @@ export class BookingService {
 
     // Calculate deposit amount if required
     let depositAmount: number | undefined;
-    if (room.depositRequired || room.hasDeposit) {
-      if (room.depositType === DepositType.FIXED && room.depositValue) {
-        depositAmount = Number(room.depositValue);
-      } else if (room.depositType === DepositType.PERCENTAGE && room.depositValue) {
-        depositAmount = (totalAmount * Number(room.depositValue)) / 100;
-      } else if (room.depositPercentage) {
+    const depositRequired = room.depositRequired || room.hasDeposit;
+    const depositType = room.depositType;
+    const depositValue = room.depositValue;
+    const depositPercentage = room.depositPercentage;
+
+    if (depositRequired) {
+      if (depositType === DepositType.FIXED && depositValue) {
+        depositAmount = Number(depositValue);
+      } else if (depositType === DepositType.PERCENTAGE && depositValue) {
+        depositAmount = (totalAmount * Number(depositValue)) / 100;
+      } else if (depositPercentage) {
         // Legacy support
         const percentageMap = {
           'TEN_PERCENT': 10,
@@ -131,7 +192,7 @@ export class BookingService {
           'FORTY_PERCENT': 40,
           'FIFTY_PERCENT': 50
         };
-        const percentage = percentageMap[room.depositPercentage as keyof typeof percentageMap] || 20;
+        const percentage = percentageMap[depositPercentage as keyof typeof percentageMap] || 20;
         depositAmount = (totalAmount * percentage) / 100;
       }
     }
@@ -164,7 +225,7 @@ export class BookingService {
 
     // Check if room has pricing for the lease type
     const pricePerUnit = this.getPricePerUnit(room, bookingData.leaseType);
-    if (!pricePerUnit || pricePerUnit <= 0) {
+    if (!Number.isFinite(pricePerUnit) || pricePerUnit <= 0) {
       errors.push(`Room does not have pricing for ${bookingData.leaseType} lease type`);
     }
 
@@ -256,10 +317,11 @@ export class BookingService {
 
   /**
    * Validate booking status transition
+   * fix(enum): sync BookingStatus UNPAID
    */
   static validateStatusTransition(currentStatus: BookingStatus, newStatus: BookingStatus): boolean {
     const validTransitions: Record<BookingStatus, BookingStatus[]> = {
-      [BookingStatus.PENDING]: [BookingStatus.DEPOSIT_PAID, BookingStatus.CONFIRMED, BookingStatus.CANCELLED, BookingStatus.EXPIRED],
+      [BookingStatus.UNPAID]: [BookingStatus.DEPOSIT_PAID, BookingStatus.CONFIRMED, BookingStatus.CANCELLED, BookingStatus.EXPIRED],
       [BookingStatus.DEPOSIT_PAID]: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED],
       [BookingStatus.CONFIRMED]: [BookingStatus.CHECKED_IN, BookingStatus.CANCELLED],
       [BookingStatus.CHECKED_IN]: [BookingStatus.COMPLETED],
@@ -291,7 +353,7 @@ export class BookingService {
     bookings.forEach(booking => {
       // Count by status
       switch (booking.status) {
-        case BookingStatus.PENDING:
+        case BookingStatus.UNPAID:
         case BookingStatus.DEPOSIT_PAID:
           stats.pendingBookings++;
           break;
@@ -329,7 +391,7 @@ export class BookingService {
    */
   static canCancelBooking(booking: BookingDTO): boolean {
     const cancellableStatuses = [
-      BookingStatus.PENDING,
+      BookingStatus.UNPAID,
       BookingStatus.DEPOSIT_PAID,
       BookingStatus.CONFIRMED
     ] as const;

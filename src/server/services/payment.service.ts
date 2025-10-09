@@ -27,6 +27,24 @@ export class PaymentService {
     return `${typePrefix}-${bookingId.substring(0, 8)}-${timestamp}`.toUpperCase();
   }
 
+  private static formatExpiryStartTime(date: Date): string {
+    const pad = (value: number) => value.toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    const seconds = pad(date.getSeconds());
+
+    const timezoneOffset = -date.getTimezoneOffset();
+    const sign = timezoneOffset >= 0 ? '+' : '-';
+    const offsetTotalMinutes = Math.abs(timezoneOffset);
+    const offsetHours = pad(Math.floor(offsetTotalMinutes / 60));
+    const offsetMinutes = pad(offsetTotalMinutes % 60);
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} ${sign}${offsetHours}${offsetMinutes}`;
+  }
+
   /**
    * Create Midtrans Snap request payload
    */
@@ -62,7 +80,7 @@ export class PaymentService {
     // Set expiry time (24 hours for deposit, 1 hour for full payment)
     const expiryDuration = payment.paymentType === PaymentType.DEPOSIT ? 24 : 1;
     request.expiry = {
-      start_time: new Date().toISOString(),
+      start_time: PaymentService.formatExpiryStartTime(new Date()),
       unit: 'hour',
       duration: expiryDuration
     };
@@ -144,7 +162,10 @@ export class PaymentService {
     }
 
     // Check booking status
-    const validStatusesForPayment = ['PENDING', 'DEPOSIT_PAID', 'CONFIRMED'];
+    // UNPAID: initial booking, can create payment
+    // DEPOSIT_PAID: deposit paid, can create full payment
+    // CONFIRMED: full payment done, cannot create more payments
+    const validStatusesForPayment = ['UNPAID', 'DEPOSIT_PAID', 'CONFIRMED'];
     if (!validStatusesForPayment.includes(booking.status)) {
       errors.push(`Cannot create payment for booking with status: ${booking.status}`);
     }

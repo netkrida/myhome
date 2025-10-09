@@ -4,13 +4,13 @@
 
 // Enums from Prisma - exported as const enums for runtime usage
 export const BookingStatus = {
-  PENDING: 'PENDING',
-  DEPOSIT_PAID: 'DEPOSIT_PAID',
-  CONFIRMED: 'CONFIRMED',
-  CHECKED_IN: 'CHECKED_IN',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED',
-  EXPIRED: 'EXPIRED'
+  UNPAID: 'UNPAID',           // Booking created but payment not completed yet
+  DEPOSIT_PAID: 'DEPOSIT_PAID', // Deposit payment successful
+  CONFIRMED: 'CONFIRMED',      // Full payment successful
+  CHECKED_IN: 'CHECKED_IN',    // Customer has checked in
+  COMPLETED: 'COMPLETED',      // Booking completed (checked out)
+  CANCELLED: 'CANCELLED',      // Booking cancelled by user or admin
+  EXPIRED: 'EXPIRED'           // Payment expired, booking invalid
 } as const;
 
 export const PaymentStatus = {

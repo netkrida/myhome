@@ -85,7 +85,8 @@ export interface UserContext {
   role: UserRole;
   email: string;
   name?: string;
-  // Additional context for role-specific data (to be defined later)
+  // Role-specific profile IDs
+  profileId?: string; // AdminKosProfile.id, ReceptionistProfile.id, or CustomerProfile.id
 }
 
 // Authorization result

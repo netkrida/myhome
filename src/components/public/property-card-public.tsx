@@ -84,7 +84,7 @@ export function PublicPropertyCard({
   return (
     <Card
       className={cn(
-        "group relative flex h-full w-full max-w-[18rem] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-900/90 dark:hover:shadow-[0_20px_40px_-25px_rgba(15,23,42,0.65)]",
+        "group relative flex h-full w-full max-w-full flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-900/90 dark:hover:shadow-[0_20px_40px_-25px_rgba(15,23,42,0.65)] sm:max-w-[20rem]",
         className,
       )}
     >

@@ -79,15 +79,13 @@ export async function validateSessionUser(session: Session): Promise<{
       name: dbUser.name || undefined,
     };
 
-    // Add role-specific context
-    if (dbUser.role === "ADMINKOS") {
-      // TODO: Add adminKosProfile relation when available
-      // userContext.adminKosId = dbUser.id; // Placeholder - commented out until interface is updated
-    }
-
-    if (dbUser.role === "RECEPTIONIST") {
-      // TODO: Add managedProperties relation when available
-      // userContext.assignedPropertyIds = []; // Placeholder - commented out until interface is updated
+    // Add role-specific profile ID
+    if (dbUser.role === "ADMINKOS" && (dbUser as any).adminKosProfile) {
+      userContext.profileId = (dbUser as any).adminKosProfile.id;
+    } else if (dbUser.role === "RECEPTIONIST" && (dbUser as any).receptionistProfile) {
+      userContext.profileId = (dbUser as any).receptionistProfile.id;
+    } else if (dbUser.role === "CUSTOMER" && (dbUser as any).customerProfile) {
+      userContext.profileId = (dbUser as any).customerProfile.id;
     }
 
     console.log("✅ Auth Validation - Session validated successfully:", {
@@ -282,17 +280,28 @@ export async function getUserBySession(session: Session): Promise<UserContext | 
   }
 
   try {
-    const user = await UserRepository.findById(session.user.id);
+    const user = await UserRepository.findById(session.user.id, true);
     if (!user || !user.isActive) {
       return null;
     }
 
-    return {
+    const userContext: UserContext = {
       id: user.id,
       role: user.role as UserRole,
       email: user.email!,
       name: user.name || undefined,
     };
+
+    // Add role-specific profile ID
+    if (user.role === "ADMINKOS" && (user as any).adminKosProfile) {
+      userContext.profileId = (user as any).adminKosProfile.id;
+    } else if (user.role === "RECEPTIONIST" && (user as any).receptionistProfile) {
+      userContext.profileId = (user as any).receptionistProfile.id;
+    } else if (user.role === "CUSTOMER" && (user as any).customerProfile) {
+      userContext.profileId = (user as any).customerProfile.id;
+    }
+
+    return userContext;
   } catch (error) {
     console.error("Error getting user by session:", error);
     return null;

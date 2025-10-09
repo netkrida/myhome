@@ -101,14 +101,14 @@ export function RoomTypeInfo({ roomType }: RoomTypeInfoProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-2">
             <CardTitle className="text-xl">{typeName}</CardTitle>
             {description && (
               <p className="text-muted-foreground">{description}</p>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge 
               variant={availableRooms > 0 ? "default" : "secondary"}
               className={availableRooms > 0 ? "bg-green-600 hover:bg-green-700" : ""}
@@ -122,7 +122,7 @@ export function RoomTypeInfo({ roomType }: RoomTypeInfoProps) {
       
       <CardContent className="space-y-6">
         {/* Image and Basic Info */}
-        <div className="grid md:grid-cols-3 gap-6">
+  <div className="grid gap-6 md:grid-cols-3">
           {/* Image */}
           <div className="md:col-span-1">
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border">
@@ -145,7 +145,7 @@ export function RoomTypeInfo({ roomType }: RoomTypeInfoProps) {
           {/* Pricing and Details */}
           <div className="md:col-span-2 space-y-4">
             {/* Pricing */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <DollarSign className="h-4 w-4" />
@@ -173,7 +173,7 @@ export function RoomTypeInfo({ roomType }: RoomTypeInfoProps) {
 
             {/* Additional Pricing */}
             {(pricing.weeklyPrice || pricing.quarterlyPrice || pricing.yearlyPrice) && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t">
+              <div className="grid grid-cols-1 gap-4 border-t pt-2 sm:grid-cols-3">
                 {pricing.weeklyPrice && (
                   <div className="text-center">
                     <div className="text-sm font-medium text-foreground">
@@ -244,7 +244,7 @@ export function RoomTypeInfo({ roomType }: RoomTypeInfoProps) {
         )}
 
         {/* Action Button */}
-        <div className="flex justify-end pt-4 border-t">
+        <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:justify-end">
           <Button 
             size="lg" 
             className="bg-blue-600 hover:bg-blue-700 text-white"

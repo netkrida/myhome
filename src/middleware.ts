@@ -12,7 +12,17 @@ const ROLE_DASHBOARDS = {
 
 const PUBLIC_ROUTES = [
   "/", "/login", "/register", "/about", "/contact",
-  "/search", "/properties", "/property", "/rooms", "/api/auth", "/api/test-db", "/api/wilayah", "/api/properties/coordinates", "/api/public", "/api/analytics", "/data"
+  "/search", "/properties", "/property", "/rooms", "/payment",
+  "/api/auth", "/api/test-db", "/api/wilayah", "/api/properties/coordinates",
+  "/api/public", "/api/analytics", "/api/debug", "/data"
+];
+
+// Webhook endpoints that should NOT require authentication
+// These are called by external services (Midtrans, etc)
+const WEBHOOK_ROUTES = [
+  "/api/midtrans/notify",
+  "/api/bookings/payment/webhook",
+  "/api/payments/webhook"
 ];
 
 const ADMIN_ROLES = ["SUPERADMIN", "ADMINKOS", "RECEPTIONIST"];
@@ -36,6 +46,28 @@ export default async function middleware(request: NextRequest) {
     pathname.startsWith("/favicon")
   ) {
     return NextResponse.next();
+  }
+
+  // Skip webhook routes - these are called by external services
+  // Security is handled by signature verification in the endpoint
+  if (WEBHOOK_ROUTES.some(route => pathname === route || pathname.startsWith(route))) {
+    console.log("🔓 Middleware - Webhook route, skipping auth:", pathname);
+
+    // Add header to bypass ngrok warning page
+    const response = NextResponse.next();
+    response.headers.set('ngrok-skip-browser-warning', 'true');
+    return response;
+  }
+
+  // Add ngrok bypass header for payment redirect pages
+  // These pages are accessed after Midtrans redirect
+  if (pathname.startsWith('/payment/')) {
+    console.log("🔓 Middleware - Payment redirect page, adding ngrok bypass header:", pathname);
+    const response = NextResponse.next();
+    response.headers.set('ngrok-skip-browser-warning', 'true');
+
+    // Continue with normal auth flow for payment pages
+    // (will be handled below)
   }
 
   // Get token - try NextAuth v5 format first, then fallback to v4 format

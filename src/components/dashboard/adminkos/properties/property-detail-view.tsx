@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { PropertyImageGallery } from "@/components/dashboard/superadmin/properties/property-image-gallery";
-import { PropertyRoomsList } from "@/components/dashboard/superadmin/properties/property-rooms-list";
+import { PropertyRoomTypes } from "./property-room-types";
 import { 
   Building2, 
   MapPin, 
@@ -264,7 +264,7 @@ export function PropertyDetailView({ property, showEditButton = false }: Propert
 
           {/* Rooms Tab */}
           <TabsContent value="rooms">
-            <PropertyRoomsList propertyId={property.id} rooms={property.rooms || []} />
+            <PropertyRoomTypes propertyId={property.id} />
           </TabsContent>
 
           {/* Facilities Tab */}

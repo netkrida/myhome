@@ -1,4 +1,4 @@
-import { type User, type Prisma } from "@prisma/client";
+import { type User, type Prisma, Shift } from "@prisma/client";
 import { UserRole } from "../types/rbac";
 import { prisma } from "../db/client";
 import type {
@@ -57,6 +57,19 @@ export class UserRepository {
   }
 
   /**
+   * Get user by email with Result wrapper
+   */
+  static async getByEmail(email: string): Promise<Result<User | null>> {
+    try {
+      const user = await this.findByEmail(email);
+      return ok(user);
+    } catch (error) {
+      console.error("Error getting user by email:", error);
+      return internalError("Failed to get user by email");
+    }
+  }
+
+  /**
    * Get total count of all users
    */
   static async getTotalCount(): Promise<number> {
@@ -70,15 +83,24 @@ export class UserRepository {
   /**
    * Create a new user
    */
-  static async create(userData: CreateUserDTO): Promise<User> {
-    return prisma.user.create({
-      data: {
-        email: userData.email,
-        name: userData.name,
-        role: userData.role,
-        image: userData.image,
-      },
-    });
+  static async create(userData: CreateUserDTO): Promise<Result<User>> {
+    try {
+      const user = await prisma.user.create({
+        data: {
+          email: userData.email,
+          name: userData.name,
+          role: userData.role,
+          image: userData.image,
+          password: userData.password,
+          phoneNumber: userData.phoneNumber,
+          isActive: userData.isActive ?? true,
+        },
+      });
+      return ok(user);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      return internalError("Failed to create user");
+    }
   }
 
   /**
@@ -114,11 +136,13 @@ export class UserRepository {
         });
       }
 
+      // fix(prisma): shift bukan field di ReceptionistProfileCreateInput
+      // fix(enum): cast string to Shift enum
       if (profileData?.receptionist && userData.role === "RECEPTIONIST") {
         await tx.receptionistProfile.create({
           data: {
             userId: user.id,
-            shift: profileData.receptionist.shift as any,
+            defaultShift: profileData.receptionist.shift as Shift | undefined,
             startDate: profileData.receptionist.startDate,
           },
         });

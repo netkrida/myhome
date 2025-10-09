@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Star, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -72,21 +72,52 @@ const testimonials: Testimonial[] = [
 
 export function Testimonials() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const itemsPerPage = 3;
-  const totalPages = Math.ceil(testimonials.length / itemsPerPage);
+  const [itemsPerPage, setItemsPerPage] = useState(3);
+
+  useEffect(() => {
+    const updateItemsPerPage = () => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      const width = window.innerWidth;
+      if (width >= 1280) {
+        setItemsPerPage(3);
+      } else if (width >= 768) {
+        setItemsPerPage(2);
+      } else {
+        setItemsPerPage(1);
+      }
+    };
+
+    updateItemsPerPage();
+    window.addEventListener("resize", updateItemsPerPage);
+
+    return () => {
+      window.removeEventListener("resize", updateItemsPerPage);
+    };
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(testimonials.length / itemsPerPage));
+
+  useEffect(() => {
+    setCurrentIndex((prev) => Math.min(prev, totalPages - 1));
+  }, [totalPages]);
 
   const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % totalPages);
+    setCurrentIndex((prev) => Math.min(prev + 1, totalPages - 1));
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + totalPages) % totalPages);
+    setCurrentIndex((prev) => Math.max(prev - 1, 0));
   };
 
   const getCurrentTestimonials = () => {
     const start = currentIndex * itemsPerPage;
     return testimonials.slice(start, start + itemsPerPage);
   };
+
+  const currentTestimonials = getCurrentTestimonials();
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }).map((_, index) => (
@@ -103,17 +134,17 @@ export function Testimonials() {
     <section className="bg-gray-50 py-12">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl font-bold text-foreground mb-4">
             Apa Kata Mereka?
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-2xl mx-auto">
             Dengarkan pengalaman nyata dari ribuan penghuni yang telah menemukan hunian impian mereka melalui myhome.
           </p>
         </div>
 
         <div className="relative">
           {/* Navigation Buttons */}
-          <div className="absolute -left-4 top-1/2 -translate-y-1/2 z-10">
+          <div className="absolute -left-4 top-1/2 z-10 hidden -translate-y-1/2 sm:block">
             <Button
               variant="outline"
               size="icon"
@@ -124,7 +155,7 @@ export function Testimonials() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
           </div>
-          <div className="absolute -right-4 top-1/2 -translate-y-1/2 z-10">
+          <div className="absolute -right-4 top-1/2 z-10 hidden -translate-y-1/2 sm:block">
             <Button
               variant="outline"
               size="icon"
@@ -137,8 +168,8 @@ export function Testimonials() {
           </div>
 
           {/* Testimonials Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {getCurrentTestimonials().map((testimonial) => (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {currentTestimonials.map((testimonial) => (
               <Card key={testimonial.id} className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300">
                 <CardContent className="p-6">
                   <div className="space-y-4">
@@ -151,7 +182,7 @@ export function Testimonials() {
                     </div>
 
                     {/* Comment */}
-                    <p className="text-gray-700 leading-relaxed text-sm">
+                    <p className="text-foreground leading-relaxed text-sm">
                       "{testimonial.comment}"
                     </p>
 
@@ -169,10 +200,10 @@ export function Testimonials() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-semibold text-sm text-gray-900">
+                        <div className="font-semibold text-sm text-foreground">
                           {testimonial.name}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           {testimonial.role} • {testimonial.location}
                         </div>
                       </div>
@@ -192,6 +223,7 @@ export function Testimonials() {
                 className={`w-2 h-2 rounded-full transition-colors ${
                   index === currentIndex ? "bg-blue-600" : "bg-gray-300"
                 }`}
+                aria-label={`Tampilkan testimoni halaman ${index + 1}`}
               />
             ))}
           </div>
@@ -199,7 +231,7 @@ export function Testimonials() {
 
         {/* CTA */}
         <div className="text-center mt-12">
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted-foreground mb-4">
             Bergabunglah dengan ribuan penghuni yang puas
           </p>
           <Button size="lg" className="bg-blue-600 hover:bg-blue-700">

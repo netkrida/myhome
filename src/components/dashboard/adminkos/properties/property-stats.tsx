@@ -111,36 +111,6 @@ export function PropertyStats({ className }: PropertyStatsProps) {
       color: "text-red-600",
       bgColor: "bg-red-100 dark:bg-red-900",
     },
-    {
-      title: "Total Kamar",
-      value: stats.totalRooms,
-      icon: Bed,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100 dark:bg-purple-900",
-    },
-    {
-      title: "Kamar Tersedia",
-      value: stats.availableRooms,
-      icon: Users,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-100 dark:bg-emerald-900",
-    },
-    {
-      title: "Tingkat Okupansi",
-      value: `${stats.occupancyRate.toFixed(1)}%`,
-      icon: TrendingUp,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-100 dark:bg-indigo-900",
-      description: `${stats.totalRooms - stats.availableRooms} kamar terisi`,
-    },
-    {
-      title: "Kamar Terisi",
-      value: stats.totalRooms - stats.availableRooms,
-      icon: Users,
-      color: "text-orange-600",
-      bgColor: "bg-orange-100 dark:bg-orange-900",
-      description: `dari ${stats.totalRooms} total kamar`,
-    },
   ];
 
   return (
@@ -162,11 +132,6 @@ export function PropertyStats({ className }: PropertyStatsProps) {
               <div className="text-2xl font-bold">
                 {typeof card.value === 'number' ? card.value.toLocaleString('id-ID') : card.value}
               </div>
-              {card.description && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {card.description}
-                </p>
-              )}
             </CardContent>
           </Card>
         );

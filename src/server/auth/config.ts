@@ -69,14 +69,15 @@ export const authConfig = {
             credentials.password as string
           );
 
+          // fix: discriminated union Result type - guard before accessing data
           console.log("🔍 NextAuth - AuthAPI result:", {
             success: result.success,
-            hasData: !!result.data,
-            userId: result.data?.id,
-            userRole: result.data?.role,
+            hasData: result.success ? !!result.data : false,
+            userId: result.success ? result.data.id : undefined,
+            userRole: result.success ? result.data.role : undefined,
           });
 
-          if (result.success && result.data) {
+          if (result.success) {
             const user = {
               id: result.data.id,
               email: result.data.email,

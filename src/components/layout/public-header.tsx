@@ -90,7 +90,7 @@ export function PublicHeader() {
   return (
     <>
   <header className="sticky top-0 z-50 w-full border-b bg-background shadow-sm text-foreground">
-  <div className="container mx-auto px-4">
+  <div className="container mx-auto px-4 sm:px-6">
         {/* Top Bar */}
         <div className="flex h-14 items-center justify-between">
           {/* Logo */}
@@ -100,12 +100,12 @@ export function PublicHeader() {
               alt="MyHome"
               width={160}
               height={48}
-              className="h-10 w-auto"
+              className="h-9 w-auto sm:h-10"
             />
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-6">
+          <nav className="hidden lg:flex items-center space-x-4 xl:space-x-6">
             {navigationItems.map((item) => (
               <div key={item.label} className="relative">
                 {item.hasDropdown ? (
@@ -113,7 +113,7 @@ export function PublicHeader() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="flex items-center space-x-1">
                         <span>{item.label}</span>
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-3.5 w-3.5" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -146,28 +146,21 @@ export function PublicHeader() {
           </nav>
 
           {/* Right Side Actions */}
-          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
-            <AnimatedThemeToggler className="mr-1 sm:mr-2" />
+          <div className="flex items-center space-x-1.5 sm:space-x-3 lg:space-x-4">
+            <AnimatedThemeToggler className="mr-0.5 sm:mr-1.5" />
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setIsSearchOpen((prev) => !prev)}
-            >
-              <Search className="h-5 w-5" />
-            </Button>
+            {/* Search icon removed as requested */}
 
             {isAuthenticated && (
               <div className="hidden md:flex items-center space-x-2">
                 <Button variant="ghost" size="sm" className="relative h-8 w-8">
-                  <Bell className="h-4 w-4" />
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 text-[10px]">
+                  <Bell className="h-3.5 w-3.5" />
+                  <Badge className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full p-0 text-[9px]">
                     3
                   </Badge>
                 </Button>
                 <Button variant="ghost" size="sm" className="h-8 w-8">
-                  <Heart className="h-4 w-4" />
+                  <Heart className="h-3.5 w-3.5" />
                 </Button>
               </div>
             )}
@@ -246,11 +239,16 @@ export function PublicHeader() {
 
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden">
-                  <Menu className="h-5 w-5" />
+                <Button
+                  size="icon"
+                  className="h-10 w-10 p-0 flex items-center justify-center border border-border rounded-lg bg-background shadow-sm transition-colors hover:border-primary focus-visible:border-primary focus:outline-none lg:hidden"
+                >
+                  <span className="flex items-center justify-center w-full h-full">
+                    <Menu className="h-5 w-5 text-foreground" style={{zIndex:1}} />
+                  </span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-80 px-0">
+              <SheetContent side="right" className="w-[82vw] max-w-xs px-0 sm:max-w-sm">
                 <SheetHeader className="px-4 pt-6 pb-2">
                   <SheetTitle className="text-base font-semibold">Menu</SheetTitle>
                 </SheetHeader>

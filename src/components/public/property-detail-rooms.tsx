@@ -277,8 +277,10 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                           }
                         </div>
                       </div>
-                      <Button size="lg" className="w-full max-w-[160px] rounded-full bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
-                        Pesan
+                      <Button asChild size="lg" className="w-full max-w-[160px] rounded-full bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
+                        <Link href={`/booking/${property.id}?roomType=${encodeURIComponent(summary.roomType)}`}>
+                          Pesan
+                        </Link>
                       </Button>
                       <Link
                         href={`/rooms/${property.id}?roomType=${encodeURIComponent(summary.roomType)}&includeOccupied=true`}
@@ -367,7 +369,7 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                           <span>{room.roomType}</span>
                           {room.size && (
                             <>
-                              <span>•</span>
+                              <span>�</span>
                               <Ruler className="h-3.5 w-3.5 text-blue-500" />
                               <span>{room.size}</span>
                             </>
@@ -411,14 +413,16 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
                             }
                           </div>
                         </div>
-                        <Button size="sm" className="rounded-full bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
-                          Pesan
+                        <Button asChild size="sm" className="rounded-full bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
+                          <Link href={`/booking/${property.id}?roomType=${encodeURIComponent(summary.roomType)}`}>
+                            Pesan
+                          </Link>
                         </Button>
                       </div>
 
                       {summary.availableRooms > 0 && summary.availableRooms < 5 && (
                         <div className="mt-2 text-xs text-amber-600 font-medium">
-                          ⚠️ Hanya tersisa {summary.availableRooms} kamar
+                          ?? Hanya tersisa {summary.availableRooms} kamar
                         </div>
                       )}
 
@@ -441,5 +445,7 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
     </section>
   );
 }
+
+
 
 

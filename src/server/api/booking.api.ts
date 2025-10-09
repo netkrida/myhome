@@ -26,8 +26,8 @@ import {
 } from "../types/booking";
 import { ok, fail, notFound, badRequest, forbidden, internalError } from "../types/result";
 
-// Midtrans client
-const midtransClient = require('midtrans-client');
+// Midtrans Adapter
+import { createSnapTransaction } from "../adapters/midtrans";
 
 /**
  * Tier-2: Booking Application Services
@@ -102,9 +102,13 @@ export class BookingAPI {
         // Determine payment amount based on user choice
         const isDepositPayment = bookingData.depositOption === 'deposit' && calculation.depositAmount;
         const paymentAmount = isDepositPayment ? calculation.depositAmount! : calculation.totalAmount;
+        if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+          return internalError("Calculated payment amount is invalid");
+        }
         const paymentType = isDepositPayment ? PaymentType.DEPOSIT : PaymentType.FULL;
 
-        // Create booking
+        // Create booking with UNPAID status
+        // Booking is only valid after payment is successful
         const createBookingResult = await BookingRepository.create({
           ...bookingData,
           bookingCode,
@@ -113,7 +117,7 @@ export class BookingAPI {
           totalAmount: calculation.totalAmount,
           depositAmount: calculation.depositAmount,
           paymentStatus: PaymentStatus.PENDING,
-          status: BookingStatus.PENDING
+          status: BookingStatus.UNPAID  // Changed from PENDING to UNPAID
         });
 
         if (!createBookingResult.success) {
@@ -140,22 +144,17 @@ export class BookingAPI {
 
         const payment = createPaymentResult.data!;
 
-        // Create Midtrans Snap token
+        // Create Midtrans Snap token using adapter
         let paymentToken: string | undefined;
-        
-        try {
-          const snap = new midtransClient.Snap({
-            isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
-            serverKey: process.env.MIDTRANS_SERVER_KEY,
-            clientKey: process.env.MIDTRANS_CLIENT_KEY
-          });
 
+        try {
           const snapRequest = PaymentService.createSnapRequest(booking, payment, {
             name: user.name || undefined,
             email: user.email || undefined,
             phoneNumber: user.phoneNumber || undefined
           });
-          const snapResponse = await snap.createTransaction(snapRequest);
+
+          const snapResponse = await createSnapTransaction(snapRequest);
           paymentToken = snapResponse.token;
 
           // Update payment with token
@@ -165,7 +164,10 @@ export class BookingAPI {
 
         } catch (midtransError) {
           console.error("Midtrans error:", midtransError);
-          return internalError("Failed to create payment token");
+          const errorMessage = midtransError instanceof Error
+            ? midtransError.message
+            : "Failed to create payment token";
+          return internalError(errorMessage);
         }
 
         return ok({
@@ -301,7 +303,7 @@ export class BookingAPI {
         // Calculate remaining amount
         const remainingAmount = PaymentService.calculatePaymentAmount(booking, PaymentType.FULL);
         
-        if (remainingAmount <= 0) {
+        if (!Number.isFinite(remainingAmount) || remainingAmount <= 0) {
           return badRequest("No remaining amount to pay");
         }
 
@@ -329,21 +331,16 @@ export class BookingAPI {
           return fail(userResult.error!, userResult.statusCode);
         }
 
-        // Create Midtrans Snap token
+        // Create Midtrans Snap token using adapter
         try {
-          const snap = new midtransClient.Snap({
-            isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
-            serverKey: process.env.MIDTRANS_SERVER_KEY,
-            clientKey: process.env.MIDTRANS_CLIENT_KEY
-          });
-
           const userData = userResult.data!;
           const snapRequest = PaymentService.createSnapRequest(booking, payment, {
             name: userData.name || undefined,
             email: userData.email || undefined,
             phoneNumber: userData.phoneNumber || undefined
           });
-          const snapResponse = await snap.createTransaction(snapRequest);
+
+          const snapResponse = await createSnapTransaction(snapRequest);
 
           // Update payment with token
           await PaymentRepository.update(payment.id, {
@@ -357,7 +354,10 @@ export class BookingAPI {
 
         } catch (midtransError) {
           console.error("Midtrans error:", midtransError);
-          return internalError("Failed to create payment token");
+          const errorMessage = midtransError instanceof Error
+            ? midtransError.message
+            : "Failed to create payment token";
+          return internalError(errorMessage);
         }
 
       } catch (error) {
@@ -418,18 +418,27 @@ export class BookingAPI {
       await PaymentRepository.updateByOrderId(notification.order_id, updateData);
 
       // Update booking status based on payment status
-      if (newStatus === PaymentStatus.SUCCESS) {
-        const bookingResult = await BookingRepository.getById(payment.bookingId);
-        if (bookingResult.success) {
-          const booking = bookingResult.data!;
-          let newBookingStatus: BookingStatus;
+      const bookingResult = await BookingRepository.getById(payment.bookingId);
+      if (bookingResult.success) {
+        const booking = bookingResult.data!;
+        let newBookingStatus: BookingStatus | null = null;
 
+        if (newStatus === PaymentStatus.SUCCESS) {
+          // Payment successful - update from UNPAID to DEPOSIT_PAID or CONFIRMED
           if (payment.paymentType === PaymentType.DEPOSIT) {
             newBookingStatus = BookingStatus.DEPOSIT_PAID;
           } else {
             newBookingStatus = BookingStatus.CONFIRMED;
           }
+        } else if (newStatus === PaymentStatus.EXPIRED || newStatus === PaymentStatus.FAILED) {
+          // Payment failed/expired - mark booking as EXPIRED if still UNPAID
+          if (booking.status === BookingStatus.UNPAID) {
+            newBookingStatus = BookingStatus.EXPIRED;
+          }
+        }
 
+        // Update booking status if changed
+        if (newBookingStatus) {
           await BookingRepository.updateStatus(booking.id, { status: newBookingStatus });
         }
       }

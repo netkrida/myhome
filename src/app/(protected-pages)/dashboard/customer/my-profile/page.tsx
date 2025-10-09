@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { CustomerAPI } from "@/server/api/customer.api";
+import { CustomerLayout } from "@/components/layout/customer-layout";
 import type { CustomerProfileDetail } from "@/server/types/customer";
 
 function formatDate(date?: Date | string | null, pattern = "d MMMM yyyy") {
@@ -32,7 +33,8 @@ export default async function CustomerProfilePage() {
 
 	const result = await CustomerAPI.getProfile();
 
-	if (!result.success || !result.data) {
+	// fix: discriminated union Result type - guard before accessing error
+	if (!result.success) {
 		console.error("Failed to load customer profile", result.error);
 		notFound();
 	}
@@ -40,13 +42,14 @@ export default async function CustomerProfilePage() {
 	const profile = result.data;
 
 	return (
-		<div className="space-y-8">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-3xl font-bold tracking-tight">Profil Saya</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
-					Kelola informasi personal, kontak darurat, dan pantau riwayat pemesanan terbaru kamu.
-				</p>
-			</div>
+		<CustomerLayout>
+			<div className="space-y-8">
+				<div className="flex flex-col gap-2">
+					<h1 className="text-3xl font-bold tracking-tight">Profil Saya</h1>
+					<p className="max-w-2xl text-sm text-muted-foreground">
+						Kelola informasi personal, kontak darurat, dan pantau riwayat pemesanan terbaru kamu.
+					</p>
+				</div>
 
 			<div className="grid gap-6 lg:grid-cols-3">
 				<Card className="lg:col-span-2">
@@ -218,5 +221,6 @@ export default async function CustomerProfilePage() {
 				</CardContent>
 			</Card>
 		</div>
+		</CustomerLayout>
 	);
 }

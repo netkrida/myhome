@@ -41,13 +41,10 @@ export class PropertyRepository {
     
     if (includeRooms) {
       include.rooms = {
-        include: {
-          images: {
-            orderBy: { sortOrder: 'asc' }
-          }
-        },
         orderBy: { roomNumber: 'asc' }
       };
+      // Note: Room images will be fetched separately using RoomTypeImage
+      // to avoid duplication (shared images per room type)
     }
     
     if (includeOwner) {
@@ -91,6 +88,34 @@ export class PropertyRepository {
     });
 
     if (!property) return null;
+
+    // If includeRooms, fetch shared room type images
+    let roomTypeImagesMap = new Map<string, any[]>();
+    if (includeRooms && property.rooms && property.rooms.length > 0) {
+      const roomTypeImages = await prisma.roomTypeImage.findMany({
+        where: {
+          propertyId: id,
+        },
+        orderBy: { sortOrder: 'asc' },
+      });
+
+      // Group images by room type
+      for (const img of roomTypeImages) {
+        if (!roomTypeImagesMap.has(img.roomType)) {
+          roomTypeImagesMap.set(img.roomType, []);
+        }
+        roomTypeImagesMap.get(img.roomType)!.push({
+          id: img.id,
+          category: img.category,
+          imageUrl: img.imageUrl,
+          publicId: img.publicId || undefined,
+          caption: img.caption || undefined,
+          sortOrder: img.sortOrder,
+          createdAt: img.createdAt,
+          updatedAt: img.updatedAt,
+        });
+      }
+    }
 
     // Transform to PropertyDetailItem
     return {
@@ -151,16 +176,8 @@ export class PropertyRepository {
         isAvailable: room.isAvailable,
         createdAt: room.createdAt,
         updatedAt: room.updatedAt,
-        images: (room as any).images?.map((img: any) => ({
-          id: img.id,
-          category: img.category as any,
-          imageUrl: img.imageUrl,
-          publicId: img.publicId || undefined,
-          caption: img.caption || undefined,
-          sortOrder: img.sortOrder,
-          createdAt: img.createdAt,
-          updatedAt: img.updatedAt,
-        })) || [],
+        // Use shared room type images instead of per-room images
+        images: roomTypeImagesMap.get(room.roomType) || [],
       })) || [],
     };
   }
@@ -711,11 +728,6 @@ export class PropertyRepository {
           orderBy: { sortOrder: 'asc' }
         },
         rooms: {
-          include: {
-            images: {
-              orderBy: { sortOrder: 'asc' }
-            }
-          },
           orderBy: { roomNumber: 'asc' }
         }
       },
@@ -731,6 +743,34 @@ export class PropertyRepository {
     });
 
     if (!property) return null;
+
+    // Get shared room type images for all rooms
+    let roomTypeImagesMap = new Map<string, any[]>();
+    if (property.rooms && property.rooms.length > 0) {
+      const roomTypeImages = await prisma.roomTypeImage.findMany({
+        where: {
+          propertyId: id,
+        },
+        orderBy: { sortOrder: 'asc' },
+      });
+
+      // Group images by room type
+      for (const img of roomTypeImages) {
+        if (!roomTypeImagesMap.has(img.roomType)) {
+          roomTypeImagesMap.set(img.roomType, []);
+        }
+        roomTypeImagesMap.get(img.roomType)!.push({
+          id: img.id,
+          category: img.category,
+          imageUrl: img.imageUrl,
+          publicId: img.publicId || undefined,
+          caption: img.caption || undefined,
+          sortOrder: img.sortOrder,
+          createdAt: img.createdAt,
+          updatedAt: img.updatedAt,
+        });
+      }
+    }
 
     // Transform to PublicPropertyDetailDTO
     return {
@@ -780,16 +820,8 @@ export class PropertyRepository {
         depositValue: room.depositValue ? Number(room.depositValue) : undefined,
         facilities: room.facilities as any[],
         isAvailable: room.isAvailable,
-        images: room.images?.map(img => ({
-          id: img.id,
-          category: img.category as any,
-          imageUrl: img.imageUrl,
-          publicId: img.publicId || undefined,
-          caption: img.caption || undefined,
-          sortOrder: img.sortOrder,
-          createdAt: img.createdAt,
-          updatedAt: img.updatedAt,
-        })) || [],
+        // Use shared room type images
+        images: roomTypeImagesMap.get(room.roomType) || [],
       })) || [],
       createdAt: property.createdAt,
       updatedAt: property.updatedAt,

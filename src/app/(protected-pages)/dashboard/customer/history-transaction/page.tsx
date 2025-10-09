@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { CustomerAPI } from "@/server/api/customer.api";
+import { CustomerLayout } from "@/components/layout/customer-layout";
 import type { BookingStatus } from "@prisma/client";
 
 function normalizeDate(value?: Date | string | null, pattern = "d MMM yyyy HH:mm") {
@@ -21,7 +22,7 @@ const currencyFormatter = new Intl.NumberFormat("id-ID", {
 	currency: "IDR",
 });
 
-const PENDING_STATUSES: BookingStatus[] = ["PENDING", "DEPOSIT_PAID", "CONFIRMED"];
+const PENDING_STATUSES: BookingStatus[] = ["UNPAID", "DEPOSIT_PAID", "CONFIRMED"];
 const COMPLETED_STATUSES: BookingStatus[] = ["CHECKED_IN", "COMPLETED"];
 
 export default async function CustomerTransactionHistoryPage() {
@@ -29,7 +30,8 @@ export default async function CustomerTransactionHistoryPage() {
 
 	const result = await CustomerAPI.getProfile();
 
-	if (!result.success || !result.data) {
+	// fix: discriminated union Result type - guard before accessing error
+	if (!result.success) {
 		console.error("Failed to load transaction history", result.error);
 		notFound();
 	}
@@ -41,19 +43,19 @@ export default async function CustomerTransactionHistoryPage() {
 	const cancelledCount = bookings.length - pendingCount - completedCount;
 
 	return (
-		<div className="space-y-8">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-3xl font-bold tracking-tight">Riwayat Transaksi</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
-					Lihat ringkasan pembayaran terakhir, status tagihan, dan detail transaksi booking kamu.
-				</p>
-			</div>
+		<CustomerLayout>
+			<div className="space-y-8">
+				<div className="flex flex-col gap-2">
+					<h1 className="text-3xl font-bold tracking-tight">Riwayat Transaksi</h1>
+					<p className="max-w-2xl text-sm text-muted-foreground">
+						Lihat ringkasan pembayaran terakhir, status tagihan, dan detail transaksi booking kamu.
+					</p>
+				</div>
 
 			<div className="grid gap-6 lg:grid-cols-3">
 				<Card>
 					<CardHeader className="pb-4">
 						<CardTitle>Total Pembayaran</CardTitle>
-						<CardDescription>Akumulasi dari 5 booking terbaru.</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<p className="text-2xl font-semibold text-foreground">{currencyFormatter.format(totalAmount)}</p>
@@ -147,5 +149,6 @@ export default async function CustomerTransactionHistoryPage() {
 				</CardContent>
 			</Card>
 		</div>
+		</CustomerLayout>
 	);
 }
