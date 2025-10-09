@@ -66,14 +66,76 @@ COPY --chown=node:node --from=builder /app/.next/static ./.next/static
 # This is needed for running migrations at container startup
 RUN npm install --global --save-exact "prisma@$(node --print 'require("./node_modules/@prisma/client/package.json").version')"
 
-# Copy entrypoint script
-COPY --chown=node:node scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
 # Ensure the lightweight runtime runs as non-root
 USER node
 EXPOSE 3000
 
-# Use tini as init system for proper signal handling
-ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["/usr/local/bin/docker-entrypoint.sh"]
+# Use shell form to run multiple commands
+CMD sh -c '\
+  echo "============================================" && \
+  echo "🚀 Booting MyHome Container" && \
+  echo "============================================" && \
+  echo "📝 Environment: NODE_ENV=${NODE_ENV:-production}" && \
+  echo "📝 Port: ${PORT:-3000}" && \
+  echo "" && \
+  \
+  if [ -z "$DATABASE_URL" ]; then \
+    echo "❌ ERROR: DATABASE_URL is not set." && \
+    exit 1; \
+  fi && \
+  \
+  echo "✅ DATABASE_URL is configured" && \
+  echo "" && \
+  \
+  echo "============================================" && \
+  echo "📦 Step 1: Generating Prisma Client..." && \
+  echo "============================================" && \
+  npx prisma generate && \
+  echo "✅ Prisma Client generated successfully!" && \
+  echo "" && \
+  \
+  echo "============================================" && \
+  echo "📦 Step 2: Syncing Database Schema..." && \
+  echo "============================================" && \
+  if [ -d "./prisma/migrations" ] && [ -n "$(ls -A ./prisma/migrations 2>/dev/null | grep -v migration_lock.toml)" ]; then \
+    echo "📂 Migrations found. Running prisma migrate deploy..." && \
+    npx prisma migrate deploy && \
+    echo "✅ Migrations applied successfully!"; \
+  else \
+    echo "📂 No migrations found. Running prisma db push..." && \
+    npx prisma db push --accept-data-loss && \
+    echo "✅ Database schema pushed successfully!"; \
+  fi && \
+  echo "" && \
+  \
+  echo "============================================" && \
+  echo "🌱 Step 3: Seeding Database..." && \
+  echo "============================================" && \
+  if npm run | grep -q "db:seed"; then \
+    echo "🌱 Running seed via npm run db:seed..." && \
+    (npm run db:seed || echo "⚠️  Seed failed (this is OK if data already exists)"); \
+  elif grep -q "\"prisma\"" package.json && grep -q "\"seed\"" package.json; then \
+    echo "🌱 Running seed via npx prisma db seed..." && \
+    (npx prisma db seed || echo "⚠️  Seed failed (this is OK if data already exists)"); \
+  else \
+    echo "ℹ️  No seed script configured. Skipping seeding."; \
+  fi && \
+  echo "" && \
+  \
+  echo "============================================" && \
+  echo "🚀 Step 4: Starting Application..." && \
+  echo "============================================" && \
+  if npm run | grep -q "start:docker"; then \
+    echo "🎯 Starting with: npm run start:docker" && \
+    exec npm run start:docker; \
+  elif npm run | grep -q "^start$"; then \
+    echo "🎯 Starting with: npm run start" && \
+    exec npm run start; \
+  elif [ -f "./server.js" ]; then \
+    echo "🎯 Starting with: node server.js" && \
+    exec node server.js; \
+  else \
+    echo "❌ ERROR: No start command found!" && \
+    exit 1; \
+  fi \
+'

@@ -44,10 +44,10 @@ Pastikan semua environment variables berikut sudah dikonfigurasi di Dockploy:
 
 ### 3. Files Verification
 - [ ] `Dockerfile` exists and up-to-date
-- [ ] `scripts/docker-entrypoint.sh` exists and executable
 - [ ] `package.json` has `start:docker` or `start` script
 - [ ] `prisma/schema.prisma` exists
 - [ ] `prisma/seed.ts` exists
+- [ ] `prisma/migrations/` folder exists with migration files
 - [ ] `next.config.js` has `output: 'standalone'`
 
 ### 4. Database
