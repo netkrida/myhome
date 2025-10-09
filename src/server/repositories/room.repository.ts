@@ -1056,7 +1056,7 @@ export class RoomRepository {
         },
         facilities: firstRoom.facilities as any[],
         rooms: roomAvailabilityInfos,
-        mainImage: firstRoom.images[0]?.imageUrl,
+        mainImage: roomTypeImageMap.get(roomType),
       };
 
       roomTypes.push(roomTypeDetail);
