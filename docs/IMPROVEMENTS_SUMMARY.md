@@ -1,5 +1,41 @@
 # Map Display and Form Persistence Improvements
 
+## 🔄 **Latest Update: Database Reset Mode (2025-10-10)**
+
+### **Docker Deployment Control Enhancements**
+
+Added flexible database initialization modes to optimize deployment workflows:
+
+#### **New Environment Variables**
+```bash
+# Deployment control flags
+SKIP_PRISMA_GENERATE=true/false
+SKIP_DB_MIGRATION=true/false
+SKIP_DB_SEED=true/false
+
+# Database reset mode
+DB_RESET_MODE=migrate/reset
+```
+
+#### **Benefits**
+- ✅ **Fast Updates**: Skip DB operations for code-only updates (~5 seconds startup)
+- ✅ **Fresh Install**: Use `reset` mode for clean database initialization
+- ✅ **Safe Migrations**: Default `migrate` mode preserves existing data
+- ✅ **Flexible Control**: Granular control over each deployment phase
+
+#### **Documentation**
+- Created `docs/DATABASE_RESET_GUIDE.md` with comprehensive usage scenarios
+- Updated `.env.example` with new variables and descriptions
+- Enhanced Dockerfile with conditional startup logic
+
+#### **Use Cases**
+1. **Production Updates** (code only): All skip flags = `true`
+2. **Schema Updates**: Only skip seed
+3. **Fresh Install**: `DB_RESET_MODE=reset`, all flags = `false`
+4. **Development Reset**: Use reset mode with local docker-compose
+
+---
+
 ## ✅ **Successfully Implemented All Requirements**
 
 ### **🗺️ Map Display Improvements**

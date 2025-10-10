@@ -30,7 +30,7 @@ export const env = createEnv({
     SKIP_PRISMA_GENERATE: z.enum(["true", "false"]).optional().default("false"),
     SKIP_DB_MIGRATION: z.enum(["true", "false"]).optional().default("false"),
     SKIP_DB_SEED: z.enum(["true", "false"]).optional().default("false"),
-    
+    DB_RESET_MODE: z.enum(["migrate", "reset"]).optional().default("migrate"),
   },
 
   /**
@@ -65,6 +65,7 @@ export const env = createEnv({
     SKIP_PRISMA_GENERATE: process.env.SKIP_PRISMA_GENERATE,
     SKIP_DB_MIGRATION: process.env.SKIP_DB_MIGRATION,
     SKIP_DB_SEED: process.env.SKIP_DB_SEED,
+    DB_RESET_MODE: process.env.DB_RESET_MODE,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
