@@ -16,9 +16,21 @@ export const env = createEnv({
     AUTH_DISCORD_SECRET: z.string().optional(),
     DATABASE_URL: z.string().url("DATABASE_URL must be a valid database URL"),
     DIRECT_URL: z.string().url().optional(),
+    CLOUDINARY_CLOUD_NAME: z.string().optional(),
+    CLOUDINARY_API_KEY: z.string().optional(),
+    CLOUDINARY_API_SECRET: z.string().optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    MIDTRANS_SERVER_KEY: z.string().optional(),
+    MIDTRANS_CLIENT_KEY: z.string().optional(),
+    MIDTRANS_IS_PRODUCTION: z.string().optional(),
+    CRON_SECRET: z.string().optional(),
+    BOOKING_UNPAID_GRACE_MINUTES: z.string().optional(),
+    SKIP_PRISMA_GENERATE: z.enum(["true", "false"]).optional().default("false"),
+    SKIP_DB_MIGRATION: z.enum(["true", "false"]).optional().default("false"),
+    SKIP_DB_SEED: z.enum(["true", "false"]).optional().default("false"),
+    
   },
 
   /**
@@ -42,6 +54,17 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     DIRECT_URL: process.env.DIRECT_URL,
     NODE_ENV: process.env.NODE_ENV,
+    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+    MIDTRANS_SERVER_KEY: process.env.MIDTRANS_SERVER_KEY,
+    MIDTRANS_CLIENT_KEY: process.env.MIDTRANS_CLIENT_KEY,
+    MIDTRANS_IS_PRODUCTION: process.env.MIDTRANS_IS_PRODUCTION,
+    CRON_SECRET: process.env.CRON_SECRET,
+    BOOKING_UNPAID_GRACE_MINUTES: process.env.BOOKING_UNPAID_GRACE_MINUTES,
+    SKIP_PRISMA_GENERATE: process.env.SKIP_PRISMA_GENERATE,
+    SKIP_DB_MIGRATION: process.env.SKIP_DB_MIGRATION,
+    SKIP_DB_SEED: process.env.SKIP_DB_SEED,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

@@ -29,7 +29,7 @@ async function fetchPublicProperties(limit: number): Promise<PublicPropertyCardD
 
   try {
     const response = await fetch(url.toString(), {
-      next: { revalidate: 300 },
+      next: { revalidate: 60 },
     });
 
     if (!response.ok) {
