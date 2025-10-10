@@ -19,6 +19,11 @@ import {
   Settings
 } from "lucide-react";
 import { toast } from "sonner";
+import { 
+  exportToCSV, 
+  formatCurrencyForCSV, 
+  formatDateTimeForCSV 
+} from "@/lib/export-csv";
 import {
   SummaryCards,
   CashFlowChart,
@@ -493,6 +498,83 @@ export function TransactionPageClient() {
     ]);
   };
 
+  // Export transactions to CSV
+  const handleExportCSV = () => {
+    try {
+      if (entries.length === 0) {
+        toast.error("Tidak ada data untuk diekspor");
+        return;
+      }
+
+      const filename = `transaksi-keuangan_${dateRange.from}_${dateRange.to}.csv`;
+      
+      exportToCSV(
+        entries,
+        filename,
+        [
+          {
+            key: "date",
+            label: "Tanggal",
+            format: (value) => formatDateTimeForCSV(value),
+          },
+          {
+            key: "direction",
+            label: "Arah",
+            format: (value) => (value === "IN" ? "Masuk" : "Keluar"),
+          },
+          {
+            key: "account",
+            label: "Akun",
+            format: (value) => value?.name || "-",
+          },
+          {
+            key: "account",
+            label: "Tipe Akun",
+            format: (value) => value?.type || "-",
+          },
+          {
+            key: "amount",
+            label: "Jumlah",
+            format: (value) => formatCurrencyForCSV(value),
+          },
+          {
+            key: "refType",
+            label: "Referensi Tipe",
+            format: (value) => {
+              const types: Record<string, string> = {
+                PAYMENT: "Pembayaran",
+                PAYOUT: "Penarikan",
+                MANUAL: "Manual",
+                ADJUSTMENT: "Penyesuaian",
+              };
+              return types[value] || value;
+            },
+          },
+          {
+            key: "refId",
+            label: "Referensi ID",
+            format: (value) => value || "-",
+          },
+          {
+            key: "propertyId",
+            label: "Properti ID",
+            format: (value) => value || "-",
+          },
+          {
+            key: "note",
+            label: "Catatan",
+            format: (value) => value || "-",
+          },
+        ]
+      );
+      
+      toast.success("Data berhasil diekspor");
+    } catch (error) {
+      console.error("Error exporting CSV:", error);
+      toast.error("Gagal mengekspor data");
+    }
+  };
+
   // Handle date range change
   const handleDateRangeChange = (field: keyof DateRange, value: string) => {
     setDateRange(prev => ({ ...prev, [field]: value }));
@@ -659,6 +741,7 @@ export function TransactionPageClient() {
             pagination={pagination}
             isLoading={loadingStates.entries}
             onQueryChange={handleLedgerQueryChange}
+            onExport={handleExportCSV}
             onEdit={handleEditTransaction}
             onDelete={handleDeleteTransaction}
           />
