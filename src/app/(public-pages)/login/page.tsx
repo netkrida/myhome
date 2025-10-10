@@ -118,7 +118,7 @@ export default function LoginPage() {
                 Sign in to myhome
               </CardTitle>
               <CardDescription className="text-center">
-                Enter your credentials to access your dashboard
+                masukkan username & password anda yang benar
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -176,25 +176,6 @@ export default function LoginPage() {
             </Alert>
           )}
 
-          {/* Session Issue Help */}
-        
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Demo Accounts</span>
-              </div>
-            </div>
-            
-            <div className="mt-4 space-y-2 text-sm text-gray-600">
-              <p><strong>Superadmin:</strong> superadmin@myhome.com / password123</p>
-              <p><strong>Admin Kos:</strong> admin@myhome.com / password123</p>
-              <p><strong>Receptionist:</strong> receptionist@myhome.com / password123</p>
-              <p><strong>Customer:</strong> customer@myhome.com / password123</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
       
