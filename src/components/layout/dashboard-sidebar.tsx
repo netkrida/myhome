@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useSession } from "next-auth/react"
+import Image from "next/image"
 import {
   IconDashboard,
   IconUsers,
@@ -232,15 +233,16 @@ export function DashboardSidebar({ variant = "sidebar" }: DashboardSidebarProps)
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <IconBuilding className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">MyHome</span>
-                  <span className="truncate text-xs">
-                    {userRole?.toLowerCase().replace("_", " ")} Dashboard
-                  </span>
+              <a href="/" className="flex items-center gap-2 justify-center">
+                <div className="relative h-8 w-auto flex-shrink-0">
+                  <Image
+                    src="/logo.png"
+                    alt="MyHome Logo"
+                    width={120}
+                    height={32}
+                    className="object-contain"
+                    priority
+                  />
                 </div>
               </a>
             </SidebarMenuButton>

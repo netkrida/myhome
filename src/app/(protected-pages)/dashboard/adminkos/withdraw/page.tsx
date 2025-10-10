@@ -23,30 +23,28 @@ export default async function AdminKosWithdrawPage() {
   const bankAccountResult = await BankAccountAPI.getApprovedByAdminKosId(profileId);
   const approvedBankAccount = bankAccountResult.success ? bankAccountResult.data : null;
 
-  // Fetch balance from ledger system (integrated approach)
+  // Fetch withdrawable balance from new withdraw API
+  // This only counts automatic "Pembayaran Kos" transactions
   let balance = null;
   try {
-    const { AdminKosLedgerAPI } = await import("@/server/api/adminkos.ledger");
-    const ledgerBalanceResult = await AdminKosLedgerAPI.getBalanceInfo();
+    const { WithdrawAPI } = await import("@/server/api/withdraw.api");
+    const withdrawSummaryResult = await WithdrawAPI.getSummary(profileId);
 
-    if (ledgerBalanceResult.success && ledgerBalanceResult.data) {
-      const ledgerBalance = ledgerBalanceResult.data;
+    if (withdrawSummaryResult.success && withdrawSummaryResult.data) {
+      const withdrawSummary = withdrawSummaryResult.data;
       balance = {
-        totalBalance: ledgerBalance.totalBalance,
-        availableBalance: ledgerBalance.availableBalance,
-        depositBalance: 0,
-        pendingPayouts: ledgerBalance.totalBalance - ledgerBalance.availableBalance,
-        lastCalculated: new Date(),
+        totalBalance: Number(withdrawSummary.withdrawableBalance ?? 0),
+        availableBalance: Number(withdrawSummary.availableBalance ?? 0),
+        depositBalance: 0, // Not used
+        pendingPayouts: Number(withdrawSummary.pendingWithdrawals ?? 0),
+        lastCalculated: withdrawSummary.asOf.toISOString(), // Convert Date to ISO string for serialization
+        // Additional info for display
+        totalPaymentIncome: Number(withdrawSummary.totalPaymentIncome ?? 0),
+        totalWithdrawals: Number(withdrawSummary.totalWithdrawals ?? 0),
       };
     }
   } catch (error) {
-    console.warn("Ledger system not available, falling back to old balance calculation:", error);
-  }
-
-  // Fallback to old balance calculation if ledger not available
-  if (!balance) {
-    const balanceResult = await PayoutAPI.getBalance(profileId);
-    balance = balanceResult.success ? balanceResult.data : null;
+    console.error("Error fetching withdrawable balance:", error);
   }
 
   // Fetch payout history

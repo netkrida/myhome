@@ -174,20 +174,21 @@ export class LedgerService {
     // Ensure system accounts exist
     await this.ensureSystemAccounts(adminKosId);
 
-    // Get "Penarikan Dana" account
-    const withdrawalAccount = await LedgerRepository.findSystemAccount(
+    // Get "Pembayaran Kos" account (changed from "Penarikan Dana")
+    // Payouts now reduce the same account that receives payment income
+    const paymentAccount = await LedgerRepository.findSystemAccount(
       adminKosId,
-      "Penarikan Dana",
-      "OTHER"
+      "Pembayaran Kos",
+      "INCOME"
     );
 
-    if (!withdrawalAccount) {
-      throw new Error("Akun sistem 'Penarikan Dana' tidak ditemukan");
+    if (!paymentAccount) {
+      throw new Error("Akun sistem 'Pembayaran Kos' tidak ditemukan");
     }
 
-    // Create ledger entry
+    // Create ledger entry (OUT from "Pembayaran Kos")
     return LedgerRepository.createEntry(adminKosId, "SYSTEM", {
-      accountId: withdrawalAccount.id,
+      accountId: paymentAccount.id,
       direction: "OUT",
       amount: payoutData.amount,
       date: payoutData.processedAt || new Date(),

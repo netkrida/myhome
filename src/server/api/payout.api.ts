@@ -21,6 +21,10 @@ import { PayoutStatus, BankAccountStatus } from "@prisma/client";
 export class PayoutAPI {
   /**
    * Create new payout request (AdminKos)
+   *
+   * NOTE: This method uses general ledger balance calculation.
+   * For withdraw feature that only counts "Pembayaran Kos" transactions,
+   * use WithdrawAPI.createWithdrawRequest() instead.
    */
   static async create(
     adminKosId: string,
@@ -46,6 +50,8 @@ export class PayoutAPI {
     }
 
     // Get current balance from ledger system (integrated approach)
+    // This uses GENERAL ledger balance (all entries)
+    // For withdrawable balance (only from "Pembayaran Kos"), use WithdrawService
     let balance: BalanceInfo;
     try {
       const { LedgerService } = await import("../services/ledger.service");

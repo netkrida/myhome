@@ -136,7 +136,10 @@ export interface BalanceInfo {
   availableBalance: number;
   depositBalance: number;
   pendingPayouts: number;
-  lastCalculated: Date;
+  lastCalculated: Date | string; // Support both Date object and ISO string for serialization
+  // Additional fields for withdraw balance from "Pembayaran Kos"
+  totalPaymentIncome?: number;
+  totalWithdrawals?: number;
 }
 
 // ============================================================================

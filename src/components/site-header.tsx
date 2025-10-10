@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { IconBell, IconSearch } from "@tabler/icons-react"
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 
 interface SiteHeaderProps {
   title?: string
@@ -19,13 +20,10 @@ export function SiteHeader({ title = "Dashboard" }: SiteHeaderProps) {
         <h1 className="text-base font-medium">{title}</h1>
         <div className="ml-auto flex items-center gap-2">
           <Button variant="ghost" size="sm">
-            <IconSearch className="h-4 w-4" />
-            <span className="sr-only">Search</span>
-          </Button>
-          <Button variant="ghost" size="sm">
             <IconBell className="h-4 w-4" />
             <span className="sr-only">Notifications</span>
           </Button>
+          <AnimatedThemeToggler className="h-9 w-9" />
         </div>
       </div>
     </header>

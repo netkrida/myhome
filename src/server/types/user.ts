@@ -35,9 +35,17 @@ export interface UpdateUserDTO {
   name?: string;
   email?: string;
   role?: UserRole;
-  image?: string;
-  phoneNumber?: string;
+  image?: string | null;
+  phoneNumber?: string | null;
   isActive?: boolean;
+  // Address fields (nullable in Prisma)
+  provinceCode?: string | null;
+  provinceName?: string | null;
+  regencyCode?: string | null;
+  regencyName?: string | null;
+  districtCode?: string | null;
+  districtName?: string | null;
+  streetAddress?: string | null;
 }
 
 // User list query parameters

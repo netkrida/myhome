@@ -71,10 +71,6 @@ export function WithdrawDialog({
       newErrors.amount = `Saldo tidak mencukupi. Maksimal: ${formatCurrency(balance.availableBalance)}`;
     }
 
-    if (!formData.source) {
-      newErrors.source = "Sumber penarikan wajib dipilih";
-    }
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -82,13 +78,13 @@ export function WithdrawDialog({
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/adminkos/payouts", {
+      // Use new withdraw API endpoint
+      const response = await fetch("/api/adminkos/withdraw", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bankAccountId: bankAccount.id,
           amount,
-          source: formData.source,
           notes: formData.notes || undefined,
         }),
       });
@@ -117,62 +113,51 @@ export function WithdrawDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Tarik Dana</DialogTitle>
           <DialogDescription>
-            Ajukan penarikan dana ke rekening bank Anda yang telah terdaftar.
+            Ajukan penarikan dana dari saldo pembayaran kos
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Balance Info */}
-          <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
-            <h4 className="font-semibold text-sm">Informasi Saldo</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-muted-foreground">Saldo Tersedia</p>
-                <p className="text-lg font-bold text-green-600">
-                  {formatCurrency(balance.availableBalance)}
-                </p>
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          {/* Balance Info - Simplified */}
+          <div className="rounded-lg border bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-blue-600" />
+                <span className="font-semibold text-sm text-blue-900 dark:text-blue-100">
+                  Saldo Tersedia
+                </span>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Penarikan Pending</p>
-                <p className="text-lg font-bold text-orange-600">
-                  {formatCurrency(balance.pendingPayouts)}
-                </p>
-              </div>
+              <span className="text-xl font-bold text-green-600">
+                {formatCurrency(balance.availableBalance)}
+              </span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Terakhir dihitung: {new Date(balance.lastCalculated).toLocaleString("id-ID")}
-            </p>
-          </div>
-
-          <Separator />
-
-          {/* Source */}
-          <div className="space-y-2">
-            <Label htmlFor="source">Sumber Penarikan *</Label>
-            <Select value={formData.source} onValueChange={(value) => setFormData({ ...formData, source: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="SALES">Hasil Penjualan</SelectItem>
-                <SelectItem value="DEPOSIT">Deposit</SelectItem>
-                <SelectItem value="OTHER">Lainnya</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.source && (
-              <p className="text-sm text-destructive">{errors.source}</p>
+            {balance.pendingPayouts > 0 && (
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                Pending: {formatCurrency(balance.pendingPayouts)}
+              </p>
             )}
           </div>
 
+          {/* Source - Locked to Pembayaran Kos - Compact */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Sumber Penarikan</Label>
+            <div className="rounded-lg border bg-muted/30 p-2.5">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-3.5 w-3.5 text-blue-600" />
+                <span className="font-medium text-sm">Pembayaran Kos (Sistem)</span>
+              </div>
+            </div>
+          </div>
+
           {/* Amount */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="amount">Jumlah Penarikan *</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                 Rp
               </span>
               <Input
@@ -181,72 +166,83 @@ export function WithdrawDialog({
                 placeholder="0"
                 value={formData.amount ? formatCurrency(Number(formData.amount)).replace("Rp", "").trim() : ""}
                 onChange={(e) => handleAmountChange(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-11 text-base"
               />
             </div>
             {errors.amount && (
-              <p className="text-sm text-destructive">{errors.amount}</p>
+              <p className="text-xs text-destructive">{errors.amount}</p>
             )}
-            <p className="text-xs text-muted-foreground">
-              Maksimal: {formatCurrency(balance.availableBalance)}
-            </p>
+            {!errors.amount && (
+              <p className="text-xs text-muted-foreground">
+                Maksimal: {formatCurrency(balance.availableBalance)}
+              </p>
+            )}
           </div>
 
-          {/* Bank Account (Read-only) */}
-          <div className="space-y-2">
-            <Label>Rekening Tujuan</Label>
-            <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+          {/* Bank Account (Read-only) - Compact */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Rekening Tujuan</Label>
+            <div className="rounded-lg border bg-muted/30 p-2.5">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
-                <span className="font-semibold">{bankAccount.bankName}</span>
+                <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-sm">{bankAccount.bankName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {bankAccount.accountNumber} - {bankAccount.accountName}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {bankAccount.accountNumber} - {bankAccount.accountName}
-              </p>
             </div>
           </div>
 
-          {/* Remaining Balance */}
+          {/* Remaining Balance - Compact */}
           {formData.amount && Number(formData.amount) > 0 && (
-            <div className="rounded-lg border bg-blue-50 dark:bg-blue-950 p-3">
+            <div className="rounded-lg border bg-blue-50 dark:bg-blue-950 p-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Sisa Saldo Setelah Penarikan:</span>
-                <span className={`text-lg font-bold ${calculateRemainingBalance() >= 0 ? "text-blue-600" : "text-red-600"}`}>
+                <span className="text-xs font-medium">Sisa Saldo:</span>
+                <span className={`text-base font-bold ${calculateRemainingBalance() >= 0 ? "text-blue-600" : "text-red-600"}`}>
                   {formatCurrency(calculateRemainingBalance())}
                 </span>
               </div>
             </div>
           )}
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Catatan (Opsional)</Label>
+          {/* Notes - Compact */}
+          <div className="space-y-1.5">
+            <Label htmlFor="notes" className="text-xs">Catatan (Opsional)</Label>
             <Textarea
               id="notes"
               placeholder="Tambahkan catatan jika diperlukan"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
+              rows={2}
               maxLength={500}
+              className="text-sm resize-none"
             />
-            <p className="text-xs text-muted-foreground">
-              {formData.notes.length}/500 karakter
-            </p>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0 mt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
+              className="w-full sm:w-auto"
             >
               Batal
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <TrendingDown className="mr-2 h-4 w-4" />
-              Ajukan Penarikan
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                <>
+                  <TrendingDown className="mr-2 h-4 w-4" />
+                  Ajukan Penarikan
+                </>
+              )}
             </Button>
           </DialogFooter>
         </form>

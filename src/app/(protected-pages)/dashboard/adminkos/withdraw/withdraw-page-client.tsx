@@ -72,26 +72,22 @@ export function WithdrawPageClient({
         setBankAccounts(bankAccountsData.data);
       }
 
-      // Refresh balance from ledger system (new integrated approach)
-      const balanceResponse = await fetch("/api/adminkos/ledger/balance");
+      // Refresh withdrawable balance from new withdraw API
+      // This only counts automatic "Pembayaran Kos" transactions
+      const balanceResponse = await fetch("/api/adminkos/withdraw/summary");
       const balanceData = await balanceResponse.json();
       if (balanceData.success) {
-        // Convert ledger balance format to withdraw balance format
-        const ledgerBalance = balanceData.data;
+        const withdrawSummary = balanceData.data;
         setCurrentBalance({
-          totalBalance: ledgerBalance.totalBalance,
-          availableBalance: ledgerBalance.availableBalance,
-          depositBalance: 0, // Not used in ledger system
-          pendingPayouts: ledgerBalance.totalBalance - ledgerBalance.availableBalance,
-          lastCalculated: new Date(),
+          totalBalance: Number(withdrawSummary.withdrawableBalance ?? 0),
+          availableBalance: Number(withdrawSummary.availableBalance ?? 0),
+          depositBalance: 0, // Not used
+          pendingPayouts: Number(withdrawSummary.pendingWithdrawals ?? 0),
+          lastCalculated: withdrawSummary.asOf || new Date().toISOString(), // ISO string for consistency
+          // Additional info for display
+          totalPaymentIncome: Number(withdrawSummary.totalPaymentIncome ?? 0),
+          totalWithdrawals: Number(withdrawSummary.totalWithdrawals ?? 0),
         });
-      } else {
-        // Fallback to old balance calculation if ledger not available
-        const fallbackResponse = await fetch("/api/adminkos/payouts/balance");
-        const fallbackData = await fallbackResponse.json();
-        if (fallbackData.success) {
-          setCurrentBalance(fallbackData.data);
-        }
       }
 
       // Reload page to get updated approved bank account
@@ -190,32 +186,37 @@ export function WithdrawPageClient({
       {/* Approved Bank Account - Show Withdraw Features */}
       {approvedBankAccount && currentBalance && (
         <>
-          {/* Balance Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Saldo</CardTitle>
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(currentBalance.totalBalance)}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Saldo keseluruhan
-                </p>
-              </CardContent>
-            </Card>
+          {/* Info Banner - Saldo dari Pembayaran Kos */}
+          <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-blue-900 dark:text-blue-100">
+                    Saldo Tarik dari Pembayaran Kos
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    Saldo yang dapat ditarik hanya berasal dari transaksi pembayaran kos otomatis.
+                    Pemasukan manual tidak termasuk dalam saldo tarik.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
+          {/* Balance Cards */}
+          <div className="grid gap-4 md:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Saldo Tersedia</CardTitle>
-                <TrendingDown className="h-4 w-4 text-green-600" />
+                <CardTitle className="text-sm font-medium">Total Pemasukan</CardTitle>
+                <Wallet className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  {formatCurrency(currentBalance.availableBalance)}
+                <div className="text-2xl font-bold text-blue-600">
+                  {formatCurrency((currentBalance as any).totalPaymentIncome || 0)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Dapat ditarik
+                  Dari pembayaran kos
                 </p>
               </CardContent>
             </Card>
@@ -223,18 +224,67 @@ export function WithdrawPageClient({
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Penarikan</CardTitle>
-                <Clock className="h-4 w-4 text-orange-600" />
+                <TrendingDown className="h-4 w-4 text-orange-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-orange-600">
-                  {formatCurrency(currentBalance.pendingPayouts)}
+                  {formatCurrency((currentBalance as any).totalWithdrawals || 0)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  sudah ditarik
+                  Sudah ditarik
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Saldo Tarik</CardTitle>
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(currentBalance.totalBalance)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Pemasukan - Penarikan
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-green-200 dark:border-green-800">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Saldo Tersedia</CardTitle>
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {formatCurrency(currentBalance.availableBalance)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Dapat ditarik sekarang
                 </p>
               </CardContent>
             </Card>
           </div>
+
+          {/* Pending Withdrawals Info */}
+          {currentBalance.pendingPayouts > 0 && (
+            <Card className="border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <Clock className="h-5 w-5 text-yellow-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium text-yellow-900 dark:text-yellow-100">
+                      Penarikan Pending
+                    </p>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                      Anda memiliki penarikan pending sebesar{" "}
+                      <span className="font-semibold">{formatCurrency(currentBalance.pendingPayouts)}</span>.
+                      Saldo ini akan tersedia kembali jika pengajuan ditolak.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Registered Bank Account */}
           <Card>
