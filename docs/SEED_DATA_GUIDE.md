@@ -1,6 +1,6 @@
 # 🌱 Comprehensive Seed Data Guide
 
-This guide explains the comprehensive seed data that has been created for the MultiKost property management system.
+This guide explains the comprehensive seed data that has been created for the MyHome property management system.
 
 ## 📋 Overview
 
@@ -62,7 +62,7 @@ The seed data includes:
 ## 👥 User Accounts
 
 ### 🔴 SUPERADMIN
-- **Email**: superadmin@multikost.com
+- **Email**: superadmin@myhome.co.id
 - **Password**: password123
 - **Role**: Manage AdminKos accounts and system overview
 

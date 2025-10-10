@@ -9,7 +9,7 @@ import { AuthErrorHandler } from "@/components/auth/auth-error-handler";
 import { ConditionalAnalyticsTracker } from "@/components/analytics/analytics-tracker";
 
 export const metadata: Metadata = {
-  title: "MultiKost - Find Your Perfect Boarding House",
+  title: "MyHome - Find Your Perfect Boarding House",
   description: "Discover comfortable and affordable boarding houses near your campus or workplace. Book with confidence and move in hassle-free.",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };

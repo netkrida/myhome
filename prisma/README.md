@@ -1,6 +1,6 @@
 # Database Seeding Guide
 
-This directory contains database seeders for the MultiKost application, providing sample data for testing all user roles in the RBAC system.
+This directory contains database seeders for the MyHome application, providing sample data for testing all user roles in the RBAC system.
 
 ## Quick Start
 
@@ -15,8 +15,8 @@ npm run db:seed
 ### 1. User Accounts (All Roles)
 
 #### 🔴 Superadmin Account
-- **Email:** `superadmin@multikost.com`
-- **Password:** `password123`
+- **Email:** `superadmin@myhome.co.id`
+- **Password:** `@superadmin@myhome.co5432`
 - **Role:** Manage AdminKos accounts and system settings
 - **Permissions:** Full system access
 
@@ -107,7 +107,7 @@ npm run db:generate
 After seeding, you can test the application with different user roles:
 
 ### 1. Test Superadmin Features
-1. Login with `superadmin@multikost.com`
+1. Login with `superadmin@myhome.co.id`
 2. Navigate to `/dashboard/superadmin`
 3. Test AdminKos management features
 

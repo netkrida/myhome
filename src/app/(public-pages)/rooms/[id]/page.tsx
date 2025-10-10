@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: RoomDetailPageProps): Promise
 
     if (!response.ok) {
       return {
-        title: "Detail Kamar - MultiKost",
+        title: "Detail Kamar - MyHome",
         description: "Detail kamar kos dengan informasi lengkap dan ketersediaan real-time.",
       };
     }
@@ -43,13 +43,13 @@ export async function generateMetadata({ params }: RoomDetailPageProps): Promise
 
     if (!property) {
       return {
-        title: "Detail Kamar - MultiKost",
+        title: "Detail Kamar - MyHome",
         description: "Detail kamar kos dengan informasi lengkap dan ketersediaan real-time.",
       };
     }
 
     return {
-      title: `Detail Kamar - ${property.name} | MultiKost`,
+      title: `Detail Kamar - ${property.name} | MyHome`,
       description: `Lihat detail kamar dan ketersediaan real-time di ${property.name}. Lokasi: ${property.fullAddress}`,
       openGraph: {
         title: `Detail Kamar - ${property.name}`,
@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: RoomDetailPageProps): Promise
   } catch (error) {
     console.error("Error generating metadata:", error);
     return {
-      title: "Detail Kamar - MultiKost",
+      title: "Detail Kamar - MyHome",
       description: "Detail kamar kos dengan informasi lengkap dan ketersediaan real-time.",
     };
   }

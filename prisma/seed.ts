@@ -39,8 +39,8 @@ async function main() {
   console.log('\n📋 Test Account Credentials:');
   console.log('================================');
   console.log('🔴 SUPERADMIN:');
-  console.log('   Email: superadmin@multikost.com');
-  console.log('   Password: password123');
+  console.log('   Email: superadmin@myhome.co.id');
+  console.log('   Password: @superadmin@myhome.co5432');
   console.log('   Role: Manage AdminKos accounts');
   console.log('');
 }

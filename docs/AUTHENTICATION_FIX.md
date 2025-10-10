@@ -219,7 +219,7 @@ export function useRoleRedirect(callbackUrl?: string) {
 ```typescript
 // User logs in with credentials
 const result = await signIn("credentials", {
-  email: "superadmin@multikost.com",
+  email: "superadmin@myhome.co.id",
   password: "password123",
   redirect: false,
 });

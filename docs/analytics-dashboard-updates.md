@@ -274,7 +274,7 @@ const topBrowser = React.useMemo(() => {
 
 ### **Manual Testing:**
 1. **Access Dashboard**: `http://localhost:3000/dashboard/superadmin`
-2. **Login**: superadmin@multikost.com / password123
+2. **Login**: superadmin@myhome.co.id / @superadmin@myhome.co5432
 3. **Verify Changes**:
    - Globe shows country points only
    - Line chart shows 2 lines

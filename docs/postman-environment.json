@@ -1,6 +1,6 @@
 {
-  "id": "multikost-complete-api-env",
-  "name": "MultiKost - Complete API Environment",
+  "id": "myhome-complete-api-env",
+  "name": "MyHome - Complete API Environment",
   "values": [
     {
       "key": "base_url",

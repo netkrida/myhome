@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "MultiKost - Public Rooms API",
+    "name": "MyHome - Public Rooms API",
     "description": "API untuk menampilkan detail room dan daftar room dari properti di halaman public. API ini mengikuti 3-tier architecture dan menyediakan data untuk halaman detail room dan property rooms.\n\n## Base URL\n`http://localhost:3000` (Development)\n\n## Authentication\nTidak memerlukan authentication - API ini bersifat public.\n\n## Response Format\nSemua response menggunakan format JSON dengan struktur:\n```json\n{\n  \"success\": boolean,\n  \"data\": object | array,\n  \"error\": string (jika ada error)\n}\n```",
     "version": "1.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"

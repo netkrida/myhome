@@ -20,7 +20,7 @@ curl -X POST "http://localhost:3000/api/auth/callback/credentials" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -b cookies.txt \
   -c cookies.txt \
-  -d "email=superadmin@multikost.com&password=password123&csrfToken=${CSRF_TOKEN}&callbackUrl=http://localhost:3000/dashboard"
+  -d "email=superadmin@myhome.co.id&password=@superadmin@myhome.co5432&csrfToken=${CSRF_TOKEN}&callbackUrl=http://localhost:3000/dashboard"
 ```
 
 #### **Step 3: Verify Session**
@@ -152,7 +152,7 @@ LOGIN_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/auth/callback/credentials" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -b ${COOKIES_FILE} \
   -c ${COOKIES_FILE} \
-  -d "email=superadmin@multikost.com&password=password123&csrfToken=${CSRF_TOKEN}&callbackUrl=${BASE_URL}/dashboard")
+  -d "email=superadmin@myhome.co.id&password=@superadmin@myhome.co5432&csrfToken=${CSRF_TOKEN}&callbackUrl=${BASE_URL}/dashboard")
 
 echo "✅ Login completed"
 
@@ -193,7 +193,7 @@ Write-Host "✅ CSRF Token: $CsrfToken" -ForegroundColor Green
 
 Write-Host "🔐 Step 2: Logging in..." -ForegroundColor Yellow
 $LoginBody = @{
-    email = "superadmin@multikost.com"
+    email = "superadmin@myhome.co.id"
     password = "password123"
     csrfToken = $CsrfToken
     callbackUrl = "$BaseUrl/dashboard"
@@ -223,7 +223,7 @@ Write-Host "✅ Testing completed!" -ForegroundColor Green
 #### **Manual Browser Testing**
 1. **Login**: Navigate ke `http://localhost:3000/login`
 2. **Credentials**: 
-   - Email: `superadmin@multikost.com`
+   - Email: `superadmin@myhome.co.id`
    - Password: `password123`
 3. **Dashboard**: Navigate ke `http://localhost:3000/dashboard/superadmin`
 4. **Inspect**: Open Developer Tools → Network tab

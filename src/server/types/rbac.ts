@@ -1,6 +1,6 @@
 /**
  * Role-Based Access Control (RBAC) Types
- * Defines the core RBAC structure for the multikost application
+ * Defines the core RBAC structure for the myhome.co.id application
  */
 
 // Core role definitions

@@ -310,7 +310,7 @@ After setup, verify:
 - [ ] Can login with test credentials
   ```
   URL: https://myhome.co.id/login
-  Email: superadmin@multikost.com
+  Email: superadmin@myhome.co.id
   Password: @superadmin@myhome.co5432
   ```
 

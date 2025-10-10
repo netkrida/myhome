@@ -1,11 +1,11 @@
-# 📚 MultiKost API Documentation Package
+# 📚 MyHome API Documentation Package
 
-Paket dokumentasi lengkap untuk semua API endpoints dalam sistem MultiKost. Dokumentasi ini mencakup semua fitur dari authentication hingga booking management dengan role-based access control.
+Paket dokumentasi lengkap untuk semua API endpoints dalam sistem MyHome. Dokumentasi ini mencakup semua fitur dari authentication hingga booking management dengan role-based access control.
 
 ## 📁 File yang Disediakan
 
 ### 1. **Postman Collection**
-- **`multikost-complete-api-collection.json`** - Collection lengkap dengan 50+ endpoints
+- **`myhome-complete-api-collection.json`** - Collection lengkap dengan 50+ endpoints
 - **`postman-environment.json`** - Environment variables untuk testing
 
 ### 2. **Dokumentasi**
@@ -17,9 +17,9 @@ Paket dokumentasi lengkap untuk semua API endpoints dalam sistem MultiKost. Doku
 
 ### Step 1: Import ke Postman
 1. Buka Postman
-2. Import `multikost-complete-api-collection.json`
+2. Import `myhome-complete-api-collection.json`
 3. Import `postman-environment.json`
-4. Pilih environment "MultiKost - Complete API Environment"
+4. Pilih environment "MyHome - Complete API Environment"
 
 ### Step 2: Setup Base URL
 - Development: `http://localhost:3000`

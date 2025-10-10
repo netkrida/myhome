@@ -82,7 +82,7 @@ chmod +x scripts/test-analytics-api.sh
 curl -i -X POST http://localhost:3000/api/auth/signin \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "superadmin@multikost.com",
+    "email": "superadmin@myhome.co.id",
     "password": "password123"
   }'
 ```

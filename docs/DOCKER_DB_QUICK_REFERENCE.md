@@ -244,7 +244,7 @@ docker-compose down -v
 docker-compose up -d
 
 # 3. Test
-# Login: superadmin@multikost.com
+# Login: superadmin@myhome.co.id
 # Password: @superadmin@myhome.co5432
 
 # 4. Back to normal

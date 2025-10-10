@@ -256,7 +256,7 @@ Setelah seed berhasil:
 
 ```
 URL: https://myhome.co.id/login
-Email: superadmin@multikost.com
+Email: superadmin@myhome.co.id
 Password: @superadmin@myhome.co5432
 Role: SUPERADMIN
 ```

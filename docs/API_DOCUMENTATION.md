@@ -1,8 +1,8 @@
-# MultiKost - Complete API Documentation
+# MyHome - Complete API Documentation
 
 ## 📋 Overview
 
-Dokumentasi lengkap untuk semua API endpoints dalam sistem MultiKost. Sistem ini menggunakan **3-tier architecture** dengan role-based access control untuk manajemen kos dan booking.
+Dokumentasi lengkap untuk semua API endpoints dalam sistem MyHome. Sistem ini menggunakan **3-tier architecture** dengan role-based access control untuk manajemen kos dan booking.
 
 - **Base URL**: `http://localhost:3000` (Development)
 - **Authentication**: NextAuth.js dengan JWT tokens

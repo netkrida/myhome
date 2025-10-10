@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "MultiKost - Complete API Collection",
-    "description": "Dokumentasi lengkap untuk semua API endpoints dalam sistem MultiKost. Sistem ini menggunakan 3-tier architecture dengan role-based access control.\n\n## Base URL\n`http://localhost:3000` (Development)\n\n## Authentication\nSistem menggunakan NextAuth.js dengan JWT tokens. Beberapa endpoint memerlukan authentication dan role-specific access.\n\n## Roles\n- **SUPERADMIN**: Full system access\n- **ADMINKOS**: Property management\n- **RECEPTIONIST**: Front desk operations  \n- **CUSTOMER**: Booking and browsing\n\n## Response Format\n```json\n{\n  \"success\": boolean,\n  \"data\": object | array,\n  \"error\": string | object,\n  \"statusCode\": number\n}\n```",
+    "name": "MyHome - Complete API Collection",
+    "description": "Dokumentasi lengkap untuk semua API endpoints dalam sistem MyHome. Sistem ini menggunakan 3-tier architecture dengan role-based access control.\n\n## Base URL\n`http://localhost:3000` (Development)\n\n## Authentication\nSistem menggunakan NextAuth.js dengan JWT tokens. Beberapa endpoint memerlukan authentication dan role-specific access.\n\n## Roles\n- **SUPERADMIN**: Full system access\n- **ADMINKOS**: Property management\n- **RECEPTIONIST**: Front desk operations  \n- **CUSTOMER**: Booking and browsing\n\n## Response Format\n```json\n{\n  \"success\": boolean,\n  \"data\": object | array,\n  \"error\": string | object,\n  \"statusCode\": number\n}\n```",
     "version": "1.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },

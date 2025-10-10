@@ -1,6 +1,6 @@
-# 🚀 Docker Deployment Guide - MultiKost
+# 🚀 Docker Deployment Guide - MyHome
 
-Panduan lengkap untuk deploy aplikasi MultiKost menggunakan Docker dan Dockploy.
+Panduan lengkap untuk deploy aplikasi MyHome menggunakan Docker dan Dockploy.
 
 ## 📋 Prerequisites
 
@@ -28,7 +28,7 @@ Copy `.env.example` ke `.env` dan sesuaikan nilai-nilai berikut:
 ### 🔐 Required Variables
 ```bash
 # Database
-DATABASE_URL="postgresql://postgres:your_password@db:5432/multikost?schema=public"
+DATABASE_URL="postgresql://postgres:your_password@db:5432/myhome?schema=public"
 POSTGRES_PASSWORD="your_secure_password"
 
 # Authentication
@@ -55,7 +55,7 @@ MIDTRANS_CLIENT_KEY="your_midtrans_client_key"
 ### 1. Clone & Setup
 ```bash
 git clone <repository-url>
-cd multikost
+cd myhome
 cp .env.example .env
 # Edit .env dengan nilai yang sesuai
 ```
@@ -139,7 +139,7 @@ Pastikan semua file deployment sudah di push ke GitHub:
 ### 3. Environment Variables di Dockploy
 Set minimal variables berikut:
 ```
-DATABASE_URL=postgresql://postgres:password@db:5432/multikost
+DATABASE_URL=postgresql://postgres:password@db:5432/myhome
 AUTH_SECRET=your-32-character-secret
 NEXTAUTH_URL=https://your-domain.com
 POSTGRES_PASSWORD=your_secure_password
@@ -170,7 +170,7 @@ docker-compose exec web env | grep -E "(DATABASE|AUTH|NEXT)"
 ### Database Issues
 ```bash
 # Check database connection
-docker-compose exec db psql -U postgres -d multikost -c "SELECT 1;"
+docker-compose exec db psql -U postgres -d myhome -c "SELECT 1;"
 
 # Reset database
 docker-compose down -v
@@ -226,10 +226,10 @@ docker-compose up -d --scale web=3
 ### Backup Database
 ```bash
 # Create backup
-docker-compose exec db pg_dump -U postgres multikost > backup.sql
+docker-compose exec db pg_dump -U postgres myhome > backup.sql
 
 # Restore backup
-docker-compose exec -T db psql -U postgres multikost < backup.sql
+docker-compose exec -T db psql -U postgres myhome < backup.sql
 ```
 
 ## 🎯 Production Checklist

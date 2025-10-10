@@ -444,7 +444,7 @@ docker-compose exec app npx prisma studio
 
 ```
 URL: https://myhome.co.id/login
-Email: superadmin@multikost.com
+Email: superadmin@myhome.co.id
 Password: @superadmin@myhome.co5432
 ```
 

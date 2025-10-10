@@ -1,18 +1,18 @@
-# 🚀 Quick Reference - MultiKost Complete API
+# 🚀 Quick Reference - MyHome Complete API
 
 ## 📥 Import ke Postman
 
 ### Step 1: Import Collection
 1. Buka Postman
 2. Klik **Import** → **Upload Files**
-3. Pilih file `multikost-complete-api-collection.json`
+3. Pilih file `myhome-complete-api-collection.json`
 4. Klik **Import**
 
 ### Step 2: Import Environment
 1. Klik **Import** → **Upload Files**
 2. Pilih file `postman-environment.json`
 3. Klik **Import**
-4. Pilih environment "MultiKost - Complete API Environment" di dropdown
+4. Pilih environment "MyHome - Complete API Environment" di dropdown
 
 ### Step 3: Setup Authentication (Optional)
 1. Login melalui aplikasi web atau API

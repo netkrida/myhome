@@ -1,4 +1,4 @@
-# 🚀 Deployment Checklist for Next.js MultiKost App
+# 🚀 Deployment Checklist for Next.js MyHome App
 
 ## 📋 Required Environment Variables
 
