@@ -10,22 +10,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 FROM base AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
-
-# Copy package files first for better caching
 COPY package.json package-lock.json* ./
-
-# Copy Prisma schema before installing dependencies
-# This is needed for postinstall script (prisma generate)
 COPY prisma ./prisma
-
-# Install all dependencies (including devDependencies for build)
 RUN npm ci --include=dev
-
-# Generate Prisma Client
 RUN npx prisma generate
 
-
-# Build the Next.js application using the standalone output
+# Build the Next.js application
 FROM base AS builder
 ENV SKIP_ENV_VALIDATION=true
 COPY --from=deps /app/node_modules ./node_modules
@@ -45,38 +35,35 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV CHECKPOINT_DISABLE=1
 ENV DISABLE_PRISMA_TELEMETRY=true
 
-# Create app directory and set ownership
+# ✅ Control flags dengan default values
+ENV SKIP_PRISMA_GENERATE=false
+ENV SKIP_DB_MIGRATION=false
+ENV SKIP_DB_SEED=false
+
 RUN mkdir -p /app && chown -R node:node /app
 
-# Copy package files
 COPY --chown=node:node package.json package-lock.json* ./
-
-# Copy node_modules from deps stage (includes Prisma Client)
 COPY --chown=node:node --from=deps /app/node_modules ./node_modules
-
-# Copy Prisma files for migrations at runtime
 COPY --chown=node:node --from=builder /app/prisma ./prisma
-
-# Copy the standalone build output and required assets
 COPY --chown=node:node --from=builder /app/public ./public
 COPY --chown=node:node --from=builder /app/.next/standalone ./
 COPY --chown=node:node --from=builder /app/.next/static ./.next/static
 
-# Install Prisma CLI globally with exact version matching @prisma/client
-# This is needed for running migrations at container startup
 RUN npm install --global --save-exact "prisma@$(node --print 'require("./node_modules/@prisma/client/package.json").version')"
 
-# Ensure the lightweight runtime runs as non-root
 USER node
 EXPOSE 3000
 
-# Use shell form to run multiple commands
+# ✅ UPDATED: Conditional startup dengan skip logic
 CMD sh -c '\
   echo "============================================" && \
   echo "🚀 Booting MyHome Container" && \
   echo "============================================" && \
   echo "📝 Environment: NODE_ENV=${NODE_ENV:-production}" && \
   echo "📝 Port: ${PORT:-3000}" && \
+  echo "📝 Skip Prisma Generate: ${SKIP_PRISMA_GENERATE:-false}" && \
+  echo "📝 Skip DB Migration: ${SKIP_DB_MIGRATION:-false}" && \
+  echo "📝 Skip DB Seed: ${SKIP_DB_SEED:-false}" && \
   echo "" && \
   \
   if [ -z "$DATABASE_URL" ]; then \
@@ -87,40 +74,52 @@ CMD sh -c '\
   echo "✅ DATABASE_URL is configured" && \
   echo "" && \
   \
-  echo "============================================" && \
-  echo "📦 Step 1: Generating Prisma Client..." && \
-  echo "============================================" && \
-  npx prisma generate && \
-  echo "✅ Prisma Client generated successfully!" && \
-  echo "" && \
-  \
-  echo "============================================" && \
-  echo "📦 Step 2: Syncing Database Schema..." && \
-  echo "============================================" && \
-  if [ -d "./prisma/migrations" ] && [ -n "$(ls -A ./prisma/migrations 2>/dev/null | grep -v migration_lock.toml)" ]; then \
-    echo "📂 Migrations found. Running prisma migrate deploy..." && \
-    npx prisma migrate deploy && \
-    echo "✅ Migrations applied successfully!"; \
+  if [ "$SKIP_PRISMA_GENERATE" != "true" ]; then \
+    echo "============================================" && \
+    echo "📦 Step 1: Generating Prisma Client..." && \
+    echo "============================================" && \
+    npx prisma generate && \
+    echo "✅ Prisma Client generated successfully!" && \
+    echo ""; \
   else \
-    echo "📂 No migrations found. Running prisma db push..." && \
-    npx prisma db push --accept-data-loss && \
-    echo "✅ Database schema pushed successfully!"; \
+    echo "⏭️  Skipping Prisma Client generation (SKIP_PRISMA_GENERATE=true)" && \
+    echo ""; \
   fi && \
-  echo "" && \
   \
-  echo "============================================" && \
-  echo "🌱 Step 3: Seeding Database..." && \
-  echo "============================================" && \
-  if npm run | grep -q "db:seed"; then \
-    echo "🌱 Running seed via npm run db:seed..." && \
-    (npm run db:seed || echo "⚠️  Seed failed (this is OK if data already exists)"); \
-  elif grep -q "\"prisma\"" package.json && grep -q "\"seed\"" package.json; then \
-    echo "🌱 Running seed via npx prisma db seed..." && \
-    (npx prisma db seed || echo "⚠️  Seed failed (this is OK if data already exists)"); \
+  if [ "$SKIP_DB_MIGRATION" != "true" ]; then \
+    echo "============================================" && \
+    echo "📦 Step 2: Syncing Database Schema..." && \
+    echo "============================================" && \
+    if [ -d "./prisma/migrations" ] && [ -n "$(ls -A ./prisma/migrations 2>/dev/null | grep -v migration_lock.toml)" ]; then \
+      echo "📂 Migrations found. Running prisma migrate deploy..." && \
+      npx prisma migrate deploy && \
+      echo "✅ Migrations applied successfully!"; \
+    else \
+      echo "📂 No migrations found. Running prisma db push..." && \
+      npx prisma db push --accept-data-loss && \
+      echo "✅ Database schema pushed successfully!"; \
+    fi && \
+    echo ""; \
   else \
-    echo "ℹ️  No seed script configured. Skipping seeding."; \
+    echo "⏭️  Skipping database migration (SKIP_DB_MIGRATION=true)" && \
+    echo ""; \
   fi && \
-  echo "" && \
+  \
+  if [ "$SKIP_DB_SEED" != "true" ]; then \
+    echo "============================================" && \
+    echo "🌱 Step 3: Seeding Database..." && \
+    echo "============================================" && \
+    if npm run | grep -q "db:seed"; then \
+      echo "🌱 Running seed via npm run db:seed..." && \
+      (npm run db:seed || echo "⚠️  Seed failed (this is OK if data already exists)"); \
+    else \
+      echo "ℹ️  No seed script configured. Skipping seeding."; \
+    fi && \
+    echo ""; \
+  else \
+    echo "⏭️  Skipping database seeding (SKIP_DB_SEED=true)" && \
+    echo ""; \
+  fi && \
   \
   echo "============================================" && \
   echo "🚀 Step 4: Starting Application..." && \
@@ -128,14 +127,8 @@ CMD sh -c '\
   if npm run | grep -q "start:docker"; then \
     echo "🎯 Starting with: npm run start:docker" && \
     exec npm run start:docker; \
-  elif npm run | grep -q "^start$"; then \
-    echo "🎯 Starting with: npm run start" && \
-    exec npm run start; \
-  elif [ -f "./server.js" ]; then \
-    echo "🎯 Starting with: node server.js" && \
-    exec node server.js; \
   else \
-    echo "❌ ERROR: No start command found!" && \
+    echo "❌ ERROR: No start:docker command found!" && \
     exit 1; \
   fi \
 '
