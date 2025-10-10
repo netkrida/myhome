@@ -5,10 +5,13 @@ import { id as indonesianLocale } from "date-fns/locale";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Price } from "@/components/ui/price";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CustomerAPI } from "@/server/api/customer.api";
 import { CustomerLayout } from "@/components/layout/customer-layout";
 import type { BookingStatus } from "@prisma/client";
+import { CheckCircle2, Clock, XCircle } from "lucide-react";
 
 function normalizeDate(value?: Date | string | null, pattern = "d MMM yyyy HH:mm") {
 	if (!value) return "-";
@@ -90,61 +93,107 @@ export default async function CustomerTransactionHistoryPage() {
 				</CardHeader>
 				<CardContent className="space-y-6">
 					{bookings.length === 0 ? (
-						<p className="text-sm text-muted-foreground">
-							Belum ada transaksi yang tercatat. Booking pertama kamu akan muncul di sini.
-						</p>
+						<EmptyState
+							title="Belum ada transaksi"
+							description="Booking pertama kamu akan muncul di sini"
+							variant="default"
+						/>
 					) : (
-						<div className="space-y-6">
-							<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-								<div className="rounded-lg border p-4">
-									<p className="text-xs text-muted-foreground uppercase tracking-wide">Terakhir diperbarui</p>
-									<p className="mt-1 text-sm font-medium text-foreground">
-										{normalizeDate(bookings[0]?.createdAt)}
-									</p>
-								</div>
-								<div className="rounded-lg border p-4">
-									<p className="text-xs text-muted-foreground uppercase tracking-wide">Pembayaran Pending</p>
-									<p className="mt-1 text-sm font-medium text-foreground">{pendingCount} booking</p>
-								</div>
-								<div className="rounded-lg border p-4">
-									<p className="text-xs text-muted-foreground uppercase tracking-wide">Dibatalkan / Expired</p>
-									<p className="mt-1 text-sm font-medium text-foreground">{cancelledCount} booking</p>
-								</div>
+						<>
+							{/* Mobile: Card Layout */}
+							<div className="space-y-3 md:hidden">
+								{bookings.map((booking) => {
+									const statusConfig: Record<string, { label: string; className: string; icon: any }> = {
+										UNPAID: { label: "Belum Dibayar", className: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
+										DEPOSIT_PAID: { label: "DP Dibayar", className: "bg-blue-100 text-blue-700 border-blue-200", icon: Clock },
+										CONFIRMED: { label: "Terkonfirmasi", className: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2 },
+										CHECKED_IN: { label: "Check-in", className: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2 },
+										COMPLETED: { label: "Selesai", className: "bg-slate-100 text-slate-700 border-slate-200", icon: CheckCircle2 },
+										CANCELLED: { label: "Dibatalkan", className: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
+										EXPIRED: { label: "Kadaluarsa", className: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
+									};
+									const config = statusConfig[booking.status] || { label: booking.status, className: "bg-slate-100 text-slate-700 border-slate-200", icon: Clock };
+									const Icon = config.icon;
+
+									return (
+										<Card key={booking.id} className="overflow-hidden rounded-2xl shadow-sm">
+											<CardContent className="p-4">
+												<div className="flex items-start justify-between gap-2">
+													<div className="flex-1 space-y-2">
+														<div>
+															<p className="text-xs text-muted-foreground">Kode Booking</p>
+															<p className="font-mono text-sm font-bold">{booking.bookingCode}</p>
+														</div>
+														<div>
+															<p className="text-xs text-muted-foreground">Properti</p>
+															<p className="text-sm font-medium">{booking.propertyName ?? "-"}</p>
+														</div>
+														<div>
+															<p className="text-xs text-muted-foreground">Tanggal</p>
+															<p className="text-sm">{normalizeDate(booking.createdAt, "dd MMM yyyy")}</p>
+														</div>
+													</div>
+													<div className="text-right">
+														<Badge className={`mb-2 gap-1 rounded-full border px-2 py-1 text-xs font-semibold ${config.className}`}>
+															<Icon className="h-3 w-3" />
+															{config.label}
+														</Badge>
+														<Price amount={booking.totalAmount} className="text-base font-bold" />
+													</div>
+												</div>
+											</CardContent>
+										</Card>
+									);
+								})}
 							</div>
 
-							<Separator />
+							{/* Desktop: Table Layout */}
+							<div className="hidden md:block">
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>Kode Booking</TableHead>
+											<TableHead>Properti</TableHead>
+											<TableHead className="text-right">Total</TableHead>
+											<TableHead>Status</TableHead>
+											<TableHead>Tanggal</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{bookings.map((booking) => {
+											const statusConfig: Record<string, { label: string; className: string; icon: any }> = {
+												UNPAID: { label: "Belum Dibayar", className: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
+												DEPOSIT_PAID: { label: "DP Dibayar", className: "bg-blue-100 text-blue-700 border-blue-200", icon: Clock },
+												CONFIRMED: { label: "Terkonfirmasi", className: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2 },
+												CHECKED_IN: { label: "Check-in", className: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2 },
+												COMPLETED: { label: "Selesai", className: "bg-slate-100 text-slate-700 border-slate-200", icon: CheckCircle2 },
+												CANCELLED: { label: "Dibatalkan", className: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
+												EXPIRED: { label: "Kadaluarsa", className: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
+											};
+											const config = statusConfig[booking.status] || { label: booking.status, className: "bg-slate-100 text-slate-700 border-slate-200", icon: Clock };
+											const Icon = config.icon;
 
-							<div className="overflow-x-auto">
-								<table className="min-w-full text-left text-sm">
-									<thead className="text-xs uppercase text-muted-foreground">
-										<tr className="border-b">
-											<th className="py-2 pr-4 font-medium">Kode Booking</th>
-											<th className="py-2 pr-4 font-medium">Properti</th>
-											<th className="py-2 pr-4 font-medium">Total</th>
-											<th className="py-2 pr-4 font-medium">Status</th>
-											<th className="py-2 pr-4 font-medium">Dibuat</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y">
-										{bookings.map((booking) => (
-											<tr key={booking.id} className="hover:bg-muted/40">
-												<td className="py-3 pr-4 font-medium text-foreground">{booking.bookingCode}</td>
-												<td className="py-3 pr-4 text-foreground">{booking.propertyName ?? "-"}</td>
-												<td className="py-3 pr-4 text-foreground">
-													{currencyFormatter.format(booking.totalAmount)}
-												</td>
-												<td className="py-3 pr-4">
-													<Badge variant="outline" className="uppercase">
-														{booking.status.toLowerCase().replace(/_/g, " ")}
-													</Badge>
-												</td>
-												<td className="py-3 pr-4 text-foreground">{normalizeDate(booking.createdAt)}</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
+											return (
+												<TableRow key={booking.id}>
+													<TableCell className="font-mono font-medium">{booking.bookingCode}</TableCell>
+													<TableCell>{booking.propertyName ?? "-"}</TableCell>
+													<TableCell className="text-right">
+														<Price amount={booking.totalAmount} />
+													</TableCell>
+													<TableCell>
+														<Badge className={`gap-1 rounded-full border px-2 py-1 text-xs font-semibold ${config.className}`}>
+															<Icon className="h-3 w-3" />
+															{config.label}
+														</Badge>
+													</TableCell>
+													<TableCell>{normalizeDate(booking.createdAt, "dd MMM yyyy")}</TableCell>
+												</TableRow>
+											);
+										})}
+									</TableBody>
+								</Table>
 							</div>
-						</div>
+						</>
 					)}
 				</CardContent>
 			</Card>

@@ -10,6 +10,8 @@ import type { TransactionFilters } from "@/server/types/transaction.types";
 
 export async function GET(request: NextRequest) {
   try {
+    console.log("🔍 [Transactions List API] Request received");
+
     const searchParams = request.nextUrl.searchParams;
 
     // Parse filters from query params
@@ -55,6 +57,14 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get("sortBy") || "transactionTime";
     const sortOrder = (searchParams.get("sortOrder") || "desc") as "asc" | "desc";
 
+    console.log("🔍 [Transactions List API] Filters:", {
+      filters,
+      page,
+      pageSize,
+      sortBy,
+      sortOrder
+    });
+
     // Get transaction list
     const result = await SuperadminTransactionsAPI.getTransactionList(
       filters,
@@ -64,7 +74,14 @@ export async function GET(request: NextRequest) {
       sortOrder
     );
 
+    console.log("🔍 [Transactions List API] Result:", {
+      success: result.success,
+      dataCount: result.success && result.data ? result.data.transactions.length : 0,
+      total: result.success && result.data ? result.data.pagination.total : 0
+    });
+
     if (!result.success) {
+      console.error("❌ [Transactions List API] Error:", result.error);
       return NextResponse.json(
         { success: false, error: result.error },
         { status: result.statusCode || 500 }
@@ -76,7 +93,7 @@ export async function GET(request: NextRequest) {
       data: result.data,
     });
   } catch (error) {
-    console.error("Error in GET /api/superadmin/transactions/list:", error);
+    console.error("❌ [Transactions List API] Exception:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }

@@ -20,60 +20,82 @@ export function PropertyDetailHero({ property, mapsUrl, roomCountLabel }: Proper
   const typeMeta = getPropertyTypeMeta(property.propertyType);
   return (
     <section className="bg-background pb-6 pt-4 transition-colors">
-      <div className="mx-auto flex max-w-[1080px] flex-col gap-5 px-4">
+      <div className="mx-auto flex max-w-[1080px] flex-col gap-5 px-3 sm:px-4">
         {heroImage && (
-          <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1.15fr)]">
-            <div className="group relative aspect-[4/3] overflow-hidden rounded-3xl">
+          <>
+            {/* Mobile: Single large image */}
+            <div className="group relative aspect-[4/3] overflow-hidden rounded-2xl md:hidden">
               <Image
                 src={heroImage.imageUrl}
                 alt={heroImage.caption ?? `${property.name} - Tampilan utama`}
                 fill
                 priority
-                sizes="(min-width: 768px) 65vw, 100vw"
+                sizes="100vw"
                 className="object-cover transition duration-700 group-hover:scale-105"
               />
               <button
                 type="button"
                 aria-label="Simpan properti"
-                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-card/90 text-foreground/80 shadow-lg transition hover:bg-card"
+                className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-card/90 text-foreground/80 shadow-lg transition hover:bg-card focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Heart className="h-5 w-5" />
               </button>
             </div>
 
-            {secondaryImages.length > 0 && (
-              <div className="grid aspect-[4/3] grid-cols-2 grid-rows-2 gap-3">
-                {secondaryImages.map((image, index) => {
-                  const isLast = index === secondaryImages.length - 1;
-                  const showOverlay = isLast && extraImageCount > 0;
-
-                  return (
-                    <div
-                      key={image.id}
-                      className="group relative overflow-hidden rounded-3xl"
-                    >
-                      <Image
-                        src={image.imageUrl}
-                        alt={image.caption ?? `${property.name} - Foto tambahan ${index + 1}`}
-                        fill
-                        sizes="(min-width: 768px) 35vw, 50vw"
-                        className="object-cover transition duration-700 group-hover:scale-105"
-                      />
-                      {showOverlay ? (
-                        <button
-                          type="button"
-                          className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900/55 text-white transition hover:bg-slate-900/70"
-                        >
-                          <ImagePlus className="h-6 w-6" />
-                          <span className="text-sm font-semibold">Lihat semua foto{extraImageCount > 1 ? ` (+${extraImageCount})` : ""}</span>
-                        </button>
-                      ) : null}
-                    </div>
-                  );
-                })}
+            {/* Desktop: Hero Grid Layout */}
+            <div className="hidden gap-3 md:grid md:grid-cols-4 md:grid-rows-2">
+              {/* Main large image - spans 2 columns and 2 rows */}
+              <div className="group relative col-span-2 row-span-2 overflow-hidden rounded-2xl">
+                <Image
+                  src={heroImage.imageUrl}
+                  alt={heroImage.caption ?? `${property.name} - Tampilan utama`}
+                  fill
+                  priority
+                  sizes="50vw"
+                  className="object-cover transition duration-700 group-hover:scale-105"
+                />
+                <button
+                  type="button"
+                  aria-label="Simpan properti"
+                  className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-card/90 text-foreground/80 shadow-lg transition hover:bg-card focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Heart className="h-5 w-5" />
+                </button>
               </div>
-            )}
-          </div>
+
+              {/* Secondary images - 4 smaller images in a 2x2 grid */}
+              {secondaryImages.slice(0, 4).map((image, index) => {
+                const isLast = index === 3;
+                const showOverlay = isLast && extraImageCount > 0;
+
+                return (
+                  <div
+                    key={image.id}
+                    className="group relative overflow-hidden rounded-2xl"
+                  >
+                    <Image
+                      src={image.imageUrl}
+                      alt={image.caption ?? `${property.name} - Foto ${index + 2}`}
+                      fill
+                      sizes="25vw"
+                      className="object-cover transition duration-700 group-hover:scale-105"
+                    />
+                    {showOverlay && (
+                      <button
+                        type="button"
+                        className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900/60 text-white transition hover:bg-slate-900/75 focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <ImagePlus className="h-6 w-6" />
+                        <span className="text-sm font-semibold">
+                          +{extraImageCount} foto lainnya
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
 
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">

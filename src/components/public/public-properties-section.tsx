@@ -96,33 +96,51 @@ export async function PublicPropertiesSection() {
   const properties = await fetchPublicProperties(PUBLIC_PROPERTIES_LIMIT);
 
   return (
-    <section className="container mx-auto px-4 py-12">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <span className="text-sm font-semibold uppercase tracking-widest text-blue-600">Kos Pilihan</span>
-          <h2 className="text-3xl font-bold text-slate-900 md:text-4xl">
-            Temukan hunian terbaik untukmu
-          </h2>
-          <p className="max-w-2xl text-slate-500">
-            Rekomendasi kos terkurasi dengan fasilitas lengkap, lokasi strategis, dan harga yang bersahabat.
-          </p>
+    <section className="px-4 pb-20 pt-12">
+      <div className="container mx-auto">
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2">
+            <span className="text-sm font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+              Kos Pilihan
+            </span>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 md:text-4xl">
+              Temukan hunian terbaik untukmu
+            </h2>
+            <p className="max-w-2xl text-slate-500 dark:text-slate-400">
+              Rekomendasi kos terkurasi dengan fasilitas lengkap, lokasi strategis, dan harga yang bersahabat.
+            </p>
+          </div>
         </div>
-      </div>
 
-      {properties.length === 0 ? (
-        <div className="mt-10 rounded-3xl border border-dashed border-blue-200 bg-blue-50/60 p-12 text-center">
-          <h3 className="text-xl font-semibold text-blue-700">Belum ada kos yang bisa ditampilkan</h3>
-          <p className="mt-2 text-sm text-slate-500">
-            Silakan coba lagi nanti. Kami sedang menyiapkan rekomendasi kos terbaik untuk Anda.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {properties.map((property) => (
-            <PublicPropertyCard key={property.id} property={property} className="mx-auto" />
-          ))}
-        </div>
-      )}
+        {properties.length === 0 ? (
+          <div className="mt-10 rounded-2xl border border-dashed border-blue-200 bg-blue-50/60 p-12 text-center dark:border-blue-800 dark:bg-blue-950/20">
+            <h3 className="text-xl font-semibold text-blue-700 dark:text-blue-300">
+              Belum ada kos yang bisa ditampilkan
+            </h3>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              Silakan coba lagi nanti. Kami sedang menyiapkan rekomendasi kos terbaik untuk Anda.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Mobile: Horizontal Carousel */}
+            <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide sm:hidden">
+              {properties.map((property) => (
+                <div key={property.id} className="min-w-[260px] snap-start">
+                  <PublicPropertyCard property={property} />
+                </div>
+              ))}
+            </div>
+
+            {/* Tablet & Desktop: Grid */}
+            <div className="hidden gap-6 sm:grid sm:grid-cols-2 xl:grid-cols-3">
+              {properties.map((property) => (
+                <PublicPropertyCard key={property.id} property={property} className="mx-auto" />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </section>
   );
 }

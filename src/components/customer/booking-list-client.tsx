@@ -1,34 +1,26 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { AnimatedCard, AnimatedList, AnimatedListItem } from "@/components/ui/animated-card";
+import { Price } from "@/components/ui/price";
+import { Section } from "@/components/ui/section";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Calendar,
   Home,
   MapPin,
-  Search,
   Eye,
   Clock,
   CheckCircle2,
   XCircle,
   AlertCircle,
-  Filter,
-  ArrowUpDown,
+  CreditCard,
+  BedDouble,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface Booking {
   id: string;
@@ -50,41 +42,75 @@ interface BookingListClientProps {
   bookings: Booking[];
 }
 
+// Status yang memerlukan tindakan
+const ACTION_REQUIRED_STATUSES = ["UNPAID", "PENDING", "EXPIRED"];
+
+// Status aktif
+const ACTIVE_STATUSES = ["DEPOSIT_PAID", "CONFIRMED", "CHECKED_IN"];
+
 export function BookingListClient({ bookings }: BookingListClientProps) {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("createdAt");
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
-      UNPAID: { label: "Belum Dibayar", variant: "destructive", icon: XCircle },
-      DEPOSIT_PAID: { label: "DP Dibayar", variant: "secondary", icon: Clock },
-      CONFIRMED: { label: "Terkonfirmasi", variant: "default", icon: CheckCircle2 },
-      CHECKED_IN: { label: "Check-in", variant: "default", icon: CheckCircle2 },
-      CHECKED_OUT: { label: "Check-out", variant: "secondary", icon: CheckCircle2 },
-      COMPLETED: { label: "Selesai", variant: "outline", icon: CheckCircle2 },
-      CANCELLED: { label: "Dibatalkan", variant: "destructive", icon: XCircle },
-      EXPIRED: { label: "Kadaluarsa", variant: "destructive", icon: AlertCircle },
+    const statusConfig: Record<
+      string,
+      { label: string; className: string; icon: any }
+    > = {
+      UNPAID: {
+        label: "Belum Dibayar",
+        className: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800",
+        icon: AlertCircle,
+      },
+      PENDING: {
+        label: "Menunggu",
+        className: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800",
+        icon: Clock,
+      },
+      EXPIRED: {
+        label: "Kadaluarsa",
+        className: "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800",
+        icon: XCircle,
+      },
+      DEPOSIT_PAID: {
+        label: "DP Dibayar",
+        className: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800",
+        icon: CheckCircle2,
+      },
+      CONFIRMED: {
+        label: "Terkonfirmasi",
+        className: "bg-green-100 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800",
+        icon: CheckCircle2,
+      },
+      CHECKED_IN: {
+        label: "Check-in",
+        className: "bg-green-100 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800",
+        icon: CheckCircle2,
+      },
+      COMPLETED: {
+        label: "Selesai",
+        className: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+        icon: CheckCircle2,
+      },
+      CANCELLED: {
+        label: "Dibatalkan",
+        className: "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800",
+        icon: XCircle,
+      },
     };
 
-    const config = statusConfig[status] || { label: status, variant: "outline" as const, icon: AlertCircle };
+    const config = statusConfig[status] || {
+      label: status,
+      className: "bg-slate-100 text-slate-700 border-slate-200",
+      icon: AlertCircle,
+    };
     const Icon = config.icon;
 
     return (
-      <Badge variant={config.variant} className="gap-1 text-xs">
+      <Badge className={`gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${config.className}`}>
         <Icon className="h-3 w-3" />
         {config.label}
       </Badge>
     );
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
   };
 
   const formatDate = (dateValue?: string | Date | null) => {
@@ -97,199 +123,126 @@ export function BookingListClient({ bookings }: BookingListClientProps) {
     }
   };
 
-  const filteredBookings = bookings
-    .filter((booking) => {
-      const matchesSearch =
-        booking.bookingCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.propertyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.roomNumber?.toLowerCase().includes(searchQuery.toLowerCase());
+  // Split bookings into sections
+  const actionRequiredBookings = bookings.filter((b) =>
+    ACTION_REQUIRED_STATUSES.includes(b.status)
+  );
+  const activeBookings = bookings.filter((b) =>
+    ACTIVE_STATUSES.includes(b.status)
+  );
 
-      const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
+  const BookingCard = ({ booking }: { booking: Booking }) => (
+    <Card className="overflow-hidden rounded-2xl border shadow-sm transition-all hover:shadow-md">
+      <CardContent className="p-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Left Section */}
+          <div className="flex-1 space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Kode Booking</p>
+                <p className="font-mono text-sm font-bold">{booking.bookingCode}</p>
+              </div>
+              {getStatusBadge(booking.status)}
+            </div>
 
-      return matchesSearch && matchesStatus;
-    })
-    .sort((a, b) => {
-      if (sortBy === "createdAt") {
-        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateB - dateA;
-      } else if (sortBy === "checkInDate") {
-        const dateA = a.checkInDate ? new Date(a.checkInDate).getTime() : 0;
-        const dateB = b.checkInDate ? new Date(b.checkInDate).getTime() : 0;
-        return dateB - dateA;
-      }
-      return 0;
-    });
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <AnimatedCard>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Riwayat Booking
-            </h1>
-            <p className="text-muted-foreground">
-              Kelola dan lihat semua booking properti Anda
-            </p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Home className="h-4 w-4 text-blue-500" />
+                <span className="font-medium">{booking.propertyName || "-"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BedDouble className="h-4 w-4" />
+                <span>
+                  {booking.roomType} - Kamar {booking.roomNumber}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>{formatDate(booking.checkInDate)}</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-sm px-3 py-1">
-              {filteredBookings.length} Booking
-            </Badge>
+
+          {/* Right Section */}
+          <div className="flex flex-col items-end gap-3 sm:min-w-[180px]">
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Total Pembayaran</p>
+              <Price amount={booking.totalAmount} className="text-lg" />
+            </div>
+            <Button
+              onClick={() => router.push(`/dashboard/customer/booking/${booking.id}`)}
+              className="w-full rounded-full sm:w-auto"
+              size="sm"
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Lihat Detail
+            </Button>
           </div>
         </div>
-      </AnimatedCard>
+      </CardContent>
+    </Card>
+  );
 
-      {/* Filters */}
-      <AnimatedCard delay={0.1}>
-        <Card className="border-2">
-          <CardContent className="pt-6">
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cari booking code, properti, kamar..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="UNPAID">Belum Dibayar</SelectItem>
-                  <SelectItem value="DEPOSIT_PAID">DP Dibayar</SelectItem>
-                  <SelectItem value="CONFIRMED">Terkonfirmasi</SelectItem>
-                  <SelectItem value="CHECKED_IN">Check-in</SelectItem>
-                  <SelectItem value="COMPLETED">Selesai</SelectItem>
-                  <SelectItem value="CANCELLED">Dibatalkan</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <ArrowUpDown className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Urutkan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt">Terbaru</SelectItem>
-                  <SelectItem value="checkInDate">Tanggal Check-in</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-      </AnimatedCard>
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Booking Saya</h1>
+        <p className="text-sm text-muted-foreground">
+          Kelola dan pantau semua booking properti Anda
+        </p>
+      </div>
 
-      {/* Booking List */}
-      {filteredBookings.length === 0 ? (
-        <AnimatedCard delay={0.2}>
-          <Card className="border-dashed border-2">
-            <CardContent className="py-16 text-center">
-              <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                <Home className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Belum Ada Booking</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                {searchQuery || statusFilter !== "all"
-                  ? "Tidak ada booking yang sesuai dengan filter"
-                  : "Anda belum memiliki booking. Mulai cari properti sekarang!"}
-              </p>
-              {!searchQuery && statusFilter === "all" && (
-                <Button onClick={() => router.push("/")} size="lg">
-                  Cari Properti
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        </AnimatedCard>
-      ) : (
-        <AnimatedList className="grid gap-4">
-          {filteredBookings.map((booking) => (
-            <AnimatedListItem key={booking.id}>
-              <Card className="hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/50 group">
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                    {/* Left Section */}
-                    <div className="flex-1 space-y-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wide">Booking Code</p>
-                          <p className="font-mono font-bold text-lg group-hover:text-primary transition-colors">
-                            {booking.bookingCode}
-                          </p>
-                        </div>
-                        {getStatusBadge(booking.status)}
-                      </div>
+      {/* Perlu Tindakan Section */}
+      <Section
+        title="Perlu Tindakan"
+        description="Booking yang memerlukan pembayaran atau konfirmasi"
+      >
+        {actionRequiredBookings.length === 0 ? (
+          <EmptyState
+            title="Tidak ada booking yang perlu ditindaklanjuti"
+            description="Semua booking Anda sudah diproses"
+            variant="default"
+          />
+        ) : (
+          <div className="grid gap-3">
+            {actionRequiredBookings.map((booking) => (
+              <BookingCard key={booking.id} booking={booking} />
+            ))}
+          </div>
+        )}
+      </Section>
 
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-primary/10 rounded-lg">
-                            <Home className="h-4 w-4 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-muted-foreground mb-1">Properti</p>
-                            <p className="font-semibold truncate">{booking.propertyName || "-"}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-primary/10 rounded-lg">
-                            <MapPin className="h-4 w-4 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-muted-foreground mb-1">Kamar</p>
-                            <p className="font-semibold truncate">
-                              {booking.roomNumber || "-"} - {booking.roomType || "-"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+      {/* Aktif Section */}
+      <Section
+        title="Booking Aktif"
+        description="Booking yang sedang berjalan atau terkonfirmasi"
+      >
+        {activeBookings.length === 0 ? (
+          <EmptyState
+            title="Belum ada booking aktif"
+            description="Booking yang sudah dikonfirmasi akan muncul di sini"
+            variant="default"
+          />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {activeBookings.map((booking) => (
+              <BookingCard key={booking.id} booking={booking} />
+            ))}
+          </div>
+        )}
+      </Section>
 
-                      <div className="flex items-center gap-4 text-sm flex-wrap">
-                        <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{formatDate(booking.checkInDate)}</span>
-                        </div>
-                        {booking.checkOutDate && (
-                          <>
-                            <span className="text-muted-foreground">→</span>
-                            <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{formatDate(booking.checkOutDate)}</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right Section */}
-                    <div className="flex flex-col items-end gap-4 lg:min-w-[200px]">
-                      <div className="text-right w-full">
-                        <p className="text-xs text-muted-foreground mb-1">Total Pembayaran</p>
-                        <p className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                          {formatCurrency(booking.totalAmount)}
-                        </p>
-                      </div>
-                      <Button
-                        onClick={() => router.push(`/dashboard/customer/booking/${booking.id}`)}
-                        className="w-full group-hover:shadow-lg transition-shadow"
-                        size="lg"
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        Lihat Detail
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </AnimatedListItem>
-          ))}
-        </AnimatedList>
+      {/* Empty State - No bookings at all */}
+      {bookings.length === 0 && (
+        <EmptyState
+          title="Belum ada booking"
+          description="Anda belum memiliki riwayat booking. Mulai cari properti impian Anda sekarang!"
+          action={{
+            label: "Cari Properti",
+            onClick: () => router.push("/"),
+          }}
+        />
       )}
     </div>
   );

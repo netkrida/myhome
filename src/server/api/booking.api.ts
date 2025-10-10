@@ -404,15 +404,15 @@ export class BookingAPI {
         status: newStatus,
         paymentMethod: notification.payment_type,
         transactionId: notification.transaction_id,
-        transactionTime: new Date(notification.transaction_time)
+        transactionTime: PaymentService.parseMidtransDateTime(notification.transaction_time)
       };
 
       if (notification.settlement_time) {
-        updateData.transactionTime = new Date(notification.settlement_time);
+        updateData.transactionTime = PaymentService.parseMidtransDateTime(notification.settlement_time);
       }
 
       if (notification.expiry_time) {
-        updateData.expiryTime = new Date(notification.expiry_time);
+        updateData.expiryTime = PaymentService.parseMidtransDateTime(notification.expiry_time);
       }
 
       await PaymentRepository.updateByOrderId(notification.order_id, updateData);

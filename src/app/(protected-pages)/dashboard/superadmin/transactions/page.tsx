@@ -75,9 +75,21 @@ interface TransactionListItem {
 
 export default function TransactionsPage() {
   // State
-  const [filters, setFilters] = useState<TransactionFilters>({
-    dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-    dateTo: new Date(),
+  const [filters, setFilters] = useState<TransactionFilters>(() => {
+    // Set dateFrom to 1 year ago at start of day
+    const dateFrom = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+    dateFrom.setHours(0, 0, 0, 0);
+
+    // Set dateTo to tomorrow end of day to handle timezone issues
+    // Some payment gateways return transaction_time in different timezones
+    const dateTo = new Date();
+    dateTo.setDate(dateTo.getDate() + 1); // Add 1 day
+    dateTo.setHours(23, 59, 59, 999);
+
+    return {
+      dateFrom,
+      dateTo,
+    };
   });
   const [granularity, setGranularity] = useState<"day" | "week" | "month">("day");
   const [page, setPage] = useState(1);

@@ -456,9 +456,10 @@ export function BookingCheckoutContent({
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_minmax(320px,360px)]">
-      <Form {...form}>
-        <form className="space-y-8" onSubmit={onSubmit}>
+    <>
+      <div className="grid gap-8 pb-32 lg:grid-cols-[1fr_minmax(320px,360px)] lg:pb-8">
+        <Form {...form}>
+          <form className="space-y-8" onSubmit={onSubmit}>
           <BookingStepper
             stepStatuses={{
               contact: Boolean(form.watch("fullName") && form.watch("email") && form.watch("phoneNumber")),
@@ -690,7 +691,8 @@ export function BookingCheckoutContent({
             </Alert>
           )}
 
-          <div className="flex justify-end">
+          {/* Desktop button - hidden on mobile */}
+          <div className="hidden justify-end lg:flex">
             <Button
               type="submit"
               size="lg"
@@ -703,7 +705,7 @@ export function BookingCheckoutContent({
         </form>
       </Form>
 
-      <aside className="space-y-6">
+      <aside className="hidden space-y-6 lg:block">
         <Card className="overflow-hidden">
           {propertyMainImage && (
             <div className="relative h-40 w-full">
@@ -800,6 +802,26 @@ export function BookingCheckoutContent({
         </Card>
       </aside>
     </div>
+
+    {/* Sticky CTA for Mobile */}
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-background/90 lg:hidden">
+      <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-3">
+        <div className="flex-1">
+          <p className="text-xs text-muted-foreground">Total Bayar</p>
+          <p className="text-lg font-bold">{formatCurrency(amounts.payableNow)}</p>
+        </div>
+        <Button
+          type="submit"
+          size="lg"
+          className="rounded-full px-6"
+          disabled={!midtransClientKey || !selectedRoom}
+          onClick={onSubmit}
+        >
+          Bayar Sekarang
+        </Button>
+      </div>
+    </div>
+  </>
   );
 }
 

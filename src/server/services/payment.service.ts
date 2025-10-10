@@ -93,7 +93,7 @@ export class PaymentService {
    */
   static verifySignature(notification: MidtransNotification, serverKey: string): boolean {
     const { order_id, status_code, gross_amount, signature_key } = notification;
-    
+
     const signatureString = `${order_id}${status_code}${gross_amount}${serverKey}`;
     const calculatedSignature = crypto
       .createHash('sha512')
@@ -101,6 +101,29 @@ export class PaymentService {
       .digest('hex');
 
     return calculatedSignature === signature_key;
+  }
+
+  /**
+   * Parse Midtrans datetime string to UTC Date
+   * Midtrans returns datetime in format: "2025-10-10 20:15:35" (WIB/UTC+7)
+   * We need to convert it to proper UTC Date object
+   */
+  static parseMidtransDateTime(dateTimeString: string | undefined): Date | undefined {
+    if (!dateTimeString) return undefined;
+
+    try {
+      // Midtrans format: "YYYY-MM-DD HH:mm:ss" in WIB (UTC+7)
+      // Parse as UTC first, then subtract 7 hours to get actual UTC time
+      const date = new Date(dateTimeString + ' UTC');
+
+      // Subtract 7 hours (WIB offset) to get actual UTC time
+      date.setHours(date.getHours() - 7);
+
+      return date;
+    } catch (error) {
+      console.error('Error parsing Midtrans datetime:', dateTimeString, error);
+      return undefined;
+    }
   }
 
   /**

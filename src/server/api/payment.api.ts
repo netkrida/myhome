@@ -238,7 +238,7 @@ export class PaymentAPI {
           data: {
             status: newPaymentStatus,
             paymentMethod: midtrans.payment_type,
-            transactionTime: midtrans.transaction_time ? new Date(midtrans.transaction_time) : undefined,
+            transactionTime: PaymentService.parseMidtransDateTime(midtrans.transaction_time),
             transactionId: midtrans.transaction_id
           }
         });

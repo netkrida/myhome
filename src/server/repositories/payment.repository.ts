@@ -421,24 +421,27 @@ export class PaymentRepository {
    */
   private static buildTransactionWhereClause(filters: TransactionFilters): Prisma.PaymentWhereInput {
     const where: Prisma.PaymentWhereInput = {};
+    const andConditions: Prisma.PaymentWhereInput[] = [];
 
     // Date range filter
     if (filters.dateFrom || filters.dateTo) {
-      where.OR = [
-        {
-          transactionTime: {
-            ...(filters.dateFrom && { gte: filters.dateFrom }),
-            ...(filters.dateTo && { lte: filters.dateTo }),
+      andConditions.push({
+        OR: [
+          {
+            transactionTime: {
+              ...(filters.dateFrom && { gte: filters.dateFrom }),
+              ...(filters.dateTo && { lte: filters.dateTo }),
+            },
           },
-        },
-        {
-          transactionTime: null,
-          createdAt: {
-            ...(filters.dateFrom && { gte: filters.dateFrom }),
-            ...(filters.dateTo && { lte: filters.dateTo }),
+          {
+            transactionTime: null,
+            createdAt: {
+              ...(filters.dateFrom && { gte: filters.dateFrom }),
+              ...(filters.dateTo && { lte: filters.dateTo }),
+            },
           },
-        },
-      ];
+        ],
+      });
     }
 
     // Status filter - fix(repo): cast to enum
@@ -456,48 +459,57 @@ export class PaymentRepository {
       where.paymentMethod = filters.paymentMethod;
     }
 
-    // Property filter - fix(repo): safe nested where
+    // Build booking filter separately to avoid conflicts
+    const bookingFilter: any = {};
+
+    // Property filter
     if (filters.propertyId) {
-      if (!where.booking) {
-        where.booking = {};
-      }
-      where.booking.propertyId = filters.propertyId;
+      bookingFilter.propertyId = filters.propertyId;
     }
 
-    // Owner filter - fix(repo): safe nested where
+    // Owner filter
     if (filters.ownerId) {
-      if (!where.booking) {
-        where.booking = {};
-      }
-      where.booking.property = {
+      bookingFilter.property = {
         ownerId: filters.ownerId,
       };
+    }
+
+    // Apply booking filter if any
+    if (Object.keys(bookingFilter).length > 0) {
+      where.booking = bookingFilter;
     }
 
     // Search filter
     if (filters.search) {
       const searchTerm = filters.search.trim();
-      where.OR = [
-        { midtransOrderId: { contains: searchTerm, mode: "insensitive" } },
-        { transactionId: { contains: searchTerm, mode: "insensitive" } },
-        {
-          booking: {
-            bookingCode: { contains: searchTerm, mode: "insensitive" },
-          },
-        },
-        {
-          user: {
-            email: { contains: searchTerm, mode: "insensitive" },
-          },
-        },
-        {
-          booking: {
-            room: {
-              roomNumber: { contains: searchTerm, mode: "insensitive" },
+      andConditions.push({
+        OR: [
+          { midtransOrderId: { contains: searchTerm, mode: "insensitive" } },
+          { transactionId: { contains: searchTerm, mode: "insensitive" } },
+          {
+            booking: {
+              bookingCode: { contains: searchTerm, mode: "insensitive" },
             },
           },
-        },
-      ];
+          {
+            user: {
+              email: { contains: searchTerm, mode: "insensitive" },
+            },
+          },
+          {
+            booking: {
+              room: {
+                roomNumber: { contains: searchTerm, mode: "insensitive" },
+              },
+            },
+          },
+        ],
+      });
+    }
+
+    // Combine all AND conditions
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
 
     return where;
@@ -656,10 +668,16 @@ export class PaymentRepository {
     sortBy: string = "transactionTime",
     sortOrder: "asc" | "desc" = "desc"
   ) {
+    console.log("🔍 [PaymentRepository.getTransactionList] Building where clause with filters:", filters);
+
     const where = this.buildTransactionWhereClause(filters);
+
+    console.log("🔍 [PaymentRepository.getTransactionList] Where clause:", JSON.stringify(where, null, 2));
 
     // Get total count
     const total = await prisma.payment.count({ where });
+
+    console.log("🔍 [PaymentRepository.getTransactionList] Total count:", total);
 
     // Get transactions with full relations
     const transactions = await prisma.payment.findMany({
@@ -714,6 +732,8 @@ export class PaymentRepository {
         },
       },
     });
+
+    console.log("🔍 [PaymentRepository.getTransactionList] Transactions found:", transactions.length);
 
     return {
       transactions: transactions.map((tx) => ({

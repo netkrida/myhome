@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription } from "@/components/ui/card";
+import { Price } from "@/components/ui/price";
 import type { PublicPropertyDetailDTO } from "@/server/types/property";
 import { BedDouble, DoorOpen, MapPin, Ruler, ShieldCheck, Sparkles, AlertTriangle } from "lucide-react";
 import type { DetailFacility } from "./property-detail-utils";
