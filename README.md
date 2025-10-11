@@ -1,149 +1,244 @@
-# MyHome - Multi-Tenant Property Management System
+<!-- BADGES -->
+![Node.js](https://img.shields.io/badge/Node-20.x-green?logo=node.js)
+![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
+![Prisma](https://img.shields.io/badge/Prisma-ORM-blue?logo=prisma)
+![Docker](https://img.shields.io/badge/Docker-ready-blue?logo=docker)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue?logo=postgresql)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-A comprehensive property management system built with Next.js, TypeScript, Prisma, and PostgreSQL.
+# MyHome – Platform Pemesanan Kos
 
-## 🚀 Quick Start
-
-### Docker Database Setup
-
-```bash
-# 1. Edit .env.production
-DB_INIT_MODE="reset"  # or "init" or "migrate"
-
-# 2. Deploy
-docker-compose up -d
-
-# 3. Check logs
-docker-compose logs -f app
-```
-
-📖 **Full Guide**: [DOCKER_DATABASE_SETUP.md](DOCKER_DATABASE_SETUP.md)
+MyHome adalah platform pemesanan kos yang memudahkan pencari kos menemukan properti, melihat tipe kamar, melakukan pemesanan dan pembayaran online, serta memberi pemilik kos dashboard pengelolaan. Dirancang untuk SuperAdmin, AdminKos, dan Customer, MyHome mengutamakan kemudahan, keamanan, dan otomasi proses booking kos.
 
 ---
 
-## 📚 Tech Stack
+## Fitur Utama
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
-
-## What's next? How do I make an app with this?
-
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
-
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
-
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
-
-## Learn More
-
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
-
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
-
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
-
-## 🐳 Docker Deployment
-
-### Database Initialization Modes
-
-| Mode | Use Case | Command |
-|------|----------|---------|
-| `migrate` | Production (default) | Only run migrations |
-| `reset` | Testing (⚠️ deletes data) | Reset DB + seed |
-| `init` | First deployment | Migrate + seed |
-
-### Quick Commands
-
-```bash
-# Production deployment
-DB_INIT_MODE="migrate" docker-compose up -d
-
-# Reset database with new seed
-DB_INIT_MODE="reset" docker-compose down -v && docker-compose up -d
-
-# First deployment with seed
-DB_INIT_MODE="init" docker-compose up -d
-```
-
-### Documentation
-
-- 📖 [Docker Database Setup Guide](DOCKER_DATABASE_SETUP.md)
-- 📖 [Full Documentation](docs/DOCKER_DATABASE_RESET.md)
-- 📖 [Quick Reference](docs/DOCKER_DB_QUICK_REFERENCE.md)
-- 📖 [Implementation Summary](docs/DOCKER_DB_SETUP_SUMMARY.md)
+- Pencarian & filter kos
+- Halaman detail properti
+- Tipe kamar & ketersediaan real-time
+- Booking & pembayaran online (Midtrans)
+- Dashboard admin multi-role (SuperAdmin, AdminKos, Receptionist, Customer)
+- Upload gambar properti (Cloudinary atau storage VPS)
+- Autentikasi & otorisasi (NextAuth)
+- Notifikasi status pesanan & refund notice
+- Monitoring transaksi & notifikasi Midtrans (khusus SuperAdmin)
 
 ---
 
-## 📝 Environment Configuration
+## Demo & Screenshot
 
-Copy `.env.production.example` to `.env.production` and configure:
+Demo: [https://myhome.co.id](https://myhome.co.id)
+
+| Home | Detail Properti | Dashboard |
+|------|-----------------|-----------|
+| ![](./public/screnshoot-web/home.png) | ![](./public/screnshoot-web/property-detail.png) | ![](./public/screnshoot-web/dashboard.png) |
+
+---
+
+## Galeri Screenshot Lengkap
+
+| Tampilan | Gambar |
+|----------|--------|
+| Home | ![](./public/screnshoot-web/home.png) |
+| Detail Properti | ![](./public/screnshoot-web/property-detail.png) |
+| Dashboard | ![](./public/screnshoot-web/dashboard.png) |
+| Booking | ![](./public/screnshoot-web/image4.png) |
+| Pembayaran | ![](./public/screnshoot-web/image5.png) |
+| Notifikasi | ![](./public/screnshoot-web/image6.png) |
+| Monitoring Transaksi | ![](./public/screnshoot-web/image7.png) |
+
+---
+
+## Arsitektur & Tech Stack
+
+**Arsitektur 3-Tier:**
+
+- **Tier 1: UI (app/*)**
+  - Server/Client Components Next.js 15
+  - Hanya memanggil API internal atau server actions
+- **Tier 2: Controller/API (app/api/**/route.ts)**
+  - Validasi input (Zod), otorisasi, mapping DTO, HTTP status
+- **Tier 3: Service/Domain**
+  - `server/api/*`, `server/services/*`, `server/repositories/*`, `server/db/*`, `server/schemas|types|lib/*`
+  - Logika bisnis, akses DB, integrasi eksternal
+
+**Stack:**
+- Next.js 15, TypeScript, Prisma, PostgreSQL
+- NextAuth, Shadcn UI, Tailwind CSS
+- Docker, Dockploy
+- Midtrans (pembayaran)
+- Cloudinary / VPS storage (upload gambar)
+
+**Diagram Alur Request:**
+
+```
+Client → app/* (UI) → app/api/**/route.ts (API) → server/api/* (Service) → server/repositories/* (Repo) → DB
+```
+
+---
+
+## Struktur Folder
+
+```
+app/
+  (public-pages)/
+  (protected-pages)/
+  api/
+    ...
+server/
+  api/
+  services/
+  repositories/
+  db/
+  schemas/
+  types/
+  lib/
+prisma/
+  schema.prisma
+  seed-superadmin.ts
+src/
+  components/
+    ui/
+    dashboard/
+public/
+  screnshoot-web/
+    home.png
+    property-detail.png
+    dashboard.png
+```
+
+---
+
+## Prasyarat
+
+- Node.js 20.x
+- PNPM/NPM
+- Docker & Docker Compose
+- Database PostgreSQL
+- Akses Midtrans (Server & Client Key)
+- (Opsional) NVM untuk Windows
+
+---
+
+## Konfigurasi Lingkungan (.env)
 
 ```env
-# Database
-DATABASE_URL="postgresql://postgres:myhome123@postgres:5432/db_myhome"
-DB_INIT_MODE="migrate"  # or "reset" or "init"
-
-# NextAuth
-NEXTAUTH_URL="https://myhome.co.id"
-NEXTAUTH_SECRET="your-secret-here"
-
-# Midtrans
-MIDTRANS_SERVER_KEY="your-key"
-MIDTRANS_CLIENT_KEY="your-key"
-
-# Cloudinary
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud"
+DATABASE_URL=postgresql://postgres:myhome123@postgres:5432/db_myhome
+DIRECT_URL=postgresql://postgres:myhome123@postgres:5432/db_myhome
+NEXTAUTH_URL=https://myhome.co.id
+AUTH_SECRET=your-secret-here
+MIDTRANS_SERVER_KEY=your-midtrans-server-key
+MIDTRANS_CLIENT_KEY=your-midtrans-client-key
+STORAGE_DRIVER=local # atau 'cloudinary'
+CLOUDINARY_CLOUD_NAME=your-cloud
+CLOUDINARY_API_KEY=your-key
+CLOUDINARY_API_SECRET=your-secret
+FILE_STORAGE_PATH=/data/uploads
 ```
+
+**Cloudinary**: Untuk upload gambar properti secara global, cocok untuk deployment cloud.
+
+**Storage VPS (local)**: Simpan file di server sendiri, path volume Docker: `/data/uploads`.
 
 ---
 
-## 🔧 Development
+## Instalasi & Pengembangan Lokal
 
 ```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
+pnpm install
+pnpm prisma generate
+pnpm prisma db push
+pnpm dev
 ```
 
----
-
-## 🗄️ Database Commands
+Seed SuperAdmin (wajib untuk login awal):
 
 ```bash
-# Generate Prisma Client
-npm run prisma:generate
-
-# Run migrations
-npm run db:migrate
-
-# Run seed
-npm run db:seed
-
-# Reset database (local)
-npm run db:reset
-
-# Reset database (Docker)
-npm run db:reset:docker
-
-# Open Prisma Studio
-npm run db:studio
+pnpm ts-node prisma/seed-superadmin.ts
 ```
+
+- Email: `superadmin@myhome.co.id`
+- Password: `@superadmin@myhome.co5432` _(ganti setelah deploy)_
 
 ---
 
-## 📚 Additional Resources
+## Migrasi & Seed
 
-For more deployment options, follow guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker).
+- **Migrasi DB:**  
+  `pnpm prisma migrate dev` (dev)  
+  `pnpm prisma db push` (sync schema tanpa migrasi)
+- **Seed SuperAdmin:**  
+  `pnpm ts-node prisma/seed-superadmin.ts`  
+  _Jangan gunakan kredensial seed di production._
+
+---
+
+## Build & Deploy (Docker + Dockploy)
+
+**Build & Run:**
+
+```bash
+docker build -t myhome-app .
+docker compose up -d
+```
+
+**Volume Penting:**
+
+- `postgres:/var/lib/postgresql/data` (data DB)
+- `uploads:/app/public/uploads` (atau `/data/uploads` untuk storage VPS)
+
+**Dockploy:**  
+Pastikan variabel env, healthcheck, scale, dan log sudah diatur di file Dockploy.
+
+---
+
+## Integrasi Pembayaran (Midtrans)
+
+1. User booking → create transaction (API)
+2. Redirect ke Snap/Payment Page Midtrans
+3. Callback/notification dari Midtrans ke endpoint backend
+4. Update status pembayaran di DB
+5. Jika refund, sistem kirim notifikasi & update status
+
+_Cek dokumen Midtrans untuk detail implementasi dan best practice._
+
+---
+
+## Keamanan & Praktik Baik
+
+- Simpan secret di server (jangan expose ke client)
+- Validasi input dengan Zod di API
+- Pembatasan role & otorisasi di setiap endpoint
+- Backup database & rotasi token secara berkala
+
+---
+
+## Testing
+
+- Unit test untuk domain/service
+- Integration test controller via fetch ke `app/api`
+
+---
+
+## Roadmap
+
+- Multi-currency & multi-language
+- Kupon/discount
+- Multi-tenant (banyak pemilik kos)
+- Laporan pajak otomatis
+- PWA & mobile support
+
+---
+
+## Kontribusi
+
+1. Fork & clone repo
+2. Buat branch fitur/bugfix
+3. PR ke `main` dengan deskripsi jelas
+
+---
+
+
+**MyHome – Platform Pemesanan Kos**  
+© 2025 MyHome Team
