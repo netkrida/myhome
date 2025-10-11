@@ -10,3 +10,4 @@ export { PropertyDetailOverview } from "./property-detail-overview";
 export { PropertyDetailFacilities } from "./property-detail-facilities";
 export { PropertyDetailGallery } from "./property-detail-gallery";
 export { PropertyDetailRooms } from "./property-detail-rooms";
+export { WhatsAppFloat } from "./whatsapp-float";

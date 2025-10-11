@@ -10,6 +10,7 @@ import type {
 } from "../types";
 import { PropertyStatus, PropertyType } from "../types/property";
 import { PropertyRepository } from "../repositories/property.repository";
+import { normalizePhoneToE164ID } from "@/lib/phone";
 
 /**
  * Property Domain Service
@@ -354,7 +355,36 @@ export class PropertyService {
     const facilityScore = Math.min(facilities.length * 0.1, 3); // Max 3 points
     const ruleScore = Math.min(rules.length * 0.05, 2); // Max 2 points
     const baseScore = 3; // Base score
-    
+
     return Math.min(baseScore + facilityScore + ruleScore, 5);
+  }
+
+  /**
+   * Get property with admin WhatsApp contact information
+   * Used for public property detail page to enable WhatsApp contact
+   */
+  static async getPublicPropertyWithAdminWA(id: string): Promise<{
+    property: {
+      id: string;
+      name: string;
+    };
+    adminWa: string | null;
+  } | null> {
+    const ownerContact = await PropertyRepository.getPropertyOwnerContact(id);
+
+    if (!ownerContact) {
+      return null;
+    }
+
+    // Normalize phone number to E.164 format
+    const adminWa = normalizePhoneToE164ID(ownerContact.ownerPhoneNumber);
+
+    return {
+      property: {
+        id: ownerContact.propertyId,
+        name: ownerContact.propertyName,
+      },
+      adminWa,
+    };
   }
 }

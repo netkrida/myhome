@@ -729,6 +729,13 @@ export class PropertyRepository {
         },
         rooms: {
           orderBy: { roomNumber: 'asc' }
+        },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            phoneNumber: true,
+          }
         }
       },
     });
@@ -739,7 +746,9 @@ export class PropertyRepository {
       propertyName: property?.name,
       status: property?.status,
       imagesCount: property?.images?.length || 0,
-      roomsCount: property?.rooms?.length || 0
+      roomsCount: property?.rooms?.length || 0,
+      hasOwner: !!property?.owner,
+      ownerPhone: property?.owner?.phoneNumber ? "***" : null
     });
 
     if (!property) return null;
@@ -825,6 +834,46 @@ export class PropertyRepository {
       })) || [],
       createdAt: property.createdAt,
       updatedAt: property.updatedAt,
+    };
+  }
+
+  /**
+   * Get property owner contact information by property ID
+   * Used for WhatsApp contact feature on public property detail page
+   */
+  static async getPropertyOwnerContact(id: string): Promise<{
+    propertyId: string;
+    propertyName: string;
+    ownerId: string;
+    ownerName: string | null;
+    ownerPhoneNumber: string | null;
+  } | null> {
+    const property = await prisma.property.findUnique({
+      where: {
+        id,
+        status: PropertyStatus.APPROVED // Only approved properties
+      },
+      select: {
+        id: true,
+        name: true,
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            phoneNumber: true,
+          }
+        }
+      },
+    });
+
+    if (!property) return null;
+
+    return {
+      propertyId: property.id,
+      propertyName: property.name,
+      ownerId: property.owner.id,
+      ownerName: property.owner.name,
+      ownerPhoneNumber: property.owner.phoneNumber,
     };
   }
 }

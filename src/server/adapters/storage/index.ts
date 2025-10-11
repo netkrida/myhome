@@ -31,20 +31,36 @@ export interface StorageAdapter {
 
 /**
  * Get storage adapter based on environment configuration
- * Default: local storage
- * Can be switched to Cloudinary via env var
+ * Default: Cloudinary (recommended for production)
+ * Can be switched to local storage via env var (for development only)
  */
 export function getStorageAdapter(): StorageAdapter {
-  const provider = process.env.ASSET_STORAGE ?? "local";
+  const provider = process.env.ASSET_STORAGE ?? "cloudinary";
   
   if (provider === "cloudinary") {
-    // Future: Cloudinary adapter
-    // return new CloudinaryAdapter();
-    console.warn("Cloudinary adapter not implemented yet, falling back to local");
+    // Check if Cloudinary is configured
+    if (
+      process.env.CLOUDINARY_CLOUD_NAME ||
+      process.env.CLOUDINARY_API_KEY ||
+      process.env.CLOUDINARY_API_SECRET
+    ) {
+      const { CloudinaryAdapter } = require("./cloudinary.adapter");
+      console.log("✅ Using Cloudinary storage adapter");
+      return new CloudinaryAdapter();
+    } else {
+      console.warn("⚠️ Cloudinary not configured, falling back to local storage");
+    }
   }
   
-  // Default to local storage
-  const { LocalStorageAdapter } = require("./local.adapter");
-  return new LocalStorageAdapter();
+  if (provider === "local") {
+    console.warn("⚠️ Using local storage adapter (not recommended for serverless)");
+    const { LocalStorageAdapter } = require("./local.adapter");
+    return new LocalStorageAdapter();
+  }
+  
+  // Default to Cloudinary
+  const { CloudinaryAdapter } = require("./cloudinary.adapter");
+  console.log("✅ Using Cloudinary storage adapter (default)");
+  return new CloudinaryAdapter();
 }
 

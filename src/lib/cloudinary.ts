@@ -227,4 +227,69 @@ export function getThumbnailUrl(publicId: string): string {
   });
 }
 
+/**
+ * Upload to Cloudinary with options
+ * Used by storage adapters
+ */
+export async function uploadToCloudinary(
+  buffer: Buffer,
+  folder: string = "myhome",
+  options?: {
+    public_id?: string;
+    resource_type?: string;
+    format?: string;
+  }
+): Promise<CloudinaryUploadResult> {
+  try {
+    const uploadData = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+    
+    const uploadOptions: any = {
+      folder,
+      transformation: [
+        { width: 1200, height: 1200, crop: 'limit', quality: 'auto' },
+        { fetch_format: 'auto' }
+      ],
+    };
+
+    if (options?.public_id) {
+      uploadOptions.public_id = options.public_id;
+    }
+    if (options?.resource_type) {
+      uploadOptions.resource_type = options.resource_type;
+    }
+    if (options?.format) {
+      uploadOptions.format = options.format;
+    }
+
+    const result = await cloudinary.uploader.upload(uploadData, uploadOptions);
+    
+    return {
+      public_id: result.public_id,
+      secure_url: result.secure_url,
+      width: result.width,
+      height: result.height,
+      format: result.format,
+      resource_type: result.resource_type,
+      bytes: result.bytes,
+    };
+  } catch (error) {
+    console.error('❌ Cloudinary upload error:', error);
+    throw new Error(`Failed to upload to Cloudinary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Delete from Cloudinary
+ * Used by storage adapters
+ */
+export async function deleteFromCloudinary(publicId: string): Promise<void> {
+  try {
+    await cloudinary.uploader.destroy(publicId);
+    console.log('✅ Deleted from Cloudinary:', publicId);
+  } catch (error) {
+    console.error('❌ Cloudinary delete error:', error);
+    throw new Error(`Failed to delete from Cloudinary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
 export { cloudinary };

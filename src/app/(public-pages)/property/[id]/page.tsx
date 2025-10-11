@@ -9,7 +9,9 @@ import { PropertyDetailOverview } from "@/components/public/property-detail-over
 import { PropertyDetailFacilities } from "@/components/public/property-detail-facilities";
 import { PropertyDetailGallery } from "@/components/public/property-detail-gallery";
 import { PropertyDetailRooms } from "@/components/public/property-detail-rooms";
+import { WhatsAppFloat } from "@/components/public/whatsapp-float";
 import type { PublicPropertyDetailDTO, PropertyImageDTO, PublicPropertyRoomDTO } from "@/server/types/property";
+import { PropertyService } from "@/server/services/property.service";
 
 type PropertyImageApiDTO = Omit<PropertyImageDTO, "createdAt" | "updatedAt"> & {
   createdAt: string;
@@ -118,8 +120,15 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
     notFound();
   }
 
+  // Get admin WhatsApp contact information
+  const adminWaData = await PropertyService.getPublicPropertyWithAdminWA(id);
+  const adminWa = adminWaData?.adminWa ?? null;
+
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${property.location.latitude},${property.location.longitude}`;
   const roomCountLabel = property.availableRooms > 0 ? `${property.availableRooms} kamar tersedia` : "Tidak ada kamar tersedia";
+
+  // Preset WhatsApp message with property name
+  const whatsappPresetText = `Halo AdminKos, saya tertarik dengan properti "${property.name}". Apakah kamar tersedia?`;
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors">
@@ -133,6 +142,9 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         <PropertyDetailRooms property={property} roomCountLabel={roomCountLabel} />
       </main>
       <PublicFooter />
+
+      {/* Floating WhatsApp Contact Button */}
+      <WhatsAppFloat number={adminWa} presetText={whatsappPresetText} />
     </div>
   );
 }

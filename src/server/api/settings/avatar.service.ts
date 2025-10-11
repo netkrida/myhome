@@ -31,8 +31,29 @@ export async function uploadMyAvatar(
   // Validate file type and size
   validateAvatarFile({ mime: file.mime, size: file.size });
 
+  // Get current user to delete old avatar
+  const user = await UserRepository.findById(userId);
+  
   // Get storage adapter
   const storage = getStorageAdapter();
+
+  // Delete old avatar if exists
+  if (user?.image && storage.deleteFile) {
+    try {
+      // Extract publicId from Cloudinary URL if applicable
+      if (user.image.includes('cloudinary.com')) {
+        const urlParts = user.image.split('/');
+        const fileWithExt = urlParts[urlParts.length - 1];
+        const folder = urlParts[urlParts.length - 2];
+        const publicId = `${folder}/${fileWithExt?.split('.')[0]}`;
+        await storage.deleteFile(publicId);
+        console.log("🗑️ Old avatar deleted:", publicId);
+      }
+    } catch (error) {
+      console.error("⚠️ Failed to delete old avatar:", error);
+      // Continue with upload even if deletion fails
+    }
+  }
 
   // Upload file
   const result = await storage.uploadAvatar({
@@ -60,12 +81,28 @@ export async function deleteMyAvatar(userId: string): Promise<void> {
     return; // No avatar to delete
   }
 
+  // Get storage adapter
+  const storage = getStorageAdapter();
+
+  // Delete file from storage if supported
+  if (storage.deleteFile) {
+    try {
+      // Extract publicId from Cloudinary URL if applicable
+      if (user.image.includes('cloudinary.com')) {
+        const urlParts = user.image.split('/');
+        const fileWithExt = urlParts[urlParts.length - 1];
+        const folder = urlParts[urlParts.length - 2];
+        const publicId = `${folder}/${fileWithExt?.split('.')[0]}`;
+        await storage.deleteFile(publicId);
+        console.log("🗑️ Avatar deleted from storage:", publicId);
+      }
+    } catch (error) {
+      console.error("⚠️ Failed to delete avatar from storage:", error);
+      // Continue to clear from database even if storage deletion fails
+    }
+  }
+
   // Clear avatar from user profile
   await UserRepository.update(userId, { image: null });
-
-  // Optional: Delete file from storage
-  // This depends on storage adapter implementation
-  // For local storage, we might want to keep old files for backup
-  // For Cloudinary, we might want to delete to save space
 }
 
