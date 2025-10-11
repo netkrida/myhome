@@ -28,11 +28,11 @@ MyHome adalah platform pemesanan kos yang memudahkan pencari kos menemukan prope
 
 ## Demo & Screenshot
 
-Demo: [https://myhome.co.id](https://myhome.co.id)
+Demo: [https://boxbook-one.vercel.app/](myhome)
 
 | Home | Detail Properti | Dashboard |
 |------|-----------------|-----------|
-| ![](./public/screnshoot-web/home.png) | ![](./public/screnshoot-web/property-detail.png) | ![](./public/screnshoot-web/dashboard.png) |
+| ![](./public/screnshoot-web/image1.png) | ![](./public/screnshoot-web/image2.png) | ![](./public/screnshoot-web/dashboard.png) |
 
 ---
 
