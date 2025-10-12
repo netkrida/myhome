@@ -50,6 +50,7 @@ interface LedgerTableProps {
   onExport?: () => void;
   onEdit?: (entry: LedgerEntryDTO) => void;
   onDelete?: (entry: LedgerEntryDTO) => void;
+  onViewPayment?: (paymentId: string) => void;
 }
 
 export function LedgerTable({
@@ -59,7 +60,8 @@ export function LedgerTable({
   onQueryChange,
   onExport,
   onEdit,
-  onDelete
+  onDelete,
+  onViewPayment
 }: LedgerTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -275,8 +277,14 @@ export function LedgerTable({
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         {getRefTypeBadge(entry.refType)}
-                        {entry.refId && (
-                          <Button variant="ghost" size="sm" className="h-6 px-2">
+                        {entry.refId && entry.refType === "PAYMENT" && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 px-2"
+                            onClick={() => onViewPayment?.(entry.refId!)}
+                            title="Lihat detail pembayaran"
+                          >
                             <ExternalLink className="h-3 w-3" />
                           </Button>
                         )}

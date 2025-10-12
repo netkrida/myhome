@@ -365,6 +365,59 @@ export class PaymentRepository {
   }
 
   /**
+   * Find payment by ID with booking details
+   * Used for ledger integration where refId is payment.id
+   */
+  static async findByIdWithBooking(
+    paymentId: string
+  ): Promise<Result<PaymentDTO & { booking: any }>> {
+    try {
+      console.log("🔍 PaymentRepository.findByIdWithBooking - Looking up:", paymentId);
+
+      const payment = await prisma.payment.findUnique({
+        where: { id: paymentId },
+        include: {
+          booking: {
+            include: {
+              room: true,
+              user: true,
+              property: true
+            }
+          }
+        }
+      });
+
+      if (!payment) {
+        console.error("❌ Payment not found:", paymentId);
+        return notFound("Payment not found");
+      }
+
+      const paymentWithBooking = payment as any;
+
+      console.log("✅ Payment found by ID:", {
+        paymentId: payment.id,
+        orderId: payment.midtransOrderId,
+        status: payment.status,
+        userId: payment.userId,
+        bookingId: paymentWithBooking.booking?.id,
+        propertyId: paymentWithBooking.booking?.property?.id,
+        propertyName: paymentWithBooking.booking?.property?.name,
+        propertyOwnerId: paymentWithBooking.booking?.property?.ownerId,
+        hasBooking: !!paymentWithBooking.booking,
+        hasProperty: !!paymentWithBooking.booking?.property
+      });
+
+      return ok({
+        ...this.mapToDTO(payment),
+        booking: paymentWithBooking.booking
+      });
+    } catch (error) {
+      console.error("❌ Error finding payment by ID with booking:", error);
+      return internalError("Failed to find payment");
+    }
+  }
+
+  /**
    * Update payment token (after creating Snap transaction)
    */
   static async saveToken(

@@ -32,6 +32,7 @@ import {
   AccountsPanel,
   AddAccountDialog,
   AddTransactionDialog,
+  PaymentDetailModal,
 } from "@/components/dashboard/adminkos/transaction";
 import { EditTransactionDialog } from "@/components/dashboard/adminkos/transaction/edit-transaction-dialog";
 import {
@@ -117,6 +118,8 @@ export function TransactionPageClient() {
   const [selectedEntry, setSelectedEntry] = useState<LedgerEntryDTO | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<LedgerEntryDTO | null>(null);
+  const [showPaymentDetail, setShowPaymentDetail] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
 
   // Sync status
   const [syncStatus, setSyncStatus] = useState<{
@@ -371,6 +374,12 @@ export function TransactionPageClient() {
   const handleEditTransaction = (entry: LedgerEntryDTO) => {
     setSelectedEntry(entry);
     setShowEditTransaction(true);
+  };
+
+  // View payment detail
+  const handleViewPayment = (paymentId: string) => {
+    setSelectedPaymentId(paymentId);
+    setShowPaymentDetail(true);
   };
 
   const handleUpdateTransaction = async (
@@ -744,6 +753,7 @@ export function TransactionPageClient() {
             onExport={handleExportCSV}
             onEdit={handleEditTransaction}
             onDelete={handleDeleteTransaction}
+            onViewPayment={handleViewPayment}
           />
         </TabsContent>
         
@@ -809,6 +819,12 @@ export function TransactionPageClient() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PaymentDetailModal
+        open={showPaymentDetail}
+        onOpenChange={setShowPaymentDetail}
+        paymentId={selectedPaymentId}
+      />
     </div>
   );
 }

@@ -90,11 +90,11 @@ export function PublicHeader() {
   return (
     <>
   <header className="sticky top-0 z-50 w-full border-b bg-background shadow-sm text-foreground">
-  <div className="container mx-auto px-4 sm:px-6">
+  <div className="w-full px-0">
         {/* Top Bar */}
         <div className="flex h-14 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center lg:pl-7">
             <Image
               src="/logo.png"
               alt="MyHome"

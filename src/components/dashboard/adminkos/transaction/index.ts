@@ -11,3 +11,4 @@ export { AccountsPanel } from "./accounts-panel";
 export { AddAccountDialog } from "./add-account-dialog";
 export { AddTransactionDialog } from "./add-transaction-dialog";
 export { EditTransactionDialog } from "./edit-transaction-dialog";
+export { PaymentDetailModal } from "./payment-detail-modal";
