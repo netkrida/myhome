@@ -19,7 +19,7 @@ import { PaymentRepository } from "@/server/repositories/payment.repository";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { paymentId: string } }
+  context: { params: Promise<{ paymentId: string }> }
 ) {
   try {
     // Get current user session
@@ -35,7 +35,9 @@ export async function GET(
 
     const userId = session.user.id;
     const userRole = session.user.role;
-    const paymentId = params.paymentId;
+    
+    // Await params as per Next.js 15 typed routes
+    const { paymentId } = await context.params;
 
     console.log("🔍 GET /api/payments/[paymentId] - Request:", { 
       paymentId, 
