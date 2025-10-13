@@ -25,6 +25,13 @@ const WEBHOOK_ROUTES = [
   "/api/payments/webhook"
 ];
 
+// Cron endpoints that should NOT require NextAuth authentication
+// These use their own Bearer token authentication (CRON_SECRET)
+const CRON_ROUTES = [
+  "/api/cron/cleanup-expired",
+  "/api/cron/expire/bookings"
+];
+
 const ADMIN_ROLES = ["SUPERADMIN", "ADMINKOS", "RECEPTIONIST"];
 
 export default async function middleware(request: NextRequest) {
@@ -57,6 +64,13 @@ export default async function middleware(request: NextRequest) {
     const response = NextResponse.next();
     response.headers.set('ngrok-skip-browser-warning', 'true');
     return response;
+  }
+
+  // Skip cron routes - these use Bearer token authentication (CRON_SECRET)
+  // Security is handled by the route handler itself
+  if (CRON_ROUTES.some(route => pathname === route || pathname.startsWith(route))) {
+    console.log("🔓 Middleware - Cron route, skipping NextAuth:", pathname);
+    return NextResponse.next();
   }
 
   // Add ngrok bypass header for payment redirect pages
