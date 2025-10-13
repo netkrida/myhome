@@ -209,19 +209,27 @@ _Cek dokumen Midtrans untuk detail implementasi dan best practice._
 
 MyHome menggunakan **cron jobs** untuk otomatis membersihkan expired payments dan bookings:
 
-- **Schedule:** Setiap 5 menit
+- **Schedule:** 
+  - **VPS Docker:** Setiap 5 menit (precise timing)
+  - **Vercel Hobby:** Setiap jam (±1 hour timing)
+  - **Vercel Pro:** Setiap 5 menit (precise timing)
 - **Endpoint:** `/api/cron/cleanup-expired`
 - **Support:** Vercel Cron + Docker Cron (VPS)
 
 ### Quick Setup
 
-**Vercel:**
+**Vercel (Hobby Plan):**
 1. Set `CRON_SECRET` di Environment Variables
-2. Deploy → Cron otomatis jalan dari `vercel.json`
+2. Deploy → Cron jalan setiap jam (timing ±1 hour)
+3. Note: Hobby plan tidak guarantee precise timing
+
+**Vercel (Pro Plan):**
+1. Set `CRON_SECRET` di Environment Variables
+2. Deploy → Cron jalan setiap 5 menit (precise)
 
 **VPS (Docker):**
 1. Set `CRON_SECRET` di `.env.production`
-2. `docker-compose up -d` → Service `cron` otomatis jalan
+2. `docker-compose up -d` → Service `cron` otomatis jalan setiap 5 menit
 
 **Generate Secret:**
 ```bash
@@ -233,6 +241,7 @@ openssl rand -base64 32
 ```
 
 📚 **Dokumentasi Lengkap:**
+- [`docs/VERCEL_CRON_HOBBY_PLAN.md`](./docs/VERCEL_CRON_HOBBY_PLAN.md) - **Vercel Hobby plan setup**
 - [`docs/CRON_QUICK_REFERENCE.md`](./docs/CRON_QUICK_REFERENCE.md) - Quick setup
 - [`docs/CRON_DEPLOYMENT_GUIDE.md`](./docs/CRON_DEPLOYMENT_GUIDE.md) - Detailed guide
 
