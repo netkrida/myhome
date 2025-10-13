@@ -21,18 +21,6 @@ export async function GET(request: NextRequest) {
   try {
     // Step 1: Validate Authorization header
     const authHeader = request.headers.get("authorization");
-    
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: "Unauthorized: Missing or invalid Authorization header" 
-        },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.substring(7); // Remove "Bearer " prefix
     const cronSecret = process.env.CRON_SECRET;
 
     if (!cronSecret) {
@@ -46,15 +34,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (token !== cronSecret) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: "Unauthorized: Invalid token" 
-        },
-        { status: 401 }
-      );
+    // Check if request is from Vercel Cron (has special header)
+    const isVercelCron = request.headers.get("x-vercel-cron") === "true";
+    
+    if (!isVercelCron) {
+      // Manual call - require Bearer token
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: "Unauthorized: Missing or invalid Authorization header" 
+          },
+          { status: 401 }
+        );
+      }
+
+      const token = authHeader.substring(7); // Remove "Bearer " prefix
+      if (token !== cronSecret) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: "Unauthorized: Invalid token" 
+          },
+          { status: 401 }
+        );
+      }
     }
+
+    console.log("[Cron Cleanup] 🧹 Starting cleanup process...", {
+      source: isVercelCron ? "Vercel Cron" : "Manual Trigger",
+      timestamp: new Date().toISOString()
+    });
 
     // Step 2: Get grace period from environment (default: 30 minutes)
     const graceMinutes = parseInt(

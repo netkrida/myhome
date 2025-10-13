@@ -205,6 +205,39 @@ _Cek dokumen Midtrans untuk detail implementasi dan best practice._
 
 ---
 
+## ⏰ Automated Cleanup (Cron Jobs)
+
+MyHome menggunakan **cron jobs** untuk otomatis membersihkan expired payments dan bookings:
+
+- **Schedule:** Setiap 5 menit
+- **Endpoint:** `/api/cron/cleanup-expired`
+- **Support:** Vercel Cron + Docker Cron (VPS)
+
+### Quick Setup
+
+**Vercel:**
+1. Set `CRON_SECRET` di Environment Variables
+2. Deploy → Cron otomatis jalan dari `vercel.json`
+
+**VPS (Docker):**
+1. Set `CRON_SECRET` di `.env.production`
+2. `docker-compose up -d` → Service `cron` otomatis jalan
+
+**Generate Secret:**
+```bash
+# Windows
+.\generate-cron-secret.ps1
+
+# Linux/Mac
+openssl rand -base64 32
+```
+
+📚 **Dokumentasi Lengkap:**
+- [`docs/CRON_QUICK_REFERENCE.md`](./docs/CRON_QUICK_REFERENCE.md) - Quick setup
+- [`docs/CRON_DEPLOYMENT_GUIDE.md`](./docs/CRON_DEPLOYMENT_GUIDE.md) - Detailed guide
+
+---
+
 ## Keamanan & Praktik Baik
 
 - Simpan secret di server (jangan expose ke client)

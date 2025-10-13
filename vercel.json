@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/cleanup-expired",
+      "schedule": "*/5 * * * *"
+    }
+  ],
+  "env": {
+    "DEPLOYMENT_ENV": "vercel"
+  }
+}
+  
