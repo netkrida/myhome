@@ -28,13 +28,13 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.myhome.rule=Host(`myhome.co.id`)"
-      - "traefik.http.routers.myhome.entrypoints=websecure"
-      - "traefik.http.routers.myhome.tls=true"
-      - "traefik.http.routers.myhome.tls.certresolver=dockploy"
-      - "traefik.http.services.myhome.loadbalancer.server.port=3000"
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.myhome.rule=Host(`myhome.co.id`)"
+    #   - "traefik.http.routers.myhome.entrypoints=websecure"
+    #   - "traefik.http.routers.myhome.tls=true"
+    #   - "traefik.http.routers.myhome.tls.certresolver=dockploy"
+    #   - "traefik.http.services.myhome.loadbalancer.server.port=3000"
 
   # Cron Service untuk Cleanup Expired Bookings
   cron:
