@@ -167,11 +167,6 @@ export function DashboardSidebar({ variant = "sidebar" }: DashboardSidebarProps)
             icon: IconBed,
           },
           {
-            title: "Validation",
-            url: "/dashboard/receptionist/validation",
-            icon: IconClipboardList,
-          },
-          {
             title: "Reports",
             url: "/dashboard/receptionist/reports",
             icon: IconFileText,

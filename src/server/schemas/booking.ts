@@ -40,6 +40,7 @@ export const DirectBookingSchema = z.object({
   payment: z.object({
     mode: z.enum(["FULL", "DEPOSIT"]),
     method: z.enum(["CASH", "TRANSFER-ADMIN"]),
+    ledgerAccountId: z.string().cuid("Invalid ledger account ID"),
   }),
   idempotencyKey: z.string().max(100).optional(),
 });

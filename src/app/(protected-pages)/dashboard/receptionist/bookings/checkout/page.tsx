@@ -1,6 +1,7 @@
 import { requireRole } from "@/server/lib/auth"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { CheckOutForm } from "@/components/dashboard/receptionist/bookings/check-out-form"
+import { ReceptionistBookingsList } from "@/components/dashboard/receptionist/bookings/receptionist-bookings-list"
 
 export default async function ReceptionistCheckoutPage() {
   // Ensure user has receptionist role
@@ -15,6 +16,12 @@ export default async function ReceptionistCheckoutPage() {
         </div>
 
         <CheckOutForm />
+
+        <ReceptionistBookingsList
+          status="COMPLETED"
+          title="Riwayat Check-out"
+          description="Daftar booking yang sudah selesai diproses check-out."
+        />
       </div>
     </DashboardLayout>
   )

@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import type { Payment as PrismaPayment } from "@prisma/client";
 import { prisma } from "../db/client";
 import type {
   BookingDTO,
@@ -104,6 +105,15 @@ interface DirectBookingTransactionInput {
     status: PaymentStatus;
     midtransOrderId: string;
     transactionTime?: Date;
+  };
+  ledgerEntry?: {
+    adminKosId: string;
+    accountId: string;
+    propertyId: string;
+    amount: number;
+    createdBy: string;
+    note?: string;
+    date?: Date;
   };
 }
 
@@ -593,6 +603,23 @@ export class BookingRepository {
           },
         });
 
+        if (input.ledgerEntry) {
+          await tx.ledgerEntry.create({
+            data: {
+              adminKosId: input.ledgerEntry.adminKosId,
+              accountId: input.ledgerEntry.accountId,
+              direction: "IN",
+              amount: input.ledgerEntry.amount,
+              date: input.ledgerEntry.date ?? new Date(),
+              note: input.ledgerEntry.note ?? `Pembayaran offline booking ${booking.bookingCode}`,
+              refType: "PAYMENT",
+              refId: payment.id,
+              propertyId: input.ledgerEntry.propertyId,
+              createdBy: input.ledgerEntry.createdBy,
+            },
+          });
+        }
+
         if (MANAGE_ROOM_AVAILABILITY && input.booking.status === BookingStatus.CONFIRMED) {
           await tx.room.update({
             where: { id: booking.roomId },
@@ -601,7 +628,7 @@ export class BookingRepository {
         }
 
         return { booking, payment };
-      });
+      }, { timeout: 60000, maxWait: 5000 });
 
       return ok({
         booking: this.mapToDTO(result.booking),
@@ -627,7 +654,7 @@ export class BookingRepository {
       propertyId: booking.propertyId,
       roomId: booking.roomId,
       checkInDate: booking.checkInDate,
-      checkOutDate: booking.checkOutDate,
+      checkOutDate: booking.checkOutDate ?? undefined,
       leaseType: booking.leaseType as LeaseType,
       totalAmount: Number(booking.totalAmount),
       depositAmount: booking.depositAmount ? Number(booking.depositAmount) : undefined,
@@ -641,8 +668,8 @@ export class BookingRepository {
       updatedAt: booking.updatedAt,
       user: booking.user ? {
         id: booking.user.id,
-        name: booking.user.name,
-        email: booking.user.email
+        name: booking.user.name ?? undefined,
+        email: booking.user.email ?? undefined,
       } : undefined,
       property: booking.property ? {
         id: booking.property.id,
@@ -657,19 +684,19 @@ export class BookingRepository {
       } : undefined,
       checkedInByUser: booking.checkedInByUser ? {
         id: booking.checkedInByUser.id,
-        name: booking.checkedInByUser.name,
-        email: booking.checkedInByUser.email
+        name: booking.checkedInByUser.name ?? undefined,
+        email: booking.checkedInByUser.email ?? undefined,
       } : undefined,
       checkedOutByUser: booking.checkedOutByUser ? {
         id: booking.checkedOutByUser.id,
-        name: booking.checkedOutByUser.name,
-        email: booking.checkedOutByUser.email
+        name: booking.checkedOutByUser.name ?? undefined,
+        email: booking.checkedOutByUser.email ?? undefined,
       } : undefined,
       payments: booking.payments?.map((payment) => this.mapPayment(payment))
     };
   }
 
-  private static mapPayment(payment: Prisma.Payment): PaymentDTO {
+  private static mapPayment(payment: PrismaPayment): PaymentDTO {
     return {
       id: payment.id,
       bookingId: payment.bookingId,

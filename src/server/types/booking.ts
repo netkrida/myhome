@@ -289,6 +289,7 @@ export interface DirectBookingCustomerInput {
 export interface DirectBookingPaymentInput {
   mode: DirectBookingPaymentMode;
   method: OfflinePaymentMethod;
+  ledgerAccountId: string;
 }
 
 export interface DirectBookingRequestDTO {

@@ -33,7 +33,7 @@ const steps: StepDefinition[] = [
   { key: "customer", title: "Customer", description: "Pilih atau buat data customer" },
   { key: "room", title: "Kamar", description: "Pilih kamar yang akan dibooking" },
   { key: "schedule", title: "Jadwal", description: "Atur tanggal check-in dan check-out" },
-  { key: "payment", title: "Pembayaran", description: "Pilih metode pembayaran" },
+  { key: "payment", title: "Pembayaran", description: "Pilih metode dan akun pembukuan" },
   { key: "review", title: "Review", description: "Periksa kembali dan konfirmasi" },
 ];
 
@@ -66,6 +66,14 @@ interface ReceptionistProfileInfo {
   id: string;
   propertyId?: string | null;
   propertyName?: string | null;
+  adminKosId?: string | null;
+}
+
+interface LedgerAccountOption {
+  id: string;
+  name: string;
+  code?: string;
+  isSystem: boolean;
 }
 
 interface ReceptionistRoomInfo {
@@ -92,6 +100,8 @@ export function DirectBookingForm() {
   const [profile, setProfile] = useState<ReceptionistProfileInfo | null>(null);
   const [rooms, setRooms] = useState<ReceptionistRoomInfo[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
+  const [ledgerAccounts, setLedgerAccounts] = useState<LedgerAccountOption[]>([]);
+  const [ledgerAccountsLoading, setLedgerAccountsLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchingCustomer, setSearchingCustomer] = useState(false);
@@ -106,8 +116,12 @@ export function DirectBookingForm() {
 
   const [paymentMode, setPaymentMode] = useState<DirectBookingPaymentMode>("FULL");
   const [paymentMethod, setPaymentMethod] = useState<OfflinePaymentMethod>("CASH");
+  const [selectedLedgerAccountId, setSelectedLedgerAccountId] = useState<string>("");
 
   const [submitting, setSubmitting] = useState(false);
+
+  const currentStep = steps[activeStepIndex] ?? steps[0]!;
+  const currentStepKey = currentStep.key;
 
   useEffect(() => {
     const loadProfileAndRooms = async () => {
@@ -120,17 +134,34 @@ export function DirectBookingForm() {
         setProfile(profileData.data as ReceptionistProfileInfo);
 
         setRoomsLoading(true);
-        const roomsResponse = await fetch("/api/receptionist/rooms");
+        setLedgerAccountsLoading(true);
+        const [roomsResponse, accountsResponse] = await Promise.all([
+          fetch("/api/receptionist/rooms"),
+          fetch("/api/receptionist/ledger/accounts"),
+        ]);
+
         const roomsPayload = await roomsResponse.json();
         if (!roomsResponse.ok || !roomsPayload.success) {
           throw new Error(roomsPayload.error || "Gagal mengambil data kamar");
         }
         setRooms(roomsPayload.data.rooms as ReceptionistRoomInfo[]);
+
+        const accountsPayload = await accountsResponse.json();
+        if (!accountsResponse.ok || !accountsPayload.success) {
+          throw new Error(accountsPayload.error || "Gagal mengambil akun pembukuan");
+        }
+        const accounts = accountsPayload.data as LedgerAccountOption[];
+        setLedgerAccounts(accounts);
+        setSelectedLedgerAccountId(accounts[0]?.id ?? "");
+        if (accounts.length === 0) {
+          toast.error("Belum ada akun pemasukan aktif. Minta AdminKos menyiapkan akun pembukuan terlebih dahulu.");
+        }
       } catch (error) {
         console.error(error);
         toast.error(error instanceof Error ? error.message : "Gagal memuat data awal resepsionis");
       } finally {
         setRoomsLoading(false);
+        setLedgerAccountsLoading(false);
       }
     };
 
@@ -140,6 +171,11 @@ export function DirectBookingForm() {
   const selectedRoom = useMemo(
     () => rooms.find((room) => room.id === selectedRoomId) || null,
     [rooms, selectedRoomId]
+  );
+
+  const selectedLedgerAccount = useMemo(
+    () => ledgerAccounts.find((account) => account.id === selectedLedgerAccountId) || null,
+    [ledgerAccounts, selectedLedgerAccountId]
   );
 
   const pricingSummary = useMemo<PricingSummary | null>(() => {
@@ -174,10 +210,12 @@ export function DirectBookingForm() {
     pricingSummary &&
     checkInDate &&
     paymentMode &&
-    paymentMethod;
+    paymentMethod &&
+    selectedLedgerAccountId &&
+    !ledgerAccountsLoading;
 
   const nextDisabled = (() => {
-    switch (steps[activeStepIndex].key) {
+    switch (currentStepKey) {
       case "customer":
         return !selectedCustomer && !(newCustomer.name && newCustomer.phoneNumber);
       case "room":
@@ -188,7 +226,13 @@ export function DirectBookingForm() {
         if (paymentMode === "DEPOSIT" && pricingSummary?.depositAmount == null) {
           return true;
         }
-        return !paymentMethod;
+        if (ledgerAccountsLoading) {
+          return true;
+        }
+        if (ledgerAccounts.length === 0) {
+          return true;
+        }
+        return !paymentMethod || !selectedLedgerAccountId;
       default:
         return !readyForSubmission;
     }
@@ -217,8 +261,31 @@ export function DirectBookingForm() {
   };
 
   const handleSubmit = async () => {
-    if (!readyForSubmission || !pricingSummary || !selectedRoom || !profile?.propertyId) {
+    if (!readyForSubmission) {
       toast.error("Data booking belum lengkap");
+      return;
+    }
+
+    const room = selectedRoom;
+    if (!room) {
+      toast.error("Pilih kamar yang ingin dibooking");
+      return;
+    }
+
+    if (!pricingSummary) {
+      toast.error("Ringkasan harga belum tersedia");
+      return;
+    }
+
+    const propertyId = profile?.propertyId;
+    if (!propertyId) {
+      toast.error("Profil resepsionis belum terhubung dengan properti");
+      return;
+    }
+
+    const ledgerAccountId = selectedLedgerAccountId;
+    if (!ledgerAccountId) {
+      toast.error("Pilih akun pembukuan untuk mencatat transaksi");
       return;
     }
 
@@ -233,14 +300,15 @@ export function DirectBookingForm() {
               phoneNumber: newCustomer.phoneNumber,
               email: newCustomer.email || undefined,
             },
-        propertyId: profile.propertyId,
-        roomId: selectedRoom.id,
+        propertyId,
+        roomId: room.id,
         leaseType,
         checkInDate: toStartOfDayIso(checkInDate),
         checkOutDate: checkOutDate ? toStartOfDayIso(checkOutDate) : undefined,
         payment: {
           mode: paymentMode,
           method: paymentMethod,
+          ledgerAccountId,
         },
       };
 
@@ -283,6 +351,7 @@ export function DirectBookingForm() {
     setCheckOutDate("");
     setPaymentMode("FULL");
     setPaymentMethod("CASH");
+    setSelectedLedgerAccountId(ledgerAccounts[0]?.id ?? "");
   };
 
   return (
@@ -303,7 +372,7 @@ export function DirectBookingForm() {
           <Stepper activeIndex={activeStepIndex} />
 
           <div className="border rounded-lg p-6 space-y-6">
-            {steps[activeStepIndex].key === "customer" && (
+            {currentStepKey === "customer" && (
               <CustomerStep
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
@@ -318,7 +387,7 @@ export function DirectBookingForm() {
               />
             )}
 
-            {steps[activeStepIndex].key === "room" && (
+            {currentStepKey === "room" && (
               <RoomStep
                 rooms={rooms}
                 loading={roomsLoading}
@@ -327,7 +396,7 @@ export function DirectBookingForm() {
               />
             )}
 
-            {steps[activeStepIndex].key === "schedule" && (
+            {currentStepKey === "schedule" && (
               <ScheduleStep
                 leaseType={leaseType}
                 onLeaseTypeChange={setLeaseType}
@@ -339,17 +408,21 @@ export function DirectBookingForm() {
               />
             )}
 
-            {steps[activeStepIndex].key === "payment" && pricingSummary && (
+            {currentStepKey === "payment" && pricingSummary && (
               <PaymentStep
                 paymentMode={paymentMode}
                 onPaymentModeChange={setPaymentMode}
                 paymentMethod={paymentMethod}
                 onPaymentMethodChange={setPaymentMethod}
                 pricingSummary={pricingSummary}
+                ledgerAccounts={ledgerAccounts}
+                ledgerAccountsLoading={ledgerAccountsLoading}
+                selectedLedgerAccountId={selectedLedgerAccountId}
+                onLedgerAccountChange={setSelectedLedgerAccountId}
               />
             )}
 
-            {steps[activeStepIndex].key === "review" && pricingSummary && profile && (
+            {currentStepKey === "review" && pricingSummary && profile && (
               <ReviewStep
                 profile={profile}
                 customer={selectedCustomer || {
@@ -364,6 +437,7 @@ export function DirectBookingForm() {
                 checkOutDate={checkOutDate}
                 paymentMode={paymentMode}
                 paymentMethod={paymentMethod}
+                ledgerAccount={selectedLedgerAccount}
               />
             )}
           </div>
@@ -694,9 +768,23 @@ interface PaymentStepProps {
   paymentMethod: OfflinePaymentMethod;
   onPaymentMethodChange: (method: OfflinePaymentMethod) => void;
   pricingSummary: PricingSummary;
+  ledgerAccounts: LedgerAccountOption[];
+  ledgerAccountsLoading: boolean;
+  selectedLedgerAccountId: string;
+  onLedgerAccountChange: (accountId: string) => void;
 }
 
-function PaymentStep({ paymentMode, onPaymentModeChange, paymentMethod, onPaymentMethodChange, pricingSummary }: PaymentStepProps) {
+function PaymentStep({
+  paymentMode,
+  onPaymentModeChange,
+  paymentMethod,
+  onPaymentMethodChange,
+  pricingSummary,
+  ledgerAccounts,
+  ledgerAccountsLoading,
+  selectedLedgerAccountId,
+  onLedgerAccountChange,
+}: PaymentStepProps) {
   const depositRequiredButMissing = paymentMode === "DEPOSIT" && pricingSummary.depositAmount == null;
 
   return (
@@ -738,6 +826,35 @@ function PaymentStep({ paymentMode, onPaymentModeChange, paymentMethod, onPaymen
         </Select>
       </div>
 
+      <div className="space-y-2 md:col-span-2">
+        <Label>Akun Pembukuan</Label>
+        {ledgerAccountsLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Memuat akun pembukuan...
+          </div>
+        ) : ledgerAccounts.length === 0 ? (
+          <p className="text-sm text-amber-600">
+            Tidak ada akun pemasukan aktif. Hubungi AdminKos untuk menambahkan akun pembukuan.
+          </p>
+        ) : (
+          <Select
+            value={selectedLedgerAccountId}
+            onValueChange={onLedgerAccountChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Pilih akun pemasukan" />
+            </SelectTrigger>
+            <SelectContent>
+              {ledgerAccounts.map((account) => (
+                <SelectItem key={account.id} value={account.id}>
+                  {`${account.name}${account.code ? ` · ${account.code}` : ""}${account.isSystem ? " (Sistem)" : ""}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
       <div className="md:col-span-2 rounded-lg border bg-muted/40 p-4 space-y-2 text-sm">
         <p className="font-semibold">Ringkasan Pembayaran</p>
         <div className="space-y-1">
@@ -762,6 +879,7 @@ interface ReviewStepProps {
   checkOutDate: string;
   paymentMode: DirectBookingPaymentMode;
   paymentMethod: OfflinePaymentMethod;
+  ledgerAccount?: LedgerAccountOption | null;
 }
 
 function ReviewStep({
@@ -773,6 +891,7 @@ function ReviewStep({
   checkOutDate,
   paymentMode,
   paymentMethod,
+  ledgerAccount,
 }: ReviewStepProps) {
   return (
     <div className="space-y-4 text-sm">
@@ -796,6 +915,10 @@ function ReviewStep({
       <ReviewSection title="Pembayaran">
         <ReviewItem label="Mode" value={paymentMode === "FULL" ? "Lunas" : "Deposit"} />
         <ReviewItem label="Metode" value={paymentMethod === "CASH" ? "Cash" : "Transfer ke Admin"} />
+        <ReviewItem
+          label="Akun Pembukuan"
+          value={ledgerAccount ? `${ledgerAccount.name}${ledgerAccount.code ? ` · ${ledgerAccount.code}` : ""}` : "-"}
+        />
         <ReviewItem label="Harga per unit" value={`Rp ${pricingSummary.pricePerUnit.toLocaleString("id-ID")}`} />
         <ReviewItem label="Total" value={`Rp ${pricingSummary.totalAmount.toLocaleString("id-ID")}`} />
         {paymentMode === "DEPOSIT" && pricingSummary.depositAmount != null && (

@@ -3,6 +3,7 @@ import { RoomRepository } from "../repositories/room.repository";
 import { UserRepository } from "../repositories/user.repository";
 import { ReceptionistRepository } from "../repositories/receptionist.repository";
 import { PaymentRepository } from "../repositories/payment.repository";
+import { LedgerRepository } from "../repositories/ledger.repository";
 import { BookingService } from "../services/booking.service";
 import {
   BookingStatus,
@@ -14,6 +15,8 @@ import {
   type DirectBookingResponseDTO,
   type UpdateBookingDatesDTO,
   type BookingDTO,
+  type BookingListResponse,
+  type BasicUserInfo,
 } from "../types/booking";
 import { UserRole, type UserContext } from "../types/rbac";
 import type { Result } from "../types/result";
@@ -39,6 +42,42 @@ function buildOfflineOrderId(idempotencyKey?: string): string {
 }
 
 export class BookingsApplication {
+  static async listForReceptionist(
+    filters: { status?: BookingStatus; page?: number; limit?: number; search?: string },
+    currentUser: UserContext
+  ): Promise<Result<BookingListResponse>> {
+    if (currentUser.role !== UserRole.RECEPTIONIST) {
+      return forbidden("Hanya resepsionis yang dapat mengakses data booking");
+    }
+
+    const receptionistResult = await ReceptionistRepository.findProfileByUserId(currentUser.id);
+    if (!receptionistResult.success) {
+      return {
+        success: false,
+        error: receptionistResult.error,
+        statusCode: receptionistResult.statusCode ?? 500,
+      };
+    }
+
+    const { propertyId } = receptionistResult.data;
+    if (!propertyId) {
+      return forbidden("Resepsionis belum ditugaskan ke properti mana pun");
+    }
+
+    const page = filters.page && filters.page > 0 ? filters.page : 1;
+    const limit = filters.limit && filters.limit > 0 ? Math.min(filters.limit, 100) : 50;
+
+    const bookingsResult = await BookingRepository.getList({
+      propertyId,
+      status: filters.status,
+      page,
+      limit,
+      search: filters.search,
+    });
+
+    return bookingsResult;
+  }
+
   static async checkIn(bookingId: string, currentUser: UserContext): Promise<Result<CheckInResponseDTO>> {
     if (currentUser.role !== UserRole.RECEPTIONIST) {
       return forbidden("Hanya resepsionis yang dapat melakukan check-in");
@@ -76,14 +115,17 @@ export class BookingsApplication {
     }
 
     if (booking.status === BookingStatus.CHECKED_IN) {
+      const fallbackCheckedInBy: BasicUserInfo = {
+        id: booking.checkedInBy ?? currentUser.id,
+        name: booking.checkedInByUser?.name ?? currentUser.name ?? undefined,
+        email: booking.checkedInByUser?.email ?? currentUser.email,
+      };
+
       return ok({
         bookingId: booking.id,
         status: booking.status,
         actualCheckInAt: booking.actualCheckInAt,
-        checkedInBy: booking.checkedInByUser || {
-          id: booking.checkedInBy ?? currentUser.id,
-          name: booking.checkedInByUser?.name ?? currentUser.name,
-        },
+        checkedInBy: booking.checkedInByUser ?? fallbackCheckedInBy,
       });
     }
 
@@ -97,14 +139,17 @@ export class BookingsApplication {
       return internalError("Gagal memperbarui status check-in");
     }
 
+    const defaultCheckedInBy: BasicUserInfo = {
+      id: currentUser.id,
+      name: currentUser.name ?? undefined,
+      email: currentUser.email,
+    };
+
     return ok({
       bookingId: updated.id,
       status: updated.status,
       actualCheckInAt: updated.actualCheckInAt,
-      checkedInBy: updated.checkedInByUser || {
-        id: currentUser.id,
-        name: currentUser.name,
-      },
+      checkedInBy: updated.checkedInByUser ?? defaultCheckedInBy,
     });
   }
 
@@ -134,14 +179,17 @@ export class BookingsApplication {
     }
 
     if (booking.status === BookingStatus.COMPLETED) {
+      const fallbackCheckedOutBy: BasicUserInfo = {
+        id: booking.checkedOutBy ?? currentUser.id,
+        name: booking.checkedOutByUser?.name ?? currentUser.name ?? undefined,
+        email: booking.checkedOutByUser?.email ?? currentUser.email,
+      };
+
       return ok({
         bookingId: booking.id,
         status: booking.status,
         actualCheckOutAt: booking.actualCheckOutAt,
-        checkedOutBy: booking.checkedOutByUser || {
-          id: booking.checkedOutBy ?? currentUser.id,
-          name: booking.checkedOutByUser?.name ?? currentUser.name,
-        },
+        checkedOutBy: booking.checkedOutByUser ?? fallbackCheckedOutBy,
       });
     }
 
@@ -155,14 +203,17 @@ export class BookingsApplication {
       return internalError("Gagal memperbarui status check-out");
     }
 
+    const defaultCheckedOutBy: BasicUserInfo = {
+      id: currentUser.id,
+      name: currentUser.name ?? undefined,
+      email: currentUser.email,
+    };
+
     return ok({
       bookingId: updated.id,
       status: updated.status,
       actualCheckOutAt: updated.actualCheckOutAt,
-      checkedOutBy: updated.checkedOutByUser || {
-        id: currentUser.id,
-        name: currentUser.name,
-      },
+      checkedOutBy: updated.checkedOutByUser ?? defaultCheckedOutBy,
     });
   }
 
@@ -204,6 +255,10 @@ export class BookingsApplication {
       return forbidden("Resepsionis tidak memiliki akses ke properti ini");
     }
 
+    if (!receptionistProfile.adminKosId) {
+      return internalError("AdminKos untuk properti ini tidak ditemukan");
+    }
+
     const room = await RoomRepository.findPrismaRoomById(payload.roomId);
     if (!room || room.propertyId !== payload.propertyId) {
       return notFound("Kamar tidak ditemukan untuk properti ini");
@@ -215,6 +270,19 @@ export class BookingsApplication {
     }
 
     const customer = customerResult.data;
+
+    const ledgerAccount = await LedgerRepository.getAccountById(payload.payment.ledgerAccountId);
+    if (!ledgerAccount || ledgerAccount.adminKosId !== receptionistProfile.adminKosId) {
+      return badRequest("Akun pembukuan tidak valid untuk properti ini");
+    }
+
+    if (ledgerAccount.type !== "INCOME") {
+      return badRequest("Hanya akun pemasukan yang dapat digunakan untuk pembayaran");
+    }
+
+    if (ledgerAccount.isArchived) {
+      return badRequest("Akun pembukuan ini sudah diarsipkan");
+    }
 
     const checkInDate = payload.checkInDate instanceof Date ? payload.checkInDate : new Date(payload.checkInDate);
     const resolvedCheckOutDate = payload.checkOutDate ? new Date(payload.checkOutDate) : BookingService.calculateCheckOutDate(checkInDate, payload.leaseType);
@@ -289,6 +357,14 @@ export class BookingsApplication {
         status: PaymentStatus.SUCCESS,
         midtransOrderId: orderId,
         transactionTime: new Date(),
+      },
+      ledgerEntry: {
+        adminKosId: ledgerAccount.adminKosId,
+        accountId: ledgerAccount.id,
+        propertyId: payload.propertyId,
+        amount: paymentAmount,
+        createdBy: currentUser.id,
+        note: `Pembayaran offline ${isFullPayment ? "lunas" : "deposit"} melalui ${payload.payment.method}`,
       },
     });
 

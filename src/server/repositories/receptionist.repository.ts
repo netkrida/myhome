@@ -17,7 +17,7 @@ import type {
 } from "@/server/types/receptionist";
 
 export class ReceptionistRepository {
-  static async findProfileByUserId(userId: string): Promise<Result<{ id: string; propertyId?: string | null; propertyName?: string | null }>> {
+  static async findProfileByUserId(userId: string): Promise<Result<{ id: string; propertyId?: string | null; propertyName?: string | null; adminKosId?: string | null }>> {
     try {
       const profile = await prisma.receptionistProfile.findUnique({
         where: { userId },
@@ -27,6 +27,16 @@ export class ReceptionistRepository {
           property: {
             select: {
               name: true,
+              ownerId: true,
+              owner: {
+                select: {
+                  adminKosProfile: {
+                    select: {
+                      id: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -40,6 +50,7 @@ export class ReceptionistRepository {
         id: profile.id,
         propertyId: profile.propertyId,
         propertyName: profile.property?.name ?? null,
+        adminKosId: profile.property?.owner?.adminKosProfile?.id ?? null,
       });
     } catch (error) {
       console.error("Error in ReceptionistRepository.findProfileByUserId:", error);

@@ -8,14 +8,18 @@ export const runtime = "nodejs";
 
 const BookingIdSchema = CheckInRequestSchema.shape.bookingId;
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await context.params;
     const user = await getCurrentUserContext();
     if (!user) {
       return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 });
     }
 
-    const idParse = BookingIdSchema.safeParse(params.id);
+    const idParse = BookingIdSchema.safeParse(id);
     if (!idParse.success) {
       return NextResponse.json(
         {

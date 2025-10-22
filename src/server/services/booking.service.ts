@@ -390,13 +390,13 @@ export class BookingService {
    * Check if booking can be cancelled
    */
   static canCancelBooking(booking: BookingDTO): boolean {
-    const cancellableStatuses = [
+    const cancellableStatuses: BookingStatus[] = [
       BookingStatus.UNPAID,
       BookingStatus.DEPOSIT_PAID,
-      BookingStatus.CONFIRMED
-    ] as const;
+      BookingStatus.CONFIRMED,
+    ];
 
-    return cancellableStatuses.includes(booking.status as any);
+    return cancellableStatuses.includes(booking.status);
   }
 
   /**
@@ -411,7 +411,12 @@ export class BookingService {
       return { allowed: true };
     }
 
-    if (![BookingStatus.CONFIRMED, BookingStatus.DEPOSIT_PAID].includes(booking.status as BookingStatus)) {
+    const allowedStatuses: BookingStatus[] = [
+      BookingStatus.CONFIRMED,
+      BookingStatus.DEPOSIT_PAID,
+    ];
+
+    if (!allowedStatuses.includes(booking.status)) {
       return { allowed: false, reason: `Booking status ${booking.status} tidak bisa check-in` };
     }
 
