@@ -30,6 +30,69 @@ import { ok, fail, notFound, internalError } from "../types/result";
  * Data access layer for room operations
  */
 export class RoomRepository {
+  static async findPrismaRoomById(id: string): Promise<Room | null> {
+    return prisma.room.findUnique({ where: { id } });
+  }
+
+  static async findForProperty(propertyId: string): Promise<Array<{
+    id: string;
+    roomNumber: string;
+    roomType: string;
+    isAvailable: boolean;
+    pricing: {
+      dailyPrice?: number;
+      weeklyPrice?: number;
+      monthlyPrice: number;
+      quarterlyPrice?: number;
+      yearlyPrice?: number;
+    };
+    depositRequired: boolean;
+    depositType: string | null;
+    depositValue?: number | null;
+    hasDeposit: boolean;
+    depositPercentage?: string | null;
+  }>> {
+    const rooms = await prisma.room.findMany({
+      where: { propertyId },
+      orderBy: { roomNumber: "asc" },
+      select: {
+        id: true,
+        roomNumber: true,
+        roomType: true,
+        isAvailable: true,
+        dailyPrice: true,
+        weeklyPrice: true,
+        monthlyPrice: true,
+        quarterlyPrice: true,
+        yearlyPrice: true,
+        depositRequired: true,
+        depositType: true,
+        depositValue: true,
+        hasDeposit: true,
+        depositPercentage: true,
+      },
+    });
+
+    return rooms.map((room) => ({
+      id: room.id,
+      roomNumber: room.roomNumber,
+      roomType: room.roomType,
+      isAvailable: room.isAvailable,
+      pricing: {
+        dailyPrice: room.dailyPrice ? Number(room.dailyPrice) : undefined,
+        weeklyPrice: room.weeklyPrice ? Number(room.weeklyPrice) : undefined,
+        monthlyPrice: Number(room.monthlyPrice),
+        quarterlyPrice: room.quarterlyPrice ? Number(room.quarterlyPrice) : undefined,
+        yearlyPrice: room.yearlyPrice ? Number(room.yearlyPrice) : undefined,
+      },
+      depositRequired: room.depositRequired,
+      depositType: room.depositType,
+      depositValue: room.depositValue ? Number(room.depositValue) : null,
+      hasDeposit: room.hasDeposit,
+      depositPercentage: room.depositPercentage,
+    }));
+  }
+
   /**
    * Helper: Get images for a room from RoomTypeImage (shared images)
    */

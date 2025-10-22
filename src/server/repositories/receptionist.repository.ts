@@ -6,7 +6,7 @@
 import { prisma } from "@/server/db";
 import { Shift } from "@prisma/client";
 import type { Result } from "@/server/types/result";
-import { ok, internalError } from "@/server/types/result";
+import { ok, internalError, notFound } from "@/server/types/result";
 import type {
   ReceptionistListItem,
   ReceptionistDetail,
@@ -17,6 +17,36 @@ import type {
 } from "@/server/types/receptionist";
 
 export class ReceptionistRepository {
+  static async findProfileByUserId(userId: string): Promise<Result<{ id: string; propertyId?: string | null; propertyName?: string | null }>> {
+    try {
+      const profile = await prisma.receptionistProfile.findUnique({
+        where: { userId },
+        select: {
+          id: true,
+          propertyId: true,
+          property: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      if (!profile) {
+        return notFound("Receptionist profile not found");
+      }
+
+      return ok({
+        id: profile.id,
+        propertyId: profile.propertyId,
+        propertyName: profile.property?.name ?? null,
+      });
+    } catch (error) {
+      console.error("Error in ReceptionistRepository.findProfileByUserId:", error);
+      return internalError("Failed to get receptionist profile");
+    }
+  }
+
   /**
    * Get list of receptionists with pagination and filters
    */

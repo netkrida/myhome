@@ -69,6 +69,10 @@ export interface BookingDTO {
   depositAmount?: number;
   paymentStatus: PaymentStatus;
   status: BookingStatus;
+  checkedInBy?: string;
+  actualCheckInAt?: Date;
+  checkedOutBy?: string;
+  actualCheckOutAt?: Date;
   createdAt: Date;
   updatedAt: Date;
   // Relations
@@ -80,6 +84,7 @@ export interface BookingDTO {
   property?: {
     id: string;
     name: string;
+    ownerId?: string;
   };
   room?: {
     id: string;
@@ -87,7 +92,15 @@ export interface BookingDTO {
     roomType: string;
     monthlyPrice: number;
   };
+  checkedInByUser?: BasicUserInfo;
+  checkedOutByUser?: BasicUserInfo;
   payments?: PaymentDTO[];
+}
+
+export interface BasicUserInfo {
+  id: string;
+  name?: string | null;
+  email?: string | null;
 }
 
 export interface BookingListQuery {
@@ -238,4 +251,68 @@ export interface UpdateBookingDTO {
   checkOutDate?: Date;
   status?: BookingStatus;
   paymentStatus?: PaymentStatus;
+}
+
+// Receptionist use cases
+export interface CheckInRequestDTO {
+  bookingId: string;
+}
+
+export interface CheckInResponseDTO {
+  bookingId: string;
+  status: BookingStatus;
+  actualCheckInAt?: Date;
+  checkedInBy?: BasicUserInfo;
+}
+
+export interface CheckOutRequestDTO {
+  bookingId: string;
+}
+
+export interface CheckOutResponseDTO {
+  bookingId: string;
+  status: BookingStatus;
+  actualCheckOutAt?: Date;
+  checkedOutBy?: BasicUserInfo;
+}
+
+export type OfflinePaymentMethod = "CASH" | "TRANSFER-ADMIN";
+export type DirectBookingPaymentMode = "FULL" | "DEPOSIT";
+
+export interface DirectBookingCustomerInput {
+  id?: string;
+  name?: string;
+  phoneNumber?: string;
+  email?: string;
+}
+
+export interface DirectBookingPaymentInput {
+  mode: DirectBookingPaymentMode;
+  method: OfflinePaymentMethod;
+}
+
+export interface DirectBookingRequestDTO {
+  customer: DirectBookingCustomerInput;
+  propertyId: string;
+  roomId: string;
+  leaseType: LeaseType;
+  checkInDate: Date;
+  checkOutDate?: Date;
+  payment: DirectBookingPaymentInput;
+  idempotencyKey?: string;
+}
+
+export interface DirectBookingResponseDTO {
+  bookingId: string;
+  bookingCode: string;
+  status: BookingStatus;
+  payment: {
+    id: string;
+    status: PaymentStatus;
+  };
+}
+
+export interface UpdateBookingDatesDTO {
+  checkInDate: Date;
+  checkOutDate?: Date;
 }

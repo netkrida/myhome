@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db/client";
 import type {
   BookingDTO,
@@ -5,15 +6,106 @@ import type {
   BookingListQuery,
   BookingListResponse,
   UpdateBookingDTO,
-  UpdateBookingStatusDTO
+  UpdateBookingStatusDTO,
+  PaymentDTO
 } from "../types/booking";
 import {
   BookingStatus,
   PaymentStatus,
-  LeaseType
+  LeaseType,
+  PaymentType
 } from "../types/booking";
 import type { Result } from "../types/result";
-import { ok, fail, notFound, internalError } from "../types/result";
+import { ok, fail, notFound, internalError, conflict } from "../types/result";
+
+const MANAGE_ROOM_AVAILABILITY = process.env.FEATURE_MANAGE_ROOM_AVAILABILITY === "true";
+
+const BASE_BOOKING_INCLUDE = {
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true
+    }
+  },
+  property: {
+    select: {
+      id: true,
+      name: true,
+      ownerId: true
+    }
+  },
+  room: {
+    select: {
+      id: true,
+      roomNumber: true,
+      roomType: true,
+      monthlyPrice: true,
+      isAvailable: true,
+      depositRequired: true,
+      depositType: true,
+      depositValue: true,
+      hasDeposit: true,
+      depositPercentage: true,
+      dailyPrice: true,
+      weeklyPrice: true,
+      quarterlyPrice: true,
+      yearlyPrice: true
+    }
+  },
+  payments: true,
+  checkedInByUser: {
+    select: {
+      id: true,
+      name: true,
+      email: true
+    }
+  },
+  checkedOutByUser: {
+    select: {
+      id: true,
+      name: true,
+      email: true
+    }
+  }
+} satisfies Prisma.BookingInclude;
+
+type PrismaBookingWithRelations = Prisma.BookingGetPayload<{ include: typeof BASE_BOOKING_INCLUDE }>;
+
+interface BookingOverlapQuery {
+  roomId: string;
+  range: {
+    start: Date;
+    end?: Date | null;
+  };
+  excludeBookingId?: string;
+  statuses?: BookingStatus[];
+}
+
+interface DirectBookingTransactionInput {
+  booking: {
+    bookingCode: string;
+    userId: string;
+    propertyId: string;
+    roomId: string;
+    leaseType: LeaseType;
+    checkInDate: Date;
+    checkOutDate?: Date | null;
+    totalAmount: number;
+    depositAmount?: number;
+    status: BookingStatus;
+    paymentStatus: PaymentStatus;
+  };
+  payment: {
+    userId: string;
+    paymentType: PaymentType;
+    paymentMethod: string;
+    amount: number;
+    status: PaymentStatus;
+    midtransOrderId: string;
+    transactionTime?: Date;
+  };
+}
 
 /**
  * Tier-3: Booking Repository
@@ -50,30 +142,7 @@ export class BookingRepository {
           paymentStatus: bookingData.paymentStatus,
           status: bookingData.status
         },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          },
-          property: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          room: {
-            select: {
-              id: true,
-              roomNumber: true,
-              roomType: true,
-              monthlyPrice: true
-            }
-          },
-          payments: true
-        }
+        include: BASE_BOOKING_INCLUDE
       });
 
       return ok(this.mapToDTO(booking));
@@ -90,30 +159,7 @@ export class BookingRepository {
     try {
       const booking = await prisma.booking.findUnique({
         where: { id },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          },
-          property: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          room: {
-            select: {
-              id: true,
-              roomNumber: true,
-              roomType: true,
-              monthlyPrice: true
-            }
-          },
-          payments: true
-        }
+        include: BASE_BOOKING_INCLUDE
       });
 
       if (!booking) {
@@ -134,30 +180,7 @@ export class BookingRepository {
     try {
       const booking = await prisma.booking.findUnique({
         where: { bookingCode },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          },
-          property: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          room: {
-            select: {
-              id: true,
-              roomNumber: true,
-              roomType: true,
-              monthlyPrice: true
-            }
-          },
-          payments: true
-        }
+        include: BASE_BOOKING_INCLUDE
       });
 
       if (!booking) {
@@ -219,30 +242,7 @@ export class BookingRepository {
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          },
-          property: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          room: {
-            select: {
-              id: true,
-              roomNumber: true,
-              roomType: true,
-              monthlyPrice: true
-            }
-          },
-          payments: true
-        }
+        include: BASE_BOOKING_INCLUDE
       });
 
       const totalPages = Math.ceil(total / limit);
@@ -270,30 +270,7 @@ export class BookingRepository {
       const booking = await prisma.booking.update({
         where: { id },
         data: updateData,
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          },
-          property: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          room: {
-            select: {
-              id: true,
-              roomNumber: true,
-              roomType: true,
-              monthlyPrice: true
-            }
-          },
-          payments: true
-        }
+        include: BASE_BOOKING_INCLUDE
       });
 
       return ok(this.mapToDTO(booking));
@@ -311,30 +288,7 @@ export class BookingRepository {
       const booking = await prisma.booking.update({
         where: { id },
         data: { status: statusData.status },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          },
-          property: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          room: {
-            select: {
-              id: true,
-              roomNumber: true,
-              roomType: true,
-              monthlyPrice: true
-            }
-          },
-          payments: true
-        }
+        include: BASE_BOOKING_INCLUDE
       });
 
       return ok(this.mapToDTO(booking));
@@ -384,30 +338,7 @@ export class BookingRepository {
             }
           ]
         },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          },
-          property: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          room: {
-            select: {
-              id: true,
-              roomNumber: true,
-              roomType: true,
-              monthlyPrice: true
-            }
-          },
-          payments: true
-        }
+        include: BASE_BOOKING_INCLUDE
       });
 
       return ok(bookings.map(booking => this.mapToDTO(booking)));
@@ -483,10 +414,212 @@ export class BookingRepository {
     }
   }
 
+  static async findByIdWithPropertyAndRoom(id: string): Promise<BookingDTO | null> {
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: BASE_BOOKING_INCLUDE
+    });
+
+    return booking ? this.mapToDTO(booking) : null;
+  }
+
+  static async findActiveOverlaps(query: BookingOverlapQuery): Promise<BookingDTO[]> {
+    const { roomId, range, excludeBookingId, statuses } = query;
+    const end = range.end ?? null;
+
+    const overlapping = await prisma.booking.findMany({
+      where: {
+        roomId,
+        id: excludeBookingId ? { not: excludeBookingId } : undefined,
+        status: {
+          in: statuses || [BookingStatus.DEPOSIT_PAID, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
+        },
+        OR: end
+          ? [
+              {
+                checkInDate: {
+                  lt: end,
+                  gte: range.start
+                }
+              },
+              {
+                checkOutDate: {
+                  gt: range.start,
+                  lte: end
+                }
+              },
+              {
+                AND: [
+                  { checkInDate: { lte: range.start } },
+                  { checkOutDate: { gte: end } }
+                ]
+              },
+              {
+                status: BookingStatus.CHECKED_IN,
+                checkInDate: { lte: end },
+                checkOutDate: null
+              }
+            ]
+          : [
+              {
+                status: BookingStatus.CHECKED_IN,
+                checkInDate: {
+                  lte: range.start
+                },
+                checkOutDate: null
+              },
+              {
+                status: BookingStatus.CHECKED_IN,
+                checkInDate: {
+                  lte: range.start
+                },
+                checkOutDate: {
+                  gte: range.start
+                }
+              }
+            ]
+      },
+      include: BASE_BOOKING_INCLUDE
+    });
+
+    return overlapping.map((booking) => this.mapToDTO(booking));
+  }
+
+  static async updateForCheckIn(params: {
+    id: string;
+    checkedInBy: string;
+    actualCheckInAt: Date;
+  }): Promise<BookingDTO | null> {
+    const updated = await prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.update({
+        where: { id: params.id },
+        data: {
+          status: BookingStatus.CHECKED_IN,
+          checkedInBy: params.checkedInBy,
+          actualCheckInAt: params.actualCheckInAt,
+        },
+        include: BASE_BOOKING_INCLUDE,
+      });
+
+      if (MANAGE_ROOM_AVAILABILITY) {
+        await tx.room.update({
+          where: { id: booking.roomId },
+          data: { isAvailable: false },
+        });
+      }
+
+      return booking;
+    });
+
+    return updated ? this.mapToDTO(updated) : null;
+  }
+
+  static async updateForCheckOut(params: {
+    id: string;
+    checkedOutBy: string;
+    actualCheckOutAt: Date;
+  }): Promise<BookingDTO | null> {
+    const updated = await prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.update({
+        where: { id: params.id },
+        data: {
+          status: BookingStatus.COMPLETED,
+          checkedOutBy: params.checkedOutBy,
+          actualCheckOutAt: params.actualCheckOutAt,
+        },
+        include: BASE_BOOKING_INCLUDE,
+      });
+
+      if (MANAGE_ROOM_AVAILABILITY) {
+        await tx.room.update({
+          where: { id: booking.roomId },
+          data: { isAvailable: true },
+        });
+      }
+
+      return booking;
+    });
+
+    return updated ? this.mapToDTO(updated) : null;
+  }
+
+  static async updateDates(params: {
+    id: string;
+    checkInDate: Date;
+    checkOutDate?: Date;
+  }): Promise<BookingDTO | null> {
+    const booking = await prisma.booking.update({
+      where: { id: params.id },
+      data: {
+        checkInDate: params.checkInDate,
+        checkOutDate: params.checkOutDate ?? null,
+      },
+      include: BASE_BOOKING_INCLUDE,
+    });
+
+    return this.mapToDTO(booking);
+  }
+
+  static async createWithPaymentTx(input: DirectBookingTransactionInput): Promise<Result<{ booking: BookingDTO; payment: PaymentDTO }>> {
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const booking = await tx.booking.create({
+          data: {
+            bookingCode: input.booking.bookingCode,
+            userId: input.booking.userId,
+            propertyId: input.booking.propertyId,
+            roomId: input.booking.roomId,
+            checkInDate: input.booking.checkInDate,
+            checkOutDate: input.booking.checkOutDate ?? null,
+            leaseType: input.booking.leaseType,
+            totalAmount: input.booking.totalAmount,
+            depositAmount: input.booking.depositAmount ?? null,
+            paymentStatus: input.booking.paymentStatus,
+            status: input.booking.status,
+          },
+          include: BASE_BOOKING_INCLUDE,
+        });
+
+        const payment = await tx.payment.create({
+          data: {
+            bookingId: booking.id,
+            userId: input.payment.userId,
+            paymentType: input.payment.paymentType,
+            paymentMethod: input.payment.paymentMethod,
+            amount: input.payment.amount,
+            status: input.payment.status,
+            midtransOrderId: input.payment.midtransOrderId,
+            transactionTime: input.payment.transactionTime ?? new Date(),
+          },
+        });
+
+        if (MANAGE_ROOM_AVAILABILITY && input.booking.status === BookingStatus.CONFIRMED) {
+          await tx.room.update({
+            where: { id: booking.roomId },
+            data: { isAvailable: false },
+          });
+        }
+
+        return { booking, payment };
+      });
+
+      return ok({
+        booking: this.mapToDTO(result.booking),
+        payment: this.mapPayment(result.payment),
+      }, 201);
+    } catch (error) {
+      console.error("Error creating direct booking:", error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return conflict("Booking atau pembayaran sudah tercatat sebelumnya");
+      }
+      return internalError("Failed to create booking");
+    }
+  }
+
   /**
    * Map database booking to DTO
    */
-  private static mapToDTO(booking: any): BookingDTO {
+  private static mapToDTO(booking: PrismaBookingWithRelations): BookingDTO {
     return {
       id: booking.id,
       bookingCode: booking.bookingCode,
@@ -500,6 +633,10 @@ export class BookingRepository {
       depositAmount: booking.depositAmount ? Number(booking.depositAmount) : undefined,
       paymentStatus: booking.paymentStatus as PaymentStatus,
       status: booking.status as BookingStatus,
+      checkedInBy: booking.checkedInBy ?? undefined,
+      actualCheckInAt: booking.actualCheckInAt ?? undefined,
+      checkedOutBy: booking.checkedOutBy ?? undefined,
+      actualCheckOutAt: booking.actualCheckOutAt ?? undefined,
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,
       user: booking.user ? {
@@ -509,7 +646,8 @@ export class BookingRepository {
       } : undefined,
       property: booking.property ? {
         id: booking.property.id,
-        name: booking.property.name
+        name: booking.property.name,
+        ownerId: booking.property.ownerId
       } : undefined,
       room: booking.room ? {
         id: booking.room.id,
@@ -517,22 +655,36 @@ export class BookingRepository {
         roomType: booking.room.roomType,
         monthlyPrice: Number(booking.room.monthlyPrice)
       } : undefined,
-      payments: booking.payments?.map((payment: any) => ({
-        id: payment.id,
-        bookingId: payment.bookingId,
-        userId: payment.userId,
-        midtransOrderId: payment.midtransOrderId,
-        paymentType: payment.paymentType,
-        paymentMethod: payment.paymentMethod,
-        amount: Number(payment.amount),
-        status: payment.status,
-        transactionTime: payment.transactionTime,
-        transactionId: payment.transactionId,
-        paymentToken: payment.paymentToken,
-        expiryTime: payment.expiryTime,
-        createdAt: payment.createdAt,
-        updatedAt: payment.updatedAt
-      }))
+      checkedInByUser: booking.checkedInByUser ? {
+        id: booking.checkedInByUser.id,
+        name: booking.checkedInByUser.name,
+        email: booking.checkedInByUser.email
+      } : undefined,
+      checkedOutByUser: booking.checkedOutByUser ? {
+        id: booking.checkedOutByUser.id,
+        name: booking.checkedOutByUser.name,
+        email: booking.checkedOutByUser.email
+      } : undefined,
+      payments: booking.payments?.map((payment) => this.mapPayment(payment))
+    };
+  }
+
+  private static mapPayment(payment: Prisma.Payment): PaymentDTO {
+    return {
+      id: payment.id,
+      bookingId: payment.bookingId,
+      userId: payment.userId,
+      midtransOrderId: payment.midtransOrderId,
+      paymentType: payment.paymentType,
+      paymentMethod: payment.paymentMethod ?? undefined,
+      amount: Number(payment.amount),
+      status: payment.status,
+      transactionTime: payment.transactionTime ?? undefined,
+      transactionId: payment.transactionId ?? undefined,
+      paymentToken: payment.paymentToken ?? undefined,
+      expiryTime: payment.expiryTime ?? undefined,
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt
     };
   }
 }

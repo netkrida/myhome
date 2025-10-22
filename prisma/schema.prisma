@@ -79,6 +79,8 @@ model User {
   createdShiftAssignments ShiftAssignment[]     @relation("ShiftCreator")
   approvedBankAccounts    BankAccount[]
   processedPayouts        Payout[]
+  handledCheckIns         Booking[]             @relation("BookingCheckedInBy")
+  handledCheckOuts        Booking[]             @relation("BookingCheckedOutBy")
 
   @@index([email])
   @@index([role])
@@ -297,6 +299,10 @@ model Booking {
   depositAmount  Decimal?      @db.Decimal(12, 2)
   paymentStatus  PaymentStatus @default(PENDING)
   status         BookingStatus @default(UNPAID)
+  checkedInBy      String?
+  actualCheckInAt  DateTime?
+  checkedOutBy     String?
+  actualCheckOutAt DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -304,6 +310,8 @@ model Booking {
   user           User          @relation(fields: [userId], references: [id])
   property       Property      @relation(fields: [propertyId], references: [id])
   room           Room          @relation(fields: [roomId], references: [id])
+  checkedInByUser  User?        @relation("BookingCheckedInBy", fields: [checkedInBy], references: [id], onDelete: SetNull)
+  checkedOutByUser User?        @relation("BookingCheckedOutBy", fields: [checkedOutBy], references: [id], onDelete: SetNull)
   payments       Payment[]
 
   @@index([userId])
@@ -312,6 +320,10 @@ model Booking {
   @@index([status])
   @@index([paymentStatus])
   @@index([checkInDate])
+  @@index([actualCheckInAt])
+  @@index([actualCheckOutAt])
+  @@index([checkedInBy])
+  @@index([checkedOutBy])
   @@index([createdAt])
 }
 

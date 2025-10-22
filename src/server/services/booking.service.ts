@@ -405,4 +405,71 @@ export class BookingService {
   static requiresDepositPayment(room: any): boolean {
     return room.depositRequired || room.hasDeposit;
   }
+
+  static ruleCanCheckIn(booking: BookingDTO): { allowed: boolean; reason?: string } {
+    if (booking.status === BookingStatus.CHECKED_IN) {
+      return { allowed: true };
+    }
+
+    if (![BookingStatus.CONFIRMED, BookingStatus.DEPOSIT_PAID].includes(booking.status as BookingStatus)) {
+      return { allowed: false, reason: `Booking status ${booking.status} tidak bisa check-in` };
+    }
+
+    if (booking.paymentStatus !== PaymentStatus.SUCCESS) {
+      return { allowed: false, reason: "Pembayaran belum sukses" };
+    }
+
+    return { allowed: true };
+  }
+
+  static ruleCanCheckOut(booking: BookingDTO): { allowed: boolean; reason?: string } {
+    if (booking.status === BookingStatus.COMPLETED) {
+      return { allowed: true };
+    }
+
+    if (booking.status !== BookingStatus.CHECKED_IN) {
+      return { allowed: false, reason: `Booking status ${booking.status} belum check-in` };
+    }
+
+    return { allowed: true };
+  }
+
+  static computePriceForLease(room: any, leaseType: LeaseType): number {
+    return this.getPricePerUnit(room, leaseType);
+  }
+
+  static computeDeposit(room: any, totalAmount: number): number | undefined {
+    const depositRequired = room.depositRequired ?? room.hasDeposit;
+    if (!depositRequired) {
+      return undefined;
+    }
+
+    const depositType = room.depositType ?? (room.depositRequired ? room.depositType : undefined);
+    const depositValue = this.normalizePrice(room.depositValue);
+
+    if (depositType === DepositType.FIXED && depositValue) {
+      return depositValue;
+    }
+
+    if (depositType === DepositType.PERCENTAGE && depositValue) {
+      return (totalAmount * depositValue) / 100;
+    }
+
+    if (room.depositPercentage) {
+      const percentageMap: Record<string, number> = {
+        TEN_PERCENT: 10,
+        TWENTY_PERCENT: 20,
+        THIRTY_PERCENT: 30,
+        FORTY_PERCENT: 40,
+        FIFTY_PERCENT: 50,
+      };
+
+      const percentage = percentageMap[room.depositPercentage as keyof typeof percentageMap];
+      if (percentage) {
+        return (totalAmount * percentage) / 100;
+      }
+    }
+
+    return undefined;
+  }
 }

@@ -487,6 +487,103 @@ export class UserRepository {
     });
   }
 
+  static async findOrCreateCustomer(input: {
+    id?: string;
+    name?: string;
+    phoneNumber?: string;
+    email?: string | null;
+  }): Promise<Result<User>> {
+    try {
+      if (input.id) {
+        const existing = await prisma.user.findFirst({
+          where: {
+            id: input.id,
+            role: UserRole.CUSTOMER,
+          },
+        });
+
+        if (!existing) {
+          return notFound("Customer not found");
+        }
+
+        return ok(existing);
+      }
+
+      if (input.phoneNumber || input.email) {
+        const orConditions = [
+          input.phoneNumber ? { phoneNumber: input.phoneNumber } : undefined,
+          input.email ? { email: input.email } : undefined,
+        ].filter(Boolean) as Prisma.UserWhereInput[];
+
+        const existing = await prisma.user.findFirst({
+          where: {
+            role: UserRole.CUSTOMER,
+            ...(orConditions.length ? { OR: orConditions } : {}),
+          },
+        });
+
+        if (existing) {
+          return ok(existing);
+        }
+      }
+
+      if (!input.name || !input.phoneNumber) {
+        return fail({
+          code: "INVALID_INPUT",
+          message: "Name and phone number are required to create new customer",
+        }, 400);
+      }
+
+      const customer = await prisma.$transaction(async (tx) => {
+        const createdUser = await tx.user.create({
+          data: {
+            name: input.name,
+            phoneNumber: input.phoneNumber,
+            email: input.email || null,
+            role: UserRole.CUSTOMER,
+            isActive: true,
+          },
+        });
+
+        await tx.customerProfile.create({
+          data: {
+            userId: createdUser.id,
+          },
+        });
+
+        return createdUser;
+      });
+
+      return ok(customer);
+    } catch (error) {
+      console.error("Error in findOrCreateCustomer:", error);
+      return internalError("Failed to resolve customer");
+    }
+  }
+
+  static async searchCustomers(query: string, limit: number = 5): Promise<Array<{ id: string; name?: string | null; email?: string | null; phoneNumber?: string | null }>> {
+    const customers = await prisma.user.findMany({
+      where: {
+        role: UserRole.CUSTOMER,
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+          { phoneNumber: { contains: query } },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+      },
+    });
+
+    return customers;
+  }
+
   /**
    * Get user statistics
    */
