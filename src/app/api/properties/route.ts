@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PropertiesAPI } from "@/server/api/properties.api";
 import { PropertyService } from "@/server/services/property.service";
-import { PropertyRepository } from "@/server/repositories/property.repository";
+import { PropertyRepository } from "@/server/repositories/global/property.repository";
 import { getCurrentUserContext } from "@/server/lib/auth";
 import {
   propertyListQuerySchema,

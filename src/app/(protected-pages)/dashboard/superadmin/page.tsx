@@ -37,7 +37,7 @@ async function getAnalyticsData(): Promise<AnalyticsData> {
   try {
     // Import the service directly instead of using fetch
     const { AnalyticsService } = await import("@/server/services/analytics.service");
-    const { AnalyticsRepository } = await import("@/server/repositories/analytics.repository");
+    const { AnalyticsRepository } = await import("@/server/repositories/superadmin/analytics.repository");
 
     // Get total visitors for month period
     const totalVisitors = await AnalyticsService.getTotalVisitors('month');

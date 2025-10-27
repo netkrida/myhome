@@ -9,8 +9,8 @@
 import type { Result } from "@/server/types/result";
 import { ok, badRequest, internalError } from "@/server/types/result";
 import { WithdrawService } from "@/server/services/withdraw.service";
-import { PayoutRepository } from "@/server/repositories/payout.repository";
-import { BankAccountRepository } from "@/server/repositories/bank-account.repository";
+import { PayoutRepository } from "@/server/repositories/superadmin/payout.repository";
+import { BankAccountRepository } from "@/server/repositories/adminkos/bank-account.repository";
 import type {
   WithdrawSummaryDTO,
   CreateWithdrawRequestDTO,

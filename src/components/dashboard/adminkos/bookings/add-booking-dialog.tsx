@@ -31,6 +31,12 @@ import { id as idLocale } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { LeaseType } from "@/server/types/booking";
 
+interface AccountOption {
+  id: string;
+  name: string;
+  type: string;
+}
+
 interface AddBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -57,6 +63,25 @@ export function AddBookingDialog({
   const [rooms, setRooms] = React.useState<Room[]>([]);
   
   // Form state
+  const [accounts, setAccounts] = React.useState<AccountOption[]>([]);
+  const [accountId, setAccountId] = React.useState("");
+  // Fetch accounts (exclude system accounts)
+  React.useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const res = await fetch("/api/adminkos/ledger/accounts");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          setAccounts(data.data.filter((a: any) => !a.isSystem && !a.isArchived));
+        } else if (data.success && Array.isArray(data.data.accounts)) {
+          setAccounts(data.data.accounts.filter((a: any) => !a.isSystem && !a.isArchived));
+        }
+      } catch (err) {
+        // ignore error
+      }
+    };
+    if (open) fetchAccounts();
+  }, [open]);
   const [propertyId, setPropertyId] = React.useState("");
   const [roomId, setRoomId] = React.useState("");
   const [customerEmail, setCustomerEmail] = React.useState("");
@@ -96,7 +121,7 @@ export function AddBookingDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!propertyId || !roomId || !customerEmail || !checkInDate) {
+    if (!propertyId || !roomId || !customerEmail || !checkInDate || !accountId) {
       alert("Mohon lengkapi semua field yang wajib diisi");
       return;
     }
@@ -132,6 +157,7 @@ export function AddBookingDialog({
           checkInDate: checkInDate.toISOString(),
           leaseType,
           depositOption,
+          accountId,
         }),
       });
 
@@ -165,7 +191,8 @@ export function AddBookingDialog({
     setCheckInDate(undefined);
     setLeaseType(LeaseType.MONTHLY);
     setDepositOption("full");
-    setRooms([]);
+  setRooms([]);
+  setAccountId("");
   };
 
   return (
@@ -215,6 +242,23 @@ export function AddBookingDialog({
                 {rooms.map((room) => (
                   <SelectItem key={room.id} value={room.id}>
                     {room.roomNumber} - {room.roomType} (Rp {room.monthlyPrice.toLocaleString("id-ID")}/bulan)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Akun Transaksi */}
+          <div className="space-y-2">
+            <Label htmlFor="account">Akun Transaksi *</Label>
+            <Select value={accountId} onValueChange={setAccountId}>
+              <SelectTrigger id="account">
+                <SelectValue placeholder="Pilih akun transaksi" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((acc) => (
+                  <SelectItem key={acc.id} value={acc.id}>
+                    {acc.name} ({acc.type === "INCOME" ? "Pemasukan" : acc.type === "EXPENSE" ? "Pengeluaran" : "Lainnya"})
                   </SelectItem>
                 ))}
               </SelectContent>

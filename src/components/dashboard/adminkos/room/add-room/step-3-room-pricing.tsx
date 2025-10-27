@@ -167,13 +167,16 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
     // Clean pricing data - remove undefined/null values for optional fields
     const cleanedPricing: Record<string, any> = {};
     Object.entries(pricing).forEach(([roomType, prices]) => {
-      cleanedPricing[roomType] = {
-        monthlyPrice: prices.monthlyPrice,
-        ...(prices.dailyPrice !== undefined && prices.dailyPrice !== null && { dailyPrice: prices.dailyPrice }),
-        ...(prices.weeklyPrice !== undefined && prices.weeklyPrice !== null && { weeklyPrice: prices.weeklyPrice }),
-        ...(prices.quarterlyPrice !== undefined && prices.quarterlyPrice !== null && { quarterlyPrice: prices.quarterlyPrice }),
-        ...(prices.yearlyPrice !== undefined && prices.yearlyPrice !== null && { yearlyPrice: prices.yearlyPrice }),
-      };
+      // Only add pricing if monthlyPrice is defined and valid
+      if (prices.monthlyPrice !== undefined && prices.monthlyPrice !== null && prices.monthlyPrice > 0) {
+        cleanedPricing[roomType] = {
+          monthlyPrice: prices.monthlyPrice,
+          ...(prices.dailyPrice !== undefined && prices.dailyPrice !== null && { dailyPrice: prices.dailyPrice }),
+          ...(prices.weeklyPrice !== undefined && prices.weeklyPrice !== null && { weeklyPrice: prices.weeklyPrice }),
+          ...(prices.quarterlyPrice !== undefined && prices.quarterlyPrice !== null && { quarterlyPrice: prices.quarterlyPrice }),
+          ...(prices.yearlyPrice !== undefined && prices.yearlyPrice !== null && { yearlyPrice: prices.yearlyPrice }),
+        };
+      }
     });
 
     return {
@@ -181,7 +184,7 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
       hasAlternativeRentals: hasAlternativeRentalsValue,
       alternativeRentals: hasAlternativeRentalsValue ? alternativeRentals : undefined,
       hasDeposit: hasDepositValue,
-      depositPercentage,
+      depositPercentage: hasDepositValue ? depositPercentage : undefined,
     };
   }, [pricing, hasAlternativeRentalsValue, alternativeRentals, hasDepositValue, depositPercentage]);
 
@@ -200,7 +203,30 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
 
   // Handle form validation and data changes
   useEffect(() => {
-    const isValid = form.formState.isValid;
+    // Custom validation: check if all room types have monthlyPrice
+    const allRoomTypesHaveMonthlyPrice = roomTypes.every(roomType => {
+      const price = pricing?.[roomType]?.monthlyPrice;
+      return price !== undefined && price !== null && price > 0;
+    });
+    
+    // Additional validation: if hasDeposit is true, depositPercentage must be set
+    const depositValid = !hasDepositValue || (hasDepositValue && depositPercentage !== undefined);
+    
+    // Check if pricing has at least one valid room type
+    const hasPricingData = Object.keys(convertedData.pricing).length > 0;
+    
+    // Combined validation
+    const isValid = form.formState.isValid && allRoomTypesHaveMonthlyPrice && depositValid && hasPricingData;
+    
+    console.log("🔍 Step3 Validation:", {
+      formValid: form.formState.isValid,
+      allRoomTypesHaveMonthlyPrice,
+      depositValid,
+      hasPricingData,
+      finalIsValid: isValid,
+      pricingKeys: Object.keys(convertedData.pricing),
+      convertedData: convertedData
+    });
     
     // Update step validity in multi-step form
     setStepValid(2, isValid);
@@ -219,6 +245,7 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
       
       // Debounce the data change call
       dataChangeTimeoutRef.current = setTimeout(() => {
+        console.log("📤 Step3 - Sending data to parent:", convertedData);
         onDataChange(convertedData);
         
         // Only persist when valid
@@ -236,7 +263,7 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
         clearTimeout(dataChangeTimeoutRef.current);
       }
     };
-  }, [convertedData, formDataForPersistence, form.formState.isValid, onDataChange, setStepValid]);
+  }, [convertedData, formDataForPersistence, form.formState.isValid, onDataChange, setStepValid, roomTypes, pricing, hasDepositValue, depositPercentage]);
 
   // Load persisted data on mount
   useEffect(() => {
@@ -254,13 +281,33 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
 
   // Initial validation check
   useEffect(() => {
-    const isValid = form.formState.isValid;
+    // Custom validation: check if all room types have monthlyPrice
+    const allRoomTypesHaveMonthlyPrice = roomTypes.every(roomType => {
+      const price = pricing?.[roomType]?.monthlyPrice;
+      return price !== undefined && price !== null && price > 0;
+    });
+    
+    // Additional validation: if hasDeposit is true, depositPercentage must be set
+    const depositValid = !hasDepositValue || (hasDepositValue && depositPercentage !== undefined);
+    
+    // Check if pricing has at least one valid room type
+    const hasPricingData = Object.keys(convertedData.pricing).length > 0;
+    
+    // Combined validation
+    const isValid = form.formState.isValid && allRoomTypesHaveMonthlyPrice && depositValid && hasPricingData;
+    
     setStepValid(2, isValid);
-  }, [form.formState.isValid, setStepValid]);
+  }, [form.formState.isValid, setStepValid, roomTypes, pricing, hasDepositValue, depositPercentage, convertedData.pricing]);
 
-  // Send initial data on mount (runs once)
+  // Send initial data on mount (runs once) - only if we have initialData
   useEffect(() => {
-    onDataChange(convertedData);
+    // Only send initial data if we have valid pricing from initialData
+    if (initialData?.pricing && Object.keys(initialData.pricing).length > 0) {
+      console.log("📤 Step3 - Sending initial data on mount:", convertedData);
+      onDataChange(convertedData);
+    } else {
+      console.log("⚠️ Step3 - Skipping initial data send (no valid pricing)");
+    }
   }, []); // Empty deps to run only once on mount
 
   // Handle alternative rentals toggle
@@ -308,58 +355,98 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
           </p>
         </div>
 
+        {/* Warning if no pricing data */}
+        {Object.keys(convertedData.pricing).length === 0 && (
+          <Card className="border-destructive bg-destructive/5">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-destructive/10 p-2">
+                  <Receipt className="h-5 w-5 text-destructive" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-destructive mb-1">
+                    Harga Bulanan Belum Diisi
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Anda harus mengisi harga sewa bulanan untuk semua jenis kamar sebelum melanjutkan ke langkah berikutnya.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Monthly Pricing per Room Type */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Receipt className="h-5 w-5" />
               Harga Bulanan per Jenis Kamar
+              <Badge variant="destructive" className="ml-2">Wajib</Badge>
             </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Harga sewa bulanan untuk setiap jenis kamar (wajib diisi)
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Harga sewa bulanan untuk setiap jenis kamar (wajib diisi)
+              </p>
+              <Badge variant={Object.keys(convertedData.pricing).length === roomTypes.length ? "default" : "secondary"}>
+                {Object.keys(convertedData.pricing).length} / {roomTypes.length} selesai
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {roomTypes.map((roomType) => (
-              <div key={roomType} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">{roomType}</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Harga sewa per bulan untuk {roomType}
-                  </p>
+            {roomTypes.map((roomType) => {
+              const monthlyPrice = pricing?.[roomType]?.monthlyPrice;
+              const hasPrice = monthlyPrice !== undefined && monthlyPrice !== null && monthlyPrice > 0;
+              
+              return (
+                <div key={roomType} className={`grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg ${!hasPrice ? 'border-destructive/50 bg-destructive/5' : ''}`}>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      {roomType}
+                      {!hasPrice && <Badge variant="destructive" className="text-xs">Wajib diisi</Badge>}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Harga sewa per bulan untuk {roomType}
+                    </p>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name={`pricing.${roomType}.monthlyPrice` as any}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <div className="relative">
+                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type="number"
+                              placeholder="Masukkan harga bulanan"
+                              className="pl-10"
+                              value={field.value || ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Only set value if it's a valid positive number
+                                if (value === "" || value === "0") {
+                                  field.onChange(undefined);
+                                } else {
+                                  const numValue = Number(value);
+                                  field.onChange(numValue > 0 ? numValue : undefined);
+                                }
+                              }}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                        {!hasPrice && (
+                          <p className="text-xs text-destructive mt-1">
+                            Harga bulanan harus diisi untuk melanjutkan
+                          </p>
+                        )}
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                <FormField
-                  control={form.control}
-                  name={`pricing.${roomType}.monthlyPrice` as any}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            type="number"
-                            placeholder="Masukkan harga bulanan"
-                            className="pl-10"
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Only set value if it's a valid positive number
-                              if (value === "" || value === "0") {
-                                field.onChange(undefined);
-                              } else {
-                                const numValue = Number(value);
-                                field.onChange(numValue > 0 ? numValue : undefined);
-                              }
-                            }}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
 
@@ -481,35 +568,68 @@ export function Step3RoomPricing({ onDataChange, initialData, roomTypes }: Step3
             </div>
           </CardHeader>
           {hasDeposit && (
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Warning if deposit enabled but not selected */}
+              {!depositPercentage && (
+                <Card className="border-destructive bg-destructive/5">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-full bg-destructive/10 p-2">
+                        <Percent className="h-4 w-4 text-destructive" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-destructive text-sm mb-1">
+                          Persentase Deposit Belum Dipilih
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          Karena Anda mengaktifkan sistem deposit, Anda harus memilih persentase deposit sebelum melanjutkan.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               <FormField
                 control={form.control}
                 name="depositPercentage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Persentase Deposit</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
-                      >
-                        {depositOptions.map((option) => (
-                          <div key={option.value} className="flex items-center space-x-2">
-                            <RadioGroupItem value={option.value} id={option.value} />
-                            <Label htmlFor={option.value} className="text-sm">
-                              {option.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </FormControl>
-                    <FormDescription>
-                      Pilih persentase deposit yang akan dikenakan kepada penyewa
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const hasValue = field.value !== undefined && field.value !== null;
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        Persentase Deposit
+                        {!hasValue && <Badge variant="destructive" className="text-xs">Wajib pilih salah satu</Badge>}
+                      </FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
+                        >
+                          {depositOptions.map((option) => (
+                            <div key={option.value} className="flex items-center space-x-2">
+                              <RadioGroupItem value={option.value} id={option.value} />
+                              <Label htmlFor={option.value} className="text-sm">
+                                {option.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormDescription>
+                        Pilih persentase deposit yang akan dikenakan kepada penyewa
+                      </FormDescription>
+                      {!hasValue && (
+                        <p className="text-xs text-destructive mt-1">
+                          Pilih persentase deposit untuk melanjutkan
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </CardContent>
           )}

@@ -249,10 +249,26 @@ export function PaymentDetailModal({ open, onOpenChange, paymentId }: PaymentDet
                     <div>
                       <p className="text-sm text-muted-foreground">Status Booking</p>
                       <p className="font-medium">
-                        {paymentData.booking.status === "DEPOSIT_PAID" && "Deposit Dibayar"}
-                        {paymentData.booking.status === "CONFIRMED" && "Terkonfirmasi"}
-                        {paymentData.booking.status === "UNPAID" && "Belum Dibayar"}
-                        {paymentData.booking.status === "CANCELLED" && "Dibatalkan"}
+                        {(() => {
+                          switch (paymentData.booking.status) {
+                            case "DEPOSIT_PAID":
+                              return "Deposit Dibayar";
+                            case "CONFIRMED":
+                              return "Terkonfirmasi";
+                            case "UNPAID":
+                              return "Belum Dibayar";
+                            case "CANCELLED":
+                              return "Dibatalkan";
+                            case "CHECKED_IN":
+                              return "Sudah Check-in";
+                            case "COMPLETED":
+                              return "Selesai";
+                            case "EXPIRED":
+                              return "Kadaluarsa";
+                            default:
+                              return paymentData.booking.status || "-";
+                          }
+                        })()}
                       </p>
                     </div>
                     {paymentData.booking.property && (
@@ -315,12 +331,6 @@ export function PaymentDetailModal({ open, onOpenChange, paymentId }: PaymentDet
           </div>
         </ScrollArea>
 
-        {/* Actions */}
-        <div className="flex justify-end space-x-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Tutup
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );

@@ -84,6 +84,27 @@ export function ReceptionistTable({
     }
   };
 
+  // Tambah fungsi hapus receptionist
+  const handleDeleteReceptionist = async (id: string) => {
+    if (!window.confirm("Yakin ingin menghapus receptionist ini?")) return;
+    setActionLoading(id);
+    try {
+      const response = await fetch(`/api/adminkos/receptionist/${id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        onRefresh();
+      } else {
+        alert("Gagal menghapus receptionist");
+      }
+    } catch (error) {
+      console.error("Error deleting receptionist:", error);
+      alert("Terjadi kesalahan");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -210,6 +231,14 @@ export function ReceptionistTable({
                       <DropdownMenuItem onClick={() => handleToggleStatus(receptionist.id, receptionist.isActive)}>
                         <UserX className="mr-2 h-4 w-4" />
                         {receptionist.isActive ? "Nonaktifkan" : "Aktifkan"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteReceptionist(receptionist.id)}
+                        className="text-destructive"
+                        disabled={actionLoading === receptionist.id}
+                      >
+                        <UserX className="mr-2 h-4 w-4" />
+                        Hapus
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

@@ -4,7 +4,7 @@ import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { BankAccountDetail } from "@/server/types/bank-account";
-import { BankAccountTable } from "@/components/superadmin/reports/bank-account-table";
+import { BankAccountTable } from "@/components/dashboard/superadmin/reports/bank-account-table";
 
 interface ReportsPageClientProps {
   initialAccounts: BankAccountDetail[];

@@ -6,7 +6,7 @@
 
 import { badRequest } from "@/server/types/result";
 import type { Result } from "@/server/types/result";
-import { BankAccountRepository } from "@/server/repositories/bank-account.repository";
+import { BankAccountRepository } from "@/server/repositories/adminkos/bank-account.repository";
 import type {
   BankAccountDTO,
   BankAccountListItem,

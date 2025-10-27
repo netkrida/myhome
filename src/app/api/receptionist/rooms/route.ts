@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentUserContext } from "@/server/lib/auth";
-import { ReceptionistRepository } from "@/server/repositories/receptionist.repository";
-import { RoomRepository } from "@/server/repositories/room.repository";
+import { ReceptionistRepository } from "@/server/repositories/adminkos/receptionist.repository";
+import { RoomRepository } from "@/server/repositories/adminkos/room.repository";
 
 export const runtime = "nodejs";
 

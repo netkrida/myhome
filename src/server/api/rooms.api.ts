@@ -1,5 +1,5 @@
-import { RoomRepository } from "../repositories/room.repository";
-import { PropertyRepository } from "../repositories/property.repository";
+import { RoomRepository } from "../repositories/adminkos/room.repository";
+import { PropertyRepository } from "../repositories/global/property.repository";
 import { RoomService } from "../services/room.service";
 import { PropertyService } from "../services/property.service";
 import { withAuth } from "../lib/auth";

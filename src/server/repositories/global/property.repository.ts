@@ -1,5 +1,5 @@
 import { type Property, type PropertyImage, type Prisma } from "@prisma/client";
-import { prisma } from "../db/client";
+import { prisma } from "../../db/client";
 import type {
   CreatePropertyDTO,
   UpdatePropertyDTO,
@@ -14,8 +14,8 @@ import type {
   PublicPropertiesQuery,
   PublicPropertiesResponse,
   PublicPropertyDetailDTO
-} from "../types";
-import { PropertyStatus, PropertyType, ImageCategory, type PropertyFacility } from "../types/property";
+} from "../../types";
+import { PropertyStatus, PropertyType, ImageCategory, type PropertyFacility } from "../../types/property";
 
 /**
  * Property Repository

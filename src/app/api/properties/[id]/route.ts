@@ -234,7 +234,7 @@ export async function DELETE(
     console.log("🗑️ DELETE API - Property found, proceeding with hard delete");
 
     // Hard delete - completely remove the property from database
-    const { PropertyRepository } = await import("@/server/repositories/property.repository");
+    const { PropertyRepository } = await import("@/server/repositories/global/property.repository");
     
     try {
       // Perform hard delete - remove property and all related data

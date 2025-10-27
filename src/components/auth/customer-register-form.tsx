@@ -218,8 +218,8 @@ export function CustomerRegisterForm() {
 			}
 			setCampuses(payload.data as CampusDTO[]);
 		} catch (error) {
-			console.error("Error fetching campuses:", error);
 			setCampusError("Gagal memuat daftar kampus. Coba lagi nanti.");
+			// Jangan overwrite campuses jika gagal
 		} finally {
 			setIsLoadingCampuses(false);
 		}

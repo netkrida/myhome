@@ -1,7 +1,7 @@
 // fix(prisma): RoomImage tidak ada di schema, hapus import
 import { type Room, type Prisma } from "@prisma/client";
-import { prisma } from "../db/client";
-import { ImageCategory } from "../types/property";
+import { prisma } from "../../db/client";
+import { ImageCategory } from "../../types/property";
 import type {
   CreateRoomDTO,
   UpdateRoomDTO,
@@ -21,9 +21,9 @@ import type {
   RoomTypeDetailDTO,
   RoomAvailabilityInfo,
   PropertyBasicInfo
-} from "../types";
-import type { Result } from "../types/result";
-import { ok, fail, notFound, internalError } from "../types/result";
+} from "../../types";
+import type { Result } from "../../types/result";
+import { ok, fail, notFound, internalError } from "../../types/result";
 
 /**
  * Room Repository

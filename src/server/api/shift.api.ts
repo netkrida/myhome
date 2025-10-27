@@ -3,7 +3,7 @@
  * Tier 2: Application Service Layer for Shift Management
  */
 
-import { ShiftRepository } from "@/server/repositories/shift.repository";
+import { ShiftRepository } from "@/server/repositories/adminkos/shift.repository";
 import { ShiftService } from "@/server/services/shift.service";
 import type { Result } from "@/server/types/result";
 import { internalError, badRequest, conflict } from "@/server/types/result";

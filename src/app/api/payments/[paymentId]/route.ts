@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/server/auth";
-import { PaymentRepository } from "@/server/repositories/payment.repository";
+import { PaymentRepository } from "@/server/repositories/adminkos/payment.repository";
 
 /**
  * GET /api/payments/[paymentId]

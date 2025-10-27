@@ -200,7 +200,7 @@ export async function DELETE(
     console.log("🗑️ DELETE API - Room found, proceeding with hard delete");
 
     // Hard delete - completely remove the room from database
-    const { RoomRepository } = await import("@/server/repositories/room.repository");
+    const { RoomRepository } = await import("@/server/repositories/adminkos/room.repository");
     
     try {
       // Perform hard delete - remove room and all related data

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AnalyticsService } from "@/server/services/analytics.service";
 import { getCurrentUserContext } from "@/server/lib/auth";
-import { AnalyticsRepository } from "@/server/repositories/analytics.repository";
+import { AnalyticsRepository } from "@/server/repositories/superadmin/analytics.repository";
 
 /**
  * GET /api/analytics/visitors/total

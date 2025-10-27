@@ -5,7 +5,7 @@
 
 import { UserRole } from "@/server/types/rbac";
 import { UserRepository } from "@/server/repositories/user.repository";
-import { ReceptionistRepository } from "@/server/repositories/receptionist.repository";
+import { ReceptionistRepository } from "@/server/repositories/adminkos/receptionist.repository";
 import { ReceptionistService } from "@/server/services/receptionist.service";
 import type { Result } from "@/server/types/result";
 import { internalError, conflict, badRequest, ok } from "@/server/types/result";

@@ -8,7 +8,7 @@ import { UserRole } from "../types/rbac";
 import type { Result } from "../types/result";
 import { ok, forbidden, badRequest, internalError } from "../types/result";
 import { LedgerService } from "../services/ledger.service";
-import { LedgerRepository } from "../repositories/ledger.repository";
+import { LedgerRepository } from "../repositories/global/ledger.repository";
 import type {
   LedgerSummaryDTO,
   LedgerTimeSeriesDTO,

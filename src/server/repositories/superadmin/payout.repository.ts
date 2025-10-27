@@ -274,7 +274,7 @@ export class PayoutRepository {
 
       // Trigger ledger synchronization hook
       try {
-        const { PayoutHooks } = await import("../api/hooks/payout.hooks");
+        const { PayoutHooks } = await import("../../api/hooks/payout.hooks");
         await PayoutHooks.onPayoutApproved(payout.id);
       } catch (error) {
         console.warn("Failed to sync payout to ledger:", error);

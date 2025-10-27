@@ -10,7 +10,7 @@
  */
 
 import { prisma } from "../db/client";
-import { LedgerRepository } from "../repositories/ledger.repository";
+import { LedgerRepository } from "../repositories/global/ledger.repository";
 import type { WithdrawSummaryDTO, WithdrawBalanceBreakdownDTO } from "../types/withdraw";
 
 export class WithdrawService {

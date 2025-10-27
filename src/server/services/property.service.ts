@@ -9,7 +9,7 @@ import type {
   PaginationDTO
 } from "../types";
 import { PropertyStatus, PropertyType } from "../types/property";
-import { PropertyRepository } from "../repositories/property.repository";
+import { PropertyRepository } from "../repositories/global/property.repository";
 import { normalizePhoneToE164ID } from "@/lib/phone";
 
 /**

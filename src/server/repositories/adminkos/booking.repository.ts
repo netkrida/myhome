@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import type { Payment as PrismaPayment } from "@prisma/client";
-import { prisma } from "../db/client";
+import { prisma } from "../../db/client";
 import type {
   BookingDTO,
   CreateBookingDTO,
@@ -9,15 +9,15 @@ import type {
   UpdateBookingDTO,
   UpdateBookingStatusDTO,
   PaymentDTO
-} from "../types/booking";
+} from "../../types/booking";
 import {
   BookingStatus,
   PaymentStatus,
   LeaseType,
   PaymentType
-} from "../types/booking";
-import type { Result } from "../types/result";
-import { ok, fail, notFound, internalError, conflict } from "../types/result";
+} from "../../types/booking";
+import type { Result } from "../../types/result";
+import { ok, fail, notFound, internalError, conflict } from "../../types/result";
 
 const MANAGE_ROOM_AVAILABILITY = process.env.FEATURE_MANAGE_ROOM_AVAILABILITY === "true";
 

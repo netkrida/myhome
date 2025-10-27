@@ -4,9 +4,9 @@ import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PayoutListItem, PayoutDetail } from "@/server/types/bank-account";
-import { PayoutTable } from "@/components/superadmin/submission/payout-table";
-import { PayoutDetailDialog } from "@/components/superadmin/submission/payout-detail-dialog";
-import { PayoutApprovalDialog } from "@/components/superadmin/submission/payout-approval-dialog";
+import { PayoutTable } from "@/components/dashboard/superadmin/submission/payout-table";
+import { PayoutDetailDialog } from "@/components/dashboard/superadmin/submission/payout-detail-dialog";
+import { PayoutApprovalDialog } from "@/components/dashboard/superadmin/submission/payout-approval-dialog";
 
 interface SubmissionPageClientProps {
   initialPayouts: PayoutListItem[];

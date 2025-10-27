@@ -142,6 +142,7 @@ export interface PaymentDTO {
   expiryTime?: Date;
   createdAt: Date;
   updatedAt: Date;
+  accountId?: string; // manual booking association
 }
 
 export interface CreatePaymentDTO {
@@ -149,6 +150,8 @@ export interface CreatePaymentDTO {
   userId: string;
   paymentType: PaymentType;
   amount: number;
+  accountId?: string; // manual booking association
+  transactionTime?: Date;
 }
 
 // Midtrans DTOs

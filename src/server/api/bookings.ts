@@ -1,9 +1,9 @@
-import { BookingRepository } from "../repositories/booking.repository";
-import { RoomRepository } from "../repositories/room.repository";
+import { BookingRepository } from "../repositories/adminkos/booking.repository";
+import { RoomRepository } from "../repositories/adminkos/room.repository";
 import { UserRepository } from "../repositories/user.repository";
-import { ReceptionistRepository } from "../repositories/receptionist.repository";
-import { PaymentRepository } from "../repositories/payment.repository";
-import { LedgerRepository } from "../repositories/ledger.repository";
+import { ReceptionistRepository } from "../repositories/adminkos/receptionist.repository";
+import { PaymentRepository } from "../repositories/adminkos/payment.repository";
+import { LedgerRepository } from "../repositories/global/ledger.repository";
 import { BookingService } from "../services/booking.service";
 import {
   BookingStatus,

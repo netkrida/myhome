@@ -3,7 +3,7 @@
  * Business logic for financial bookkeeping operations
  */
 
-import { LedgerRepository } from "../repositories/ledger.repository";
+import { LedgerRepository } from "../repositories/global/ledger.repository";
 import type {
   LedgerAccountDTO,
   LedgerEntryDTO,

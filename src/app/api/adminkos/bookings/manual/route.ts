@@ -1,3 +1,4 @@
+import { LedgerRepository } from "@/server/repositories/global/ledger.repository";
 /**
  * POST /api/adminkos/bookings/manual
  * Create manual booking by AdminKos
@@ -7,13 +8,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserContext } from "@/server/lib/auth";
 import { UserRole } from "@/server/types/rbac";
-import { BookingRepository } from "@/server/repositories/booking.repository";
-import { PaymentRepository } from "@/server/repositories/payment.repository";
-import { RoomRepository } from "@/server/repositories/room.repository";
-import { PropertyRepository } from "@/server/repositories/property.repository";
+import { BookingRepository } from "@/server/repositories/adminkos/booking.repository";
+import { PaymentRepository } from "@/server/repositories/adminkos/payment.repository";
+import { RoomRepository } from "@/server/repositories/adminkos/room.repository";
+import { PropertyRepository } from "@/server/repositories/global/property.repository";
 import { BookingService } from "@/server/services/booking.service";
 import { PaymentService } from "@/server/services/payment.service";
 import { BookingStatus, PaymentStatus, PaymentType, LeaseType } from "@/server/types/booking";
+import { AdminKosLedgerAPI } from "@/server/api/adminkos.ledger";
 import { z } from "zod";
 
 const manualBookingSchema = z.object({
@@ -22,6 +24,7 @@ const manualBookingSchema = z.object({
   checkInDate: z.coerce.date(),
   leaseType: z.nativeEnum(LeaseType),
   depositOption: z.enum(["deposit", "full"]),
+  accountId: z.string().cuid("Invalid account ID"),
 });
 
 export async function POST(request: NextRequest) {
@@ -58,7 +61,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, roomId, checkInDate, leaseType, depositOption } = validationResult.data;
+  const { userId, roomId, checkInDate, leaseType, depositOption, accountId } = validationResult.data;
+    // Validate accountId (must be a non-system account belonging to this AdminKos)
+    const accountsResult = await AdminKosLedgerAPI.listAccounts();
+    if (!accountsResult.success || !Array.isArray(accountsResult.data.accounts)) {
+      return NextResponse.json({ success: false, error: "Gagal mengambil daftar akun" }, { status: 400 });
+    }
+    const validAccount = accountsResult.data.accounts.find((a: any) => a.id === accountId && !a.isSystem && !a.isArchived);
+    if (!validAccount) {
+      return NextResponse.json({ success: false, error: "Akun tidak valid atau tidak ditemukan" }, { status: 400 });
+    }
 
     // Get room details
     const roomResult = await RoomRepository.getById(roomId);
@@ -130,7 +142,7 @@ export async function POST(request: NextRequest) {
     const paymentAmount = isDepositPayment ? calculation.depositAmount! : calculation.totalAmount;
     const paymentType = isDepositPayment ? PaymentType.DEPOSIT : PaymentType.FULL;
 
-    // Create booking with UNPAID status
+    // Create booking with CONFIRMED status (langsung lunas)
     const createBookingResult = await BookingRepository.create({
       userId,
       roomId,
@@ -141,8 +153,8 @@ export async function POST(request: NextRequest) {
       leaseType,
       totalAmount: calculation.totalAmount,
       depositAmount: calculation.depositAmount,
-      paymentStatus: PaymentStatus.PENDING,
-      status: BookingStatus.UNPAID,
+      paymentStatus: PaymentStatus.SUCCESS,
+      status: BookingStatus.CONFIRMED,
       depositOption,
     });
 
@@ -155,7 +167,7 @@ export async function POST(request: NextRequest) {
 
     const booking = createBookingResult.data!;
 
-    // Create payment record
+    // Create payment record (langsung sukses, masuk akun)
     const orderId = PaymentService.generateOrderId(booking.id, paymentType);
     const createPaymentResult = await PaymentRepository.create({
       bookingId: booking.id,
@@ -163,8 +175,9 @@ export async function POST(request: NextRequest) {
       paymentType,
       midtransOrderId: orderId,
       amount: paymentAmount,
-      status: PaymentStatus.PENDING,
-      expiryTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      status: PaymentStatus.SUCCESS,
+      transactionTime: new Date(),
+      accountId,
     });
 
     if (!createPaymentResult.success) {
@@ -175,6 +188,26 @@ export async function POST(request: NextRequest) {
     }
 
     const payment = createPaymentResult.data!;
+
+
+    // Validasi profileId sebelum membuat ledger entry
+    if (!userContext.profileId) {
+      return NextResponse.json({ success: false, error: "Akun AdminKos tidak valid" }, { status: 400 });
+    }
+    await LedgerRepository.createEntry(
+      userContext.profileId,
+      userContext.id,
+      {
+        accountId,
+        direction: "IN",
+        amount: paymentAmount,
+        date: new Date(),
+        note: `Booking manual ${booking.bookingCode} oleh admin`,
+        refType: "PAYMENT",
+        refId: payment.id,
+        propertyId: property.id,
+      }
+    );
 
     return NextResponse.json({
       success: true,

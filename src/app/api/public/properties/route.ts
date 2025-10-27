@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PropertyRepository } from "@/server/repositories/property.repository";
+import { PropertyRepository } from "@/server/repositories/global/property.repository";
 import { publicPropertiesQuerySchema, type PublicPropertiesQueryInput } from "@/server/schemas/property.schemas";
 
 /**

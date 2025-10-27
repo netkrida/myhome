@@ -6,16 +6,16 @@
 export * from "./user.repository";
 
 // Property repository
-export * from "./property.repository";
+export * from "./global/property.repository";
 
 // Room repository
-export * from "./room.repository";
+export * from "./adminkos/room.repository";
 
 // Booking repository
-export * from "./booking.repository";
+export * from "./adminkos/booking.repository";
 
 // Payment repository
-export * from "./payment.repository";
+export * from "./adminkos/payment.repository";
 
 // Customer repository
 export * from "./customer.repository";

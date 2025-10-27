@@ -6,8 +6,8 @@
 
 import type { Result } from "@/server/types/result";
 import { badRequest } from "@/server/types/result";
-import { PayoutRepository } from "@/server/repositories/payout.repository";
-import { BankAccountRepository } from "@/server/repositories/bank-account.repository";
+import { PayoutRepository } from "@/server/repositories/superadmin/payout.repository";
+import { BankAccountRepository } from "@/server/repositories/adminkos/bank-account.repository";
 import type {
   PayoutDTO,
   PayoutListItem,

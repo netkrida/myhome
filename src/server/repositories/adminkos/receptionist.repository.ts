@@ -438,10 +438,12 @@ export class ReceptionistRepository {
         return internalError("Receptionist not found");
       }
 
-      // Soft delete by deactivating user
-      await prisma.user.update({
+      // Hard delete: delete profile and user (cascade)
+      await prisma.receptionistProfile.delete({
+        where: { id },
+      });
+      await prisma.user.delete({
         where: { id: receptionist.userId },
-        data: { isActive: false },
       });
 
       return ok(undefined);

@@ -1,4 +1,4 @@
-import { PropertyRepository } from "../repositories/property.repository";
+import { PropertyRepository } from "../repositories/global/property.repository";
 import { PropertyService } from "../services/property.service";
 import { withAuth } from "../lib/auth";
 import { UserRole } from "../types/rbac";

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { RoomRepository } from "@/server/repositories/room.repository";
+import { RoomRepository } from "@/server/repositories/adminkos/room.repository";
 import { publicRoomDetailIdSchema, type PublicRoomDetailIdInput } from "@/server/schemas/room.schemas";
 
 /**

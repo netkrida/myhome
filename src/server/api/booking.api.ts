@@ -1,6 +1,6 @@
-import { BookingRepository } from "../repositories/booking.repository";
-import { PaymentRepository } from "../repositories/payment.repository";
-import { RoomRepository } from "../repositories/room.repository";
+import { BookingRepository } from "../repositories/adminkos/booking.repository";
+import { PaymentRepository } from "../repositories/adminkos/payment.repository";
+import { RoomRepository } from "../repositories/adminkos/room.repository";
 import { UserRepository } from "../repositories/user.repository";
 import { BookingService } from "../services/booking.service";
 import { PaymentService } from "../services/payment.service";

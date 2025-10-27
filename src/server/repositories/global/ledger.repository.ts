@@ -3,7 +3,7 @@
  * Data access layer for ledger operations
  */
 
-import { prisma } from "../db/client";
+import { prisma } from "../../db/client";
 import type {
   LedgerAccountDTO,
   LedgerEntryDTO,
@@ -15,7 +15,7 @@ import type {
   LedgerAccountType,
   LedgerDirection,
   LedgerRefType,
-} from "../types/ledger";
+} from "../../types/ledger";
 
 export class LedgerRepository {
   /**

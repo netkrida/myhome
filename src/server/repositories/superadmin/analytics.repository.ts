@@ -1,4 +1,4 @@
-import { prisma } from "../db";
+import { prisma } from "../../db";
 import type { PageView, WebsiteVisitor } from "@prisma/client";
 import type {
   WebsiteVisitorDTO,
@@ -8,7 +8,7 @@ import type {
   UpdateVisitorDTO,
   AnalyticsQueryDTO,
   DailyAnalyticsDTO,
-} from "../types/analytics";
+} from "../../types/analytics";
 
 function mapWebsiteVisitor(visitor: WebsiteVisitor): WebsiteVisitorDTO {
   return {

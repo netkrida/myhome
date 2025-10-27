@@ -1,20 +1,20 @@
-import { prisma } from "../db/client";
+import { prisma } from "../../db/client";
 import type { Prisma } from "@prisma/client";
 import type {
   PaymentDTO,
   CreatePaymentDTO
-} from "../types/booking";
+} from "../../types/booking";
 import {
   PaymentStatus,
   PaymentType
-} from "../types/booking";
-import type { Result } from "../types/result";
-import { ok, fail, notFound, internalError, forbidden } from "../types/result";
+} from "../../types/booking";
+import type { Result } from "../../types/result";
+import { ok, fail, notFound, internalError, forbidden } from "../../types/result";
 import type {
   TransactionFilters,
   TransactionListItem,
   TransactionDetailDTO,
-} from "../types/transaction.types";
+} from "../../types/transaction.types";
 
 /**
  * Tier-3: Payment Repository
@@ -32,6 +32,7 @@ export class PaymentRepository {
       status: PaymentStatus;
       paymentToken?: string;
       expiryTime?: Date;
+      accountId?: string; // for manual booking association
     }
   ): Promise<Result<PaymentDTO>> {
     try {
@@ -44,7 +45,9 @@ export class PaymentRepository {
           amount: paymentData.amount,
           status: paymentData.status,
           paymentToken: paymentData.paymentToken,
-          expiryTime: paymentData.expiryTime
+          expiryTime: paymentData.expiryTime,
+          // Only set accountId if provided (manual booking)
+          ...(paymentData.accountId ? { accountId: paymentData.accountId } : {}),
         }
       });
 
@@ -179,7 +182,7 @@ export class PaymentRepository {
       // Trigger ledger synchronization hook if payment status changed to SUCCESS
       if (updateData.status === "SUCCESS") {
         try {
-          const { PaymentHooks } = await import("../api/hooks/payment.hooks");
+          const { PaymentHooks } = await import("../../api/hooks/payment.hooks");
           await PaymentHooks.onPaymentSuccess(payment.id);
         } catch (error) {
           console.warn("Failed to sync payment to ledger:", error);

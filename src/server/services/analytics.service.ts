@@ -1,4 +1,4 @@
-import { AnalyticsRepository } from "../repositories/analytics.repository";
+import { AnalyticsRepository } from "../repositories/superadmin/analytics.repository";
 import type {
   AnalyticsSummaryDTO,
   AnalyticsQueryDTO,

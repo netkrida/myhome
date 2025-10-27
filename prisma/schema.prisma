@@ -340,6 +340,7 @@ model Payment {
   transactionId    String?       @db.VarChar(100)
   paymentToken     String?       @db.VarChar(500)
   expiryTime       DateTime?
+  accountId        String?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 

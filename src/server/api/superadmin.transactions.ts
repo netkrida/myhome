@@ -4,7 +4,7 @@
  * Tier 2: Application/Business Logic Layer
  */
 
-import { PaymentRepository } from "@/server/repositories/payment.repository";
+import { PaymentRepository } from "@/server/repositories/adminkos/payment.repository";
 import { withAuth } from "@/server/lib/auth";
 import { UserRole } from "@/server/types/rbac";
 import type { UserContext } from "@/server/types/rbac";
