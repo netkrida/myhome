@@ -250,17 +250,18 @@ export class LedgerService {
     // Ensure system accounts exist
     await this.ensureSystemAccounts(adminKosId);
 
-    // Get period summary
+    // Get period summary (only from Pembayaran Kos)
     const periodSummary = await LedgerRepository.getSummaryByAdminKos(
       adminKosId,
       dateFrom,
       dateTo
     );
 
-    // Get balance calculation
-    const balance = await this.calculateBalance(adminKosId);
+    // For totalBalance and availableBalance, use only Pembayaran Kos
+    // (availableBalance = totalBalance for this account)
+    // For totalWithdrawals, use OUT from Pembayaran Kos
 
-    // Get payment income for this month
+    // Get payment income for this month (from Pembayaran Kos)
     const paymentAccount = await LedgerRepository.findSystemAccount(
       adminKosId,
       "Pembayaran Kos",
@@ -268,6 +269,9 @@ export class LedgerService {
     );
 
     let paymentIncomeThisMonth = 0;
+    let totalWithdrawals = 0;
+    let availableBalance = 0;
+    let totalBalance = 0;
     if (paymentAccount) {
       const paymentEntries = await prisma.ledgerEntry.aggregate({
         where: {
@@ -282,15 +286,46 @@ export class LedgerService {
         _sum: { amount: true },
       });
       paymentIncomeThisMonth = Number(paymentEntries._sum.amount || 0);
+
+      // Total withdrawals (OUT from Pembayaran Kos)
+      const withdrawalEntries = await prisma.ledgerEntry.aggregate({
+        where: {
+          adminKosId,
+          accountId: paymentAccount.id,
+          direction: "OUT",
+        },
+        _sum: { amount: true },
+      });
+      totalWithdrawals = Number(withdrawalEntries._sum.amount || 0);
+
+      // Total balance = IN - OUT (all time, only Pembayaran Kos)
+      const totalIn = await prisma.ledgerEntry.aggregate({
+        where: {
+          adminKosId,
+          accountId: paymentAccount.id,
+          direction: "IN",
+        },
+        _sum: { amount: true },
+      });
+      const totalOut = await prisma.ledgerEntry.aggregate({
+        where: {
+          adminKosId,
+          accountId: paymentAccount.id,
+          direction: "OUT",
+        },
+        _sum: { amount: true },
+      });
+      totalBalance = Number(totalIn._sum.amount || 0) - Number(totalOut._sum.amount || 0);
+      availableBalance = totalBalance;
     }
 
     return {
       cashInPeriod: periodSummary.cashIn,
       cashOutPeriod: periodSummary.cashOut,
       netCashFlowPeriod: periodSummary.cashIn - periodSummary.cashOut,
-      totalBalance: balance.totalBalance,
-      availableBalance: balance.availableBalance,
-      totalWithdrawals: balance.totalWithdrawals,
+      totalBalance,
+      availableBalance,
+      totalWithdrawals,
       paymentIncomeThisMonth,
       dateFrom,
       dateTo,

@@ -515,25 +515,14 @@ export class PaymentRepository {
       where.paymentMethod = filters.paymentMethod;
     }
 
-    // Build booking filter separately to avoid conflicts
-    const bookingFilter: any = {};
-
-    // Property filter
-    if (filters.propertyId) {
-      bookingFilter.propertyId = filters.propertyId;
-    }
-
-    // Owner filter
-    if (filters.ownerId) {
-      bookingFilter.property = {
-        ownerId: filters.ownerId,
-      };
-    }
-
-    // Apply booking filter if any
-    if (Object.keys(bookingFilter).length > 0) {
-      where.booking = bookingFilter;
-    }
+    // Only include payments to system account (Pembayaran Kos)
+    // Exclude manual bookings to custom accounts
+    // Assume system accountId is null or matches system account id (can be improved if needed)
+    // If accountId is set, only include if accountId is system account
+    // For now, only include payments where accountId is null (legacy) or accountId matches system account id
+    // If you have a way to get system account ids, filter here
+    // Always exclude manual bookings (accountId != null) for superadmin transaction summary
+    where.accountId = null;
 
     // Search filter
     if (filters.search) {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formatIndonesianPhoneNumber } from "@/lib/phone-format";
 
 export const customerStatusEnum = z.enum(["MAHASISWA", "PEKERJA"], {
   required_error: "Status wajib dipilih",
@@ -21,11 +22,11 @@ export const customerRegistrationSchema = z
       .string()
       .min(10, "Nomor HP minimal 10 digit")
       .max(15, "Nomor HP maksimal 15 digit")
-      .regex(
-        /^(\+62|62|0)[0-9]{8,13}$/,
-        "Format nomor HP tidak valid (contoh: 08123456789 atau +62812345678)"
-      )
-      .trim(),
+      .transform((val) => formatIndonesianPhoneNumber(val))
+      .refine(
+        (val) => /^62[0-9]{9,13}$/.test(val),
+        "Format nomor HP harus diawali 62 dan hanya angka (contoh: 6281234567890)"
+      ),
     password: z
       .string()
       .min(8, "Password minimal 8 karakter")

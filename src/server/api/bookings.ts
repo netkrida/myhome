@@ -145,6 +145,73 @@ export class BookingsApplication {
       email: currentUser.email,
     };
 
+    // 🔔 Kirim notifikasi check-in (async, tidak block response)
+    try {
+      console.log("🔔 [CheckIn] Preparing to send checkin notification...");
+      
+      // Get customer details
+      const customerResult = await UserRepository.getById(booking.userId);
+      console.log("🔍 [CheckIn] Customer result:", { 
+        success: customerResult.success, 
+        hasPhone: customerResult.success ? !!customerResult.data?.phoneNumber : false,
+        phone: customerResult.success ? customerResult.data?.phoneNumber : null
+      });
+      
+      // Get property owner details
+      const PropertyRepository = (await import("@/server/repositories/global/property.repository")).PropertyRepository;
+      const propertyOwner = await PropertyRepository.getPropertyOwnerContact(booking.propertyId);
+      console.log("🔍 [CheckIn] Property owner result:", {
+        hasData: !!propertyOwner,
+        ownerPhone: propertyOwner?.ownerPhoneNumber,
+        propertyName: propertyOwner?.propertyName,
+      });
+      
+      if (customerResult.success && customerResult.data && propertyOwner) {
+        const customer = customerResult.data;
+        
+        if (customer.phoneNumber && propertyOwner.ownerPhoneNumber) {
+          const NotificationService = (await import("@/server/services/NotificationService")).NotificationService;
+          
+          const checkInDate = updated.actualCheckInAt || booking.checkInDate;
+          console.log("🔔 [CheckIn] Sending check-in notification...", {
+            customerPhone: customer.phoneNumber,
+            adminkosPhone: propertyOwner.ownerPhoneNumber,
+            checkInDate: checkInDate,
+          });
+          
+          NotificationService.sendCheckInNotification({
+            customerName: customer.name || "Customer",
+            customerPhone: customer.phoneNumber,
+            adminkosPhone: propertyOwner.ownerPhoneNumber,
+            propertyName: propertyOwner.propertyName,
+            bookingCode: booking.bookingCode,
+            checkInDate: checkInDate,
+          }).then((notifResult) => {
+            if (notifResult.success) {
+              console.log("✅ [CheckIn] Check-in notification sent:", notifResult.data);
+            } else {
+              console.error("❌ [CheckIn] Failed to send check-in notification:", notifResult.error);
+            }
+          }).catch((err) => {
+            console.error("❌ [CheckIn] Error sending check-in notification:", err);
+          });
+        } else {
+          console.warn("⚠️ [CheckIn] Cannot send notification - missing phone numbers:", {
+            customerPhone: customer.phoneNumber,
+            adminkosPhone: propertyOwner.ownerPhoneNumber,
+          });
+        }
+      } else {
+        console.warn("⚠️ [CheckIn] Cannot send notification - missing data:", {
+          hasCustomerResult: customerResult.success,
+          hasPropertyOwner: !!propertyOwner,
+        });
+      }
+    } catch (notifError) {
+      // Log tapi tidak gagalkan checkin
+      console.error("⚠️ [CheckIn] Error preparing check-in notification:", notifError);
+    }
+
     return ok({
       bookingId: updated.id,
       status: updated.status,
@@ -208,6 +275,73 @@ export class BookingsApplication {
       name: currentUser.name ?? undefined,
       email: currentUser.email,
     };
+
+    // 🔔 Kirim notifikasi check-out (async, tidak block response)
+    try {
+      console.log("🔔 [CheckOut] Preparing to send checkout notification...");
+      
+      // Get customer details
+      const customerResult = await UserRepository.getById(booking.userId);
+      console.log("🔍 [CheckOut] Customer result:", { 
+        success: customerResult.success, 
+        hasPhone: customerResult.success ? !!customerResult.data?.phoneNumber : false,
+        phone: customerResult.success ? customerResult.data?.phoneNumber : null
+      });
+      
+      // Get property owner details
+      const PropertyRepository = (await import("@/server/repositories/global/property.repository")).PropertyRepository;
+      const propertyOwner = await PropertyRepository.getPropertyOwnerContact(booking.propertyId);
+      console.log("🔍 [CheckOut] Property owner result:", {
+        hasData: !!propertyOwner,
+        ownerPhone: propertyOwner?.ownerPhoneNumber,
+        propertyName: propertyOwner?.propertyName,
+      });
+      
+      if (customerResult.success && customerResult.data && propertyOwner) {
+        const customer = customerResult.data;
+        
+        if (customer.phoneNumber && propertyOwner.ownerPhoneNumber) {
+          const NotificationService = (await import("@/server/services/NotificationService")).NotificationService;
+          
+          const checkOutDate = updated.actualCheckOutAt || new Date();
+          console.log("🔔 [CheckOut] Sending check-out notification...", {
+            customerPhone: customer.phoneNumber,
+            adminkosPhone: propertyOwner.ownerPhoneNumber,
+            checkOutDate: checkOutDate,
+          });
+          
+          NotificationService.sendCheckOutNotification({
+            customerName: customer.name || "Customer",
+            customerPhone: customer.phoneNumber,
+            adminkosPhone: propertyOwner.ownerPhoneNumber,
+            propertyName: propertyOwner.propertyName,
+            bookingCode: booking.bookingCode,
+            checkOutDate: checkOutDate,
+          }).then((notifResult) => {
+            if (notifResult.success) {
+              console.log("✅ [CheckOut] Check-out notification sent:", notifResult.data);
+            } else {
+              console.error("❌ [CheckOut] Failed to send check-out notification:", notifResult.error);
+            }
+          }).catch((err) => {
+            console.error("❌ [CheckOut] Error sending check-out notification:", err);
+          });
+        } else {
+          console.warn("⚠️ [CheckOut] Cannot send notification - missing phone numbers:", {
+            customerPhone: customer.phoneNumber,
+            adminkosPhone: propertyOwner.ownerPhoneNumber,
+          });
+        }
+      } else {
+        console.warn("⚠️ [CheckOut] Cannot send notification - missing data:", {
+          hasCustomerResult: customerResult.success,
+          hasPropertyOwner: !!propertyOwner,
+        });
+      }
+    } catch (notifError) {
+      // Log tapi tidak gagalkan checkout
+      console.error("⚠️ [CheckOut] Error preparing check-out notification:", notifError);
+    }
 
     return ok({
       bookingId: updated.id,

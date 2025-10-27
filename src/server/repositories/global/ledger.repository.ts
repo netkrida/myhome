@@ -345,8 +345,14 @@ export class LedgerRepository {
     cashOut: number;
     totalBalance: number;
   }> {
-    const where: any = { adminKosId };
-    
+    // Only count IN/OUT from system account 'Pembayaran Kos'
+    // Find system account first
+    const pembayaranKosAccount = await this.findSystemAccount(adminKosId, "Pembayaran Kos", "INCOME");
+    if (!pembayaranKosAccount) {
+      return { cashIn: 0, cashOut: 0, totalBalance: 0 };
+    }
+
+    const where: any = { adminKosId, accountId: pembayaranKosAccount.id };
     if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) where.date.gte = dateFrom;
@@ -354,24 +360,24 @@ export class LedgerRepository {
     }
 
     const [cashInResult, cashOutResult, totalInResult, totalOutResult] = await Promise.all([
-      // Cash in for period
+      // Cash in for period (only from Pembayaran Kos)
       prisma.ledgerEntry.aggregate({
         where: { ...where, direction: 'IN' },
         _sum: { amount: true },
       }),
-      // Cash out for period
+      // Cash out for period (only from Pembayaran Kos)
       prisma.ledgerEntry.aggregate({
         where: { ...where, direction: 'OUT' },
         _sum: { amount: true },
       }),
-      // Total in (all time)
+      // Total in (all time, only from Pembayaran Kos)
       prisma.ledgerEntry.aggregate({
-        where: { adminKosId, direction: 'IN' },
+        where: { adminKosId, accountId: pembayaranKosAccount.id, direction: 'IN' },
         _sum: { amount: true },
       }),
-      // Total out (all time)
+      // Total out (all time, only from Pembayaran Kos)
       prisma.ledgerEntry.aggregate({
-        where: { adminKosId, direction: 'OUT' },
+        where: { adminKosId, accountId: pembayaranKosAccount.id, direction: 'OUT' },
         _sum: { amount: true },
       }),
     ]);

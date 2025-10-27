@@ -2,6 +2,7 @@ import { BookingRepository } from "../repositories/adminkos/booking.repository";
 import { PaymentRepository } from "../repositories/adminkos/payment.repository";
 import { UserRepository } from "../repositories/user.repository";
 import { PaymentService } from "../services/payment.service";
+import { NotificationService } from "../services/NotificationService";
 import { createSnapTransaction } from "../adapters/midtrans";
 import { prisma } from "../db/client";
 import { withAuth } from "../lib/auth";
@@ -270,7 +271,11 @@ export class PaymentAPI {
           },
           include: {
             user: true,
-            property: true,
+            property: {
+              include: {
+                owner: true
+              }
+            },
             room: true,
             payments: true
           }
@@ -320,6 +325,36 @@ export class PaymentAPI {
         createdAt: result.booking.createdAt,
         updatedAt: result.booking.updatedAt
       };
+
+      // 🔔 Kirim notifikasi WhatsApp jika pembayaran berhasil
+      if (newPaymentStatus === "SUCCESS" && result.booking.user && result.booking.property?.owner) {
+        console.log("🔔 Sending payment success notification...");
+        
+        // Pastikan nomor HP tersedia
+        if (result.booking.user.phoneNumber && result.booking.property.owner.phoneNumber) {
+          NotificationService.sendPaymentSuccessNotification({
+            customerName: result.booking.user.name || "Customer",
+            customerPhone: result.booking.user.phoneNumber,
+            adminkosPhone: result.booking.property.owner.phoneNumber,
+            propertyName: result.booking.property.name,
+            bookingCode: result.booking.bookingCode,
+            amount: Number(result.booking.totalAmount),
+          }).then((notifResult) => {
+            if (notifResult.success) {
+              console.log("✅ Payment success notification sent:", notifResult.data);
+            } else {
+              console.error("❌ Failed to send payment notification:", notifResult.error);
+            }
+          }).catch((err) => {
+            console.error("❌ Error sending payment notification:", err);
+          });
+        } else {
+          console.warn("⚠️ Cannot send notification - missing phone numbers:", {
+            customerPhone: result.booking.user.phoneNumber,
+            adminkosPhone: result.booking.property?.owner?.phoneNumber,
+          });
+        }
+      }
 
       return ok({ payment: paymentDTO, booking: bookingDTO });
 

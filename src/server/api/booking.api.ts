@@ -1,9 +1,11 @@
 import { BookingRepository } from "../repositories/adminkos/booking.repository";
 import { PaymentRepository } from "../repositories/adminkos/payment.repository";
 import { RoomRepository } from "../repositories/adminkos/room.repository";
+import { PropertyRepository } from "../repositories/global/property.repository";
 import { UserRepository } from "../repositories/user.repository";
 import { BookingService } from "../services/booking.service";
 import { PaymentService } from "../services/payment.service";
+import { NotificationService } from "../services/NotificationService";
 import { withAuth } from "../lib/auth";
 import { UserRole } from "../types/rbac";
 import type { UserContext } from "../types/rbac";
@@ -170,6 +172,42 @@ export class BookingAPI {
           return internalError(errorMessage);
         }
 
+        // 🔔 Kirim notifikasi booking baru (async, tidak block response)
+        try {
+          // Get property owner details untuk notifikasi
+          const propertyOwner = await PropertyRepository.getPropertyOwnerContact(room.propertyId);
+          
+          if (propertyOwner && propertyOwner.ownerPhoneNumber && user.phoneNumber) {
+            console.log("🔔 Sending booking created notification...");
+            
+            NotificationService.sendBookingCreatedNotification({
+              customerName: user.name || "Customer",
+              customerPhone: user.phoneNumber,
+              adminkosPhone: propertyOwner.ownerPhoneNumber,
+              propertyName: propertyOwner.propertyName,
+              bookingCode: booking.bookingCode,
+              checkInDate: booking.checkInDate,
+              checkOutDate: booking.checkOutDate || checkOutDate,
+            }).then((notifResult) => {
+              if (notifResult.success) {
+                console.log("✅ Booking created notification sent:", notifResult.data);
+              } else {
+                console.error("❌ Failed to send booking notification:", notifResult.error);
+              }
+            }).catch((err) => {
+              console.error("❌ Error sending booking notification:", err);
+            });
+          } else {
+            console.warn("⚠️ Cannot send booking notification - missing phone numbers:", {
+              customerPhone: user.phoneNumber,
+              adminkosPhone: propertyOwner?.ownerPhoneNumber,
+            });
+          }
+        } catch (notifError) {
+          // Log tapi tidak gagalkan booking
+          console.error("⚠️ Error preparing booking notification:", notifError);
+        }
+
         return ok({
           booking,
           paymentToken
@@ -267,7 +305,140 @@ export class BookingAPI {
         }
 
         // Update booking status
-        return await BookingRepository.updateStatus(bookingId, statusData);
+        const updateResult = await BookingRepository.updateStatus(bookingId, statusData);
+        
+        if (!updateResult.success) {
+          return fail(updateResult.error!, updateResult.statusCode);
+        }
+
+        const updatedBooking = updateResult.data!;
+
+        // 🔔 Kirim notifikasi check-in/check-out (async, tidak block response)
+        try {
+          console.log("🔍 Check notification trigger:", {
+            newStatus: statusData.status,
+            isCheckIn: statusData.status === BookingStatus.CHECKED_IN,
+            isCheckOut: statusData.status === BookingStatus.COMPLETED,
+          });
+
+          // Hanya kirim notifikasi jika status berubah ke CHECKED_IN atau COMPLETED (check-out)
+          if (statusData.status === BookingStatus.CHECKED_IN || statusData.status === BookingStatus.COMPLETED) {
+            console.log("🔍 Fetching booking data for notification...");
+            
+            // Get full booking data with relations untuk notifikasi
+            const fullBookingResult = await BookingRepository.getById(bookingId);
+            console.log("🔍 Full booking result:", { 
+              success: fullBookingResult.success, 
+              hasData: fullBookingResult.success ? !!fullBookingResult.data : false 
+            });
+            
+            if (fullBookingResult.success && fullBookingResult.data) {
+              const fullBooking = fullBookingResult.data;
+              console.log("🔍 Full booking data:", {
+                id: fullBooking.id,
+                userId: fullBooking.userId,
+                propertyId: fullBooking.propertyId,
+                bookingCode: fullBooking.bookingCode,
+              });
+              
+              // Get user details
+              const userResult = await UserRepository.getById(fullBooking.userId);
+              console.log("🔍 User result:", { 
+                success: userResult.success, 
+                hasData: userResult.success ? !!userResult.data : false 
+              });
+              
+              // Get property owner details
+              const propertyOwner = await PropertyRepository.getPropertyOwnerContact(fullBooking.propertyId);
+              console.log("🔍 Property owner result:", {
+                hasData: !!propertyOwner,
+                ownerPhone: propertyOwner?.ownerPhoneNumber,
+                propertyName: propertyOwner?.propertyName,
+              });
+              
+              if (userResult.success && userResult.data && propertyOwner) {
+                const user = userResult.data;
+                console.log("🔍 User data:", {
+                  name: user.name,
+                  phone: user.phoneNumber,
+                });
+                
+                if (user.phoneNumber && propertyOwner.ownerPhoneNumber) {
+                  if (statusData.status === BookingStatus.CHECKED_IN) {
+                    console.log("🔔 Sending check-in notification...");
+                    
+                    NotificationService.sendCheckInNotification({
+                      customerName: user.name || "Customer",
+                      customerPhone: user.phoneNumber,
+                      adminkosPhone: propertyOwner.ownerPhoneNumber,
+                      propertyName: propertyOwner.propertyName,
+                      bookingCode: fullBooking.bookingCode,
+                      checkInDate: fullBooking.checkInDate,
+                    }).then((notifResult) => {
+                      if (notifResult.success) {
+                        console.log("✅ Check-in notification sent:", notifResult.data);
+                      } else {
+                        console.error("❌ Failed to send check-in notification:", notifResult.error);
+                      }
+                    }).catch((err) => {
+                      console.error("❌ Error sending check-in notification:", err);
+                    });
+                  } else if (statusData.status === BookingStatus.COMPLETED) {
+                    console.log("🔍 Check-out condition:", {
+                      hasCheckOutDate: !!fullBooking.checkOutDate,
+                      checkOutDate: fullBooking.checkOutDate,
+                      hasActualCheckOutAt: !!fullBooking.actualCheckOutAt,
+                      actualCheckOutAt: fullBooking.actualCheckOutAt,
+                    });
+                    
+                    // Gunakan actualCheckOutAt atau checkOutDate atau new Date() sebagai fallback
+                    const checkOutDateToUse = fullBooking.actualCheckOutAt || fullBooking.checkOutDate || new Date();
+                    
+                    console.log("🔔 Sending check-out notification...", {
+                      checkOutDate: checkOutDateToUse,
+                    });
+                    
+                    NotificationService.sendCheckOutNotification({
+                      customerName: user.name || "Customer",
+                      customerPhone: user.phoneNumber,
+                      adminkosPhone: propertyOwner.ownerPhoneNumber,
+                      propertyName: propertyOwner.propertyName,
+                      bookingCode: fullBooking.bookingCode,
+                      checkOutDate: checkOutDateToUse,
+                    }).then((notifResult) => {
+                      if (notifResult.success) {
+                        console.log("✅ Check-out notification sent:", notifResult.data);
+                      } else {
+                        console.error("❌ Failed to send check-out notification:", notifResult.error);
+                      }
+                    }).catch((err) => {
+                      console.error("❌ Error sending check-out notification:", err);
+                    });
+                  }
+                } else {
+                  console.warn("⚠️ Cannot send notification - missing phone numbers:", {
+                    customerPhone: user.phoneNumber,
+                    adminkosPhone: propertyOwner.ownerPhoneNumber,
+                  });
+                }
+              } else {
+                console.warn("⚠️ Cannot send notification - missing data:", {
+                  hasUserResult: userResult.success,
+                  hasPropertyOwner: !!propertyOwner,
+                });
+              }
+            } else {
+              console.warn("⚠️ Cannot fetch full booking data for notification");
+            }
+          } else {
+            console.log("🔍 Status not eligible for notification:", statusData.status);
+          }
+        } catch (notifError) {
+          // Log tapi tidak gagalkan update status
+          console.error("⚠️ Error preparing check-in/check-out notification:", notifError);
+        }
+
+        return updateResult;
       } catch (error) {
         console.error("Error updating booking status:", error);
         return internalError("Failed to update booking status");

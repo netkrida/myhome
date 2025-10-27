@@ -323,9 +323,8 @@ export class BookingRepository {
         where: {
           roomId,
           status: {
-            // Exclude UNPAID (not paid yet), CANCELLED, and EXPIRED bookings
-            // Only count bookings that have been paid (DEPOSIT_PAID, CONFIRMED, CHECKED_IN, COMPLETED)
-            notIn: [BookingStatus.UNPAID, BookingStatus.CANCELLED, BookingStatus.EXPIRED]
+            // Only block booking if there is an active booking (DEPOSIT_PAID, CONFIRMED, CHECKED_IN)
+            in: [BookingStatus.DEPOSIT_PAID, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
           },
           OR: [
             {
