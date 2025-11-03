@@ -1,13 +1,15 @@
 export { HeroSearch } from "../public/hero-search";
 export { Testimonials } from "./testimonials";
-export {
-  PublicPropertiesSection,
-  PublicPropertiesSectionSkeleton,
-} from "./public-properties-section";
+export { PropertyListingSection } from "./property-listing-section";
+export { PropertyFilterBar } from "./property-filter-bar";
 export { PropertyDetailHero } from "./property-detail-hero";
+export { PropertyDetailHeroImproved } from "./property-detail-hero-improved";
 export { PropertyDetailMetrics } from "./property-detail-metrics";
 export { PropertyDetailOverview } from "./property-detail-overview";
 export { PropertyDetailFacilities } from "./property-detail-facilities";
 export { PropertyDetailGallery } from "./property-detail-gallery";
+export { PropertyDetailGalleryImproved } from "./property-detail-gallery-improved";
 export { PropertyDetailRooms } from "./property-detail-rooms";
 export { WhatsAppFloat } from "./whatsapp-float";
+export { QuickBookingCard } from "./quick-booking-card";
+export { RoomImageCarousel } from "./room-image-carousel";

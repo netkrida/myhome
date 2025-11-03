@@ -377,8 +377,9 @@ export interface PublicPropertiesQuery {
   page?: number;
   limit?: number;
   propertyType?: PropertyType;
-  regencyCode?: string;
-  districtCode?: string;
+  provinceName?: string;
+  regencyName?: string;
+  districtName?: string;
   minPrice?: number;
   maxPrice?: number;
   sortBy?: 'price' | 'newest';

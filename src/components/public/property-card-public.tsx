@@ -84,11 +84,11 @@ export function PublicPropertyCard({
   return (
     <Card
       className={cn(
-        "group relative flex h-full w-full max-w-full flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-900/90 dark:hover:shadow-[0_20px_40px_-25px_rgba(15,23,42,0.65)] sm:max-w-[20rem]",
+        "group relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-900/90 dark:hover:shadow-[0_20px_40px_-25px_rgba(15,23,42,0.65)] sm:rounded-3xl",
         className,
       )}
     >
-      <div className="relative h-36 w-full overflow-hidden">
+      <div className="relative aspect-[4/3] w-full overflow-hidden sm:h-36 sm:aspect-auto">
         {property.mainImage && !imageError ? (
           <>
             {isImageLoading && <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-700/60" />}
@@ -107,46 +107,46 @@ export function PublicPropertyCard({
           </div>
         )}
 
-        <div className="absolute inset-x-3 top-3 flex items-center justify-between gap-2 text-xs">
+        <div className="absolute inset-x-2 top-2 flex items-center justify-between gap-1 text-xs sm:inset-x-3 sm:top-3">
           {typeInfo && (
             <Badge
               variant="secondary"
-              className={cn("rounded-full px-2.5 py-1 font-semibold", typeInfo.badgeClass)}
+              className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2.5 sm:py-1 sm:text-xs", typeInfo.badgeClass)}
             >
               {typeInfo.label}
             </Badge>
           )}
           {property.availableRooms > 0 && (
-            <Badge className="rounded-full bg-blue-500 px-2.5 py-1 font-semibold text-white dark:bg-blue-500/80">
+            <Badge className="rounded-full bg-blue-500 px-1.5 py-0.5 text-[10px] font-semibold text-white dark:bg-blue-500/80 sm:px-2.5 sm:py-1 sm:text-xs">
               {property.availableRooms} kamar
             </Badge>
           )}
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <div className="space-y-2">
+      <div className="flex flex-1 flex-col gap-2 p-2.5 sm:gap-3 sm:p-4">
+        <div className="space-y-1 sm:space-y-2">
           <Link href={`/property/${property.id}`} className="block">
-            <h3 className="line-clamp-2 text-[15px] font-semibold text-slate-900 transition group-hover:text-blue-700 dark:text-slate-100 dark:group-hover:text-blue-300">
+            <h3 className="line-clamp-2 text-xs font-semibold leading-tight text-slate-900 transition group-hover:text-blue-700 dark:text-slate-100 dark:group-hover:text-blue-300 sm:text-[15px] sm:leading-normal">
               {property.name}
             </h3>
           </Link>
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
-            <MapPin className="h-3.5 w-3.5 text-blue-500 dark:text-blue-300" />
-            <span>
+          <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-300 sm:gap-2 sm:text-xs">
+            <MapPin className="h-3 w-3 shrink-0 text-blue-500 dark:text-blue-300 sm:h-3.5 sm:w-3.5" />
+            <span className="truncate">
               {property.location.districtName}, {property.location.regencyName}
             </span>
           </div>
         </div>
 
-        <div className="space-y-1">
-          <div className="text-[11px] font-medium uppercase tracking-wide text-blue-500 dark:text-blue-300">Mulai dari</div>
-          <div className="text-xl font-bold text-blue-700 dark:text-blue-300">{formatPrice(property.cheapestMonthlyPrice)}</div>
-          <div className="text-[11px] text-slate-400 dark:text-slate-500">Harga belum termasuk pajak</div>
+        <div className="space-y-0.5 sm:space-y-1">
+          <div className="text-[9px] font-medium uppercase tracking-wide text-blue-500 dark:text-blue-300 sm:text-[11px]">Mulai dari</div>
+          <div className="text-sm font-bold text-blue-700 dark:text-blue-300 sm:text-xl">{formatPrice(property.cheapestMonthlyPrice)}</div>
+          <div className="text-[9px] text-slate-400 dark:text-slate-500 sm:text-[11px]">Harga belum termasuk pajak</div>
         </div>
 
         {facilities.length > 0 && (
-          <div className="space-y-2">
+          <div className="hidden space-y-2 sm:block">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Fasilitas utama
             </div>
@@ -165,39 +165,39 @@ export function PublicPropertyCard({
           </div>
         )}
 
-        <div className="mt-auto flex items-center justify-between">
+        <div className="mt-auto flex items-center justify-between gap-1">
           <Button
             variant="outline"
-            className="h-9 rounded-full border-blue-100 bg-white px-4 text-xs font-semibold text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-200 dark:hover:bg-blue-900/30"
+            className="h-7 flex-1 rounded-full border-blue-100 bg-white px-2 text-[10px] font-semibold text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-200 dark:hover:bg-blue-900/30 sm:h-9 sm:flex-none sm:px-4 sm:text-xs"
             asChild
           >
             <Link href={`/property/${property.id}`}>Lihat Detail</Link>
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {onFavorite && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full border border-blue-100 text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-200 dark:hover:bg-blue-900/30"
+                className="h-7 w-7 rounded-full border border-blue-100 text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-200 dark:hover:bg-blue-900/30 sm:h-8 sm:w-8"
                 onClick={(event) => {
                   event.preventDefault();
                   onFavorite(property);
                 }}
               >
-                <Heart className={cn("h-4 w-4", isFavorited && "fill-current text-rose-400")} />
+                <Heart className={cn("h-3 w-3 sm:h-4 sm:w-4", isFavorited && "fill-current text-rose-400")} />
               </Button>
             )}
             {onShare && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full border border-blue-100 text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-200 dark:hover:bg-blue-900/30"
+                className="h-7 w-7 rounded-full border border-blue-100 text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-200 dark:hover:bg-blue-900/30 sm:h-8 sm:w-8"
                 onClick={(event) => {
                   event.preventDefault();
                   onShare(property);
                 }}
               >
-                <Share2 className="h-4 w-4" />
+                <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             )}
           </div>

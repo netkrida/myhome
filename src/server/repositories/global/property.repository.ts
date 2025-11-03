@@ -583,8 +583,9 @@ export class PropertyRepository {
       page = 1,
       limit = 12,
       propertyType,
-      regencyCode,
-      districtCode,
+      provinceName,
+      regencyName,
+      districtName,
       minPrice,
       maxPrice,
       sortBy = "newest",
@@ -597,11 +598,42 @@ export class PropertyRepository {
     };
 
     if (propertyType) where.propertyType = propertyType;
-    if (regencyCode) where.regencyCode = regencyCode;
-    if (districtCode) where.districtCode = districtCode;
+    if (provinceName) {
+      where.provinceName = {
+        contains: provinceName,
+        mode: 'insensitive' // Case-insensitive partial match
+      };
+    }
+    if (regencyName) {
+      // Clean regency name: remove prefix like "KABUPATEN ", "KOTA ", "KAB. ", etc
+      const cleanRegencyName = regencyName
+        .replace(/^(KABUPATEN|KOTA|KAB\.|KOTA)\s+/i, '')
+        .trim();
+
+      console.log("🧹 Cleaning regency name:", {
+        original: regencyName,
+        cleaned: cleanRegencyName
+      });
+
+      where.regencyName = {
+        contains: cleanRegencyName,
+        mode: 'insensitive' // Case-insensitive partial match
+      };
+    }
+    if (districtName) {
+      where.districtName = {
+        contains: districtName,
+        mode: 'insensitive' // Case-insensitive partial match
+      };
+    }
+
+    // Debug logging
+    console.log("🔍 Repository Filter - WHERE clause:", JSON.stringify(where, null, 2));
+    console.log("📍 Filter values:", { provinceName, regencyName, districtName });
 
     // Get total count
     const total = await prisma.property.count({ where });
+    console.log("📊 Total properties found:", total);
 
     // Calculate pagination
     const totalPages = Math.ceil(total / limit);

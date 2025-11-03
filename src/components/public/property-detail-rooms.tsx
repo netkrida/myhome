@@ -15,6 +15,7 @@ import {
   resolveFacilityLabel,
   magicCardClass,
 } from "./property-detail-utils";
+import { RoomImageCarousel } from "./room-image-carousel";
 
 interface PropertyDetailRoomsProps {
   property: PublicPropertyDetailDTO;
@@ -107,7 +108,6 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
 
           const facilities = Array.isArray(room.facilities) ? (room.facilities as DetailFacility[]) : [];
           const roomFacilityEntries = facilities.length > 0 ? orderedFacilityEntries(groupFacilitiesByCategory(facilities)) : [];
-          const primaryImage = [...room.images].sort((a, b) => a.sortOrder - b.sortOrder)[0] ?? null;
           const highlightFacilities = facilities.slice(0, 8);
           const dailyPrice = room.dailyPrice ? formatCurrency(room.dailyPrice) : null;
 
@@ -115,32 +115,20 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
             <Card key={summary.roomType} className={`${magicCardClass} overflow-hidden`}>
               <CardContent className="flex flex-col gap-6 p-5 transition-colors md:flex-row md:items-stretch md:gap-8">
                 <div className="md:w-64">
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-                    {primaryImage ? (
-                      <Image
-                        src={primaryImage.imageUrl}
-                        alt={primaryImage.caption ?? `${room.roomType} - ${property.name}`}
-                        fill
-                        sizes="(min-width: 1024px) 260px, 50vw"
-                        className="object-cover transition duration-700 hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center bg-muted text-muted-foreground/60">
-                        <BedDouble className="h-10 w-10" />
-                      </div>
-                    )}
-                    {room.images.length > 0 && (
-                      <div className="absolute right-3 top-3 inline-flex items-center rounded-full bg-slate-900/80 px-3 py-1 text-xs font-semibold text-white shadow">
-                        1/{room.images.length}
-                      </div>
-                    )}
-                    <div className="absolute left-3 top-3 flex flex-col gap-2">
-                      <Badge className="flex items-center gap-2 rounded-full bg-card/90 px-3 py-1 text-xs font-semibold text-foreground/80">
+                  <div className="relative aspect-[4/3] w-full">
+                    <RoomImageCarousel
+                      images={room.images}
+                      roomType={room.roomType}
+                      propertyName={property.name}
+                      className="h-full w-full"
+                    />
+                    <div className="absolute left-3 top-3 z-20 flex flex-col gap-2">
+                      <Badge className="flex items-center gap-2 rounded-full bg-card/90 px-3 py-1 text-xs font-semibold text-foreground/80 shadow-lg">
                         <Sparkles className="h-3.5 w-3.5 text-blue-500" />
                         {summary.availableRooms > 0 ? "Best pick" : "Fully booked"}
                       </Badge>
                       {summary.availableRooms > 0 && summary.availableRooms < 5 && (
-                        <Badge className="flex items-center gap-1 rounded-full bg-amber-500/90 px-3 py-1 text-xs font-semibold text-white">
+                        <Badge className="flex items-center gap-1 rounded-full bg-amber-500/90 px-3 py-1 text-xs font-semibold text-white shadow-lg">
                           <AlertTriangle className="h-3 w-3" />
                           Sisa {summary.availableRooms}
                         </Badge>
@@ -306,7 +294,6 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
             if (!room) return null;
 
             const facilities = Array.isArray(room.facilities) ? (room.facilities as DetailFacility[]) : [];
-            const primaryImage = [...room.images].sort((a, b) => a.sortOrder - b.sortOrder)[0] ?? null;
             const highlightFacilities = facilities.slice(0, 4);
             const dailyPrice = room.dailyPrice ? formatCurrency(room.dailyPrice) : null;
 
@@ -314,32 +301,20 @@ export function PropertyDetailRooms({ property, roomCountLabel }: PropertyDetail
               <Card key={summary.roomType} className={`${magicCardClass} w-80 flex-shrink-0 overflow-hidden`}>
                 <CardContent className="p-4">
                   {/* Image Section */}
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
-                    {primaryImage ? (
-                      <Image
-                        src={primaryImage.imageUrl}
-                        alt={primaryImage.caption ?? `${room.roomType} - ${property.name}`}
-                        fill
-                        sizes="320px"
-                        className="object-cover transition duration-700 hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center bg-muted text-muted-foreground/60">
-                        <BedDouble className="h-8 w-8" />
-                      </div>
-                    )}
-                    {room.images.length > 0 && (
-                      <div className="absolute right-2 top-2 inline-flex items-center rounded-full bg-slate-900/80 px-2 py-1 text-xs font-semibold text-white shadow">
-                        1/{room.images.length}
-                      </div>
-                    )}
-                    <div className="absolute left-2 top-2 flex flex-col gap-1">
-                      <Badge className="flex items-center gap-1 rounded-full bg-card/90 px-2 py-1 text-xs font-semibold text-foreground/80">
+                  <div className="relative aspect-[4/3] w-full">
+                    <RoomImageCarousel
+                      images={room.images}
+                      roomType={room.roomType}
+                      propertyName={property.name}
+                      className="h-full w-full"
+                    />
+                    <div className="absolute left-2 top-2 z-20 flex flex-col gap-1">
+                      <Badge className="flex items-center gap-1 rounded-full bg-card/90 px-2 py-1 text-xs font-semibold text-foreground/80 shadow-lg">
                         <Sparkles className="h-3 w-3 text-blue-500" />
                         {summary.availableRooms > 0 ? "Terbaik" : "Penuh"}
                       </Badge>
                       {summary.availableRooms > 0 && summary.availableRooms < 5 && (
-                        <Badge className="flex items-center gap-1 rounded-full bg-amber-500/90 px-2 py-1 text-xs font-semibold text-white">
+                        <Badge className="flex items-center gap-1 rounded-full bg-amber-500/90 px-2 py-1 text-xs font-semibold text-white shadow-lg">
                           <AlertTriangle className="h-2.5 w-2.5" />
                           Sisa {summary.availableRooms}
                         </Badge>
