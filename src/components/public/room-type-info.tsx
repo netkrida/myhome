@@ -133,6 +133,7 @@ export function RoomTypeInfo({ roomType }: RoomTypeInfoProps) {
                   fill
                   sizes="(min-width: 768px) 300px, 100vw"
                   className="object-cover"
+                  unoptimized
                 />
               ) : (
                 <div className="flex h-full items-center justify-center bg-muted text-muted-foreground">

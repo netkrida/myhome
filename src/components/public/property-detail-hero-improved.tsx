@@ -61,6 +61,7 @@ export function PropertyDetailHeroImproved({ property, mapsUrl, roomCountLabel }
                     priority
                     sizes="100vw"
                     className="object-cover transition duration-500 group-hover:scale-105"
+                    unoptimized
                   />
                   {sortedImages.length > 1 && (
                     <div className="absolute bottom-3 right-3 flex items-center gap-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
@@ -93,6 +94,7 @@ export function PropertyDetailHeroImproved({ property, mapsUrl, roomCountLabel }
                     priority
                     sizes="50vw"
                     className="object-cover transition duration-500 group-hover:scale-105"
+                    unoptimized
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </button>
@@ -116,6 +118,7 @@ export function PropertyDetailHeroImproved({ property, mapsUrl, roomCountLabel }
                         fill
                         sizes="25vw"
                         className="object-cover transition duration-500 group-hover:scale-110"
+                        unoptimized
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
@@ -262,6 +265,7 @@ export function PropertyDetailHeroImproved({ property, mapsUrl, roomCountLabel }
                   className="object-contain"
                   sizes="100vw"
                   priority
+                  unoptimized
                 />
               </div>
             )}

@@ -118,6 +118,7 @@ export function PropertyCard({
             fill
             className="object-cover"
             onError={handleImageError}
+            unoptimized
           />
         ) : (
           <div className="flex items-center justify-center h-full">

@@ -111,6 +111,7 @@ export function AdvertisementCarousel() {
                     fill
                     className="object-cover"
                     priority={advertisements.indexOf(ad) === 0}
+                    unoptimized
                   />
                   {/* Overlay with title and description */}
                   {(ad.title || ad.description) && (
@@ -138,6 +139,7 @@ export function AdvertisementCarousel() {
                     fill
                     className="object-cover"
                     priority={advertisements.indexOf(ad) === 0}
+                    unoptimized
                   />
                   {/* Overlay with title and description */}
                   {(ad.title || ad.description) && (

@@ -184,6 +184,7 @@ function RoomCard({
                       fill
                       sizes="400px"
                       className="object-cover"
+                      unoptimized
                     />
                   </div>
                 )}

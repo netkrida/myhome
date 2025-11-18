@@ -709,7 +709,7 @@ export function BookingCheckoutContent({
         <Card className="overflow-hidden">
           {propertyMainImage && (
             <div className="relative h-40 w-full">
-              <Image src={propertyMainImage} alt={property.name} fill className="object-cover" />
+              <Image src={propertyMainImage} alt={property.name} fill className="object-cover" unoptimized />
             </div>
           )}
           <CardHeader>

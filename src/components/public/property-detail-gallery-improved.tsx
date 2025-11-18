@@ -84,6 +84,7 @@ export function PropertyDetailGalleryImproved({ property }: PropertyDetailGaller
                           fill
                           sizes="192px"
                           className="object-cover transition duration-300 group-hover:scale-105"
+                          unoptimized
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                       </button>
@@ -108,6 +109,7 @@ export function PropertyDetailGalleryImproved({ property }: PropertyDetailGaller
                           fill
                           sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                           className="object-cover transition duration-500 group-hover:scale-110"
+                          unoptimized
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
@@ -163,6 +165,7 @@ export function PropertyDetailGalleryImproved({ property }: PropertyDetailGaller
                   className="object-contain"
                   sizes="100vw"
                   priority
+                  unoptimized
                 />
               </div>
             )}

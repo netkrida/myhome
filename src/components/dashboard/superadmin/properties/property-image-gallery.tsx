@@ -67,6 +67,7 @@ function ImageViewer({ images, currentIndex, isOpen, onClose, onNext, onPrevious
               fill
               className="object-contain"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+              unoptimized
             />
           </div>
           
@@ -114,6 +115,7 @@ function ImageViewer({ images, currentIndex, isOpen, onClose, onNext, onPrevious
                   fill
                   className="object-cover"
                   sizes="64px"
+                  unoptimized
                 />
               </button>
             ))}
@@ -202,6 +204,7 @@ export function PropertyImageGallery({ images }: PropertyImageGalleryProps) {
               fill
               className="object-cover transition-transform group-hover:scale-105"
               sizes="(max-width: 1024px) 100vw, 75vw"
+              unoptimized
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
               <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -227,6 +230,7 @@ export function PropertyImageGallery({ images }: PropertyImageGalleryProps) {
                 fill
                 className="object-cover transition-transform group-hover:scale-105"
                 sizes="(max-width: 1024px) 50vw, 25vw"
+                unoptimized
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                 <ZoomIn className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />

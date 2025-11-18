@@ -59,6 +59,7 @@ export function RoomImageCarousel({
           fill
           sizes="(min-width: 1024px) 260px, 50vw"
           className="object-cover transition duration-500"
+          unoptimized
         />
       </div>
 

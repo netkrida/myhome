@@ -99,6 +99,7 @@ export function PublicPropertyCard({
               className="object-cover"
               onError={handleImageError}
               onLoad={handleImageLoad}
+              unoptimized
             />
           </>
         ) : (

@@ -380,6 +380,7 @@ export function AddRoomModal({
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 33vw, 150px"
+                        unoptimized
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
                         <p className="text-[10px] text-white font-medium truncate">
