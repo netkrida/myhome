@@ -4,7 +4,13 @@
       "Bash(npx tsc:*)",
       "Bash(npx prisma studio)",
       "Bash(npm install:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(prisma/schema.prisma)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(ls:*)",
+      "Bash(src/components/layout/dashboard-sidebar.tsx)",
+      "Bash(npx prisma generate:*)"
     ],
     "deny": [],
     "ask": []

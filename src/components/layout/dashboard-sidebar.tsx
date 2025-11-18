@@ -23,6 +23,7 @@ import {
   IconReport,
   IconUpload,
   IconActivity,
+  IconAd,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -69,6 +70,11 @@ export function DashboardSidebar({ variant = "sidebar" }: DashboardSidebarProps)
             title: "Transaction",
             url: "/dashboard/superadmin/transactions",
             icon: IconChartBar,
+          },
+          {
+            title: "Iklan",
+            url: "/dashboard/superadmin/iklan",
+            icon: IconAd,
           },
           {
             title: "Submission",

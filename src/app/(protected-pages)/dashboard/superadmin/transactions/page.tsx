@@ -184,7 +184,7 @@ export default function TransactionsPage() {
       if (result.success && result.data) {
         setSummary(result.data);
       } else {
-        toast.error(result.error || "Gagal memuat summary");
+        toast.error(result.error?.message || "Gagal memuat summary");
       }
     } catch (error) {
       console.error("Error fetching summary:", error);
@@ -205,7 +205,7 @@ export default function TransactionsPage() {
         setTimeSeries(result.data.timeSeries);
         setMethodBreakdown(result.data.methodBreakdown);
       } else {
-        toast.error(result.error || "Gagal memuat chart data");
+        toast.error(result.error?.message || "Gagal memuat chart data");
       }
     } catch (error) {
       console.error("Error fetching chart data:", error);
@@ -225,7 +225,7 @@ export default function TransactionsPage() {
       if (result.success && result.data) {
         setTransactions(result.data);
       } else {
-        toast.error(result.error || "Gagal memuat transaksi");
+        toast.error(result.error?.message || "Gagal memuat transaksi");
       }
     } catch (error) {
       console.error("Error fetching transactions:", error);
