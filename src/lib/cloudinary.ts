@@ -7,18 +7,20 @@ import { v2 as cloudinary } from 'cloudinary';
 
 // Cloudinary configuration
 cloudinary.config({
-  cloud_name: 'dg0ybxdbt',
-  api_key: '836543447587342',
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dg0ybxdbt',
+  api_key: process.env.CLOUDINARY_API_KEY || '836543447587342',
   api_secret: process.env.CLOUDINARY_API_SECRET || 'joI9lZdqjlWNyCEnJ5gh0ugYuzQ',
 });
 
 // Debug: Log configuration status (remove in production)
 if (process.env.NODE_ENV === 'development') {
   console.log('🔧 Cloudinary Config:', {
-    cloud_name: 'dg0ybxdbt',
-    api_key: '836543447587342',
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dg0ybxdbt',
+    api_key: process.env.CLOUDINARY_API_KEY || '836543447587342',
+    cloud_name_set: !!process.env.CLOUDINARY_CLOUD_NAME,
+    api_key_set: !!process.env.CLOUDINARY_API_KEY,
     api_secret_set: !!process.env.CLOUDINARY_API_SECRET,
-    api_secret_fallback: !process.env.CLOUDINARY_API_SECRET ? 'Using fallback' : 'Using env var',
+    using_env_vars: !!process.env.CLOUDINARY_CLOUD_NAME && !!process.env.CLOUDINARY_API_KEY && !!process.env.CLOUDINARY_API_SECRET,
   });
 }
 
@@ -49,6 +51,7 @@ export async function uploadImage(
   try {
     const uploadOptions = {
       folder: options.folder || 'kos-properties',
+      upload_preset: 'ml_default',
       transformation: options.transformation || [
         { width: 1200, height: 800, crop: 'limit', quality: 'auto' },
         { fetch_format: 'auto' }
@@ -242,9 +245,10 @@ export async function uploadToCloudinary(
 ): Promise<CloudinaryUploadResult> {
   try {
     const uploadData = `data:image/jpeg;base64,${buffer.toString('base64')}`;
-    
+
     const uploadOptions: any = {
       folder,
+      upload_preset: 'ml_default',
       transformation: [
         { width: 1200, height: 1200, crop: 'limit', quality: 'auto' },
         { fetch_format: 'auto' }
