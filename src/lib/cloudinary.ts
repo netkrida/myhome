@@ -231,6 +231,21 @@ export function getThumbnailUrl(publicId: string): string {
 }
 
 /**
+ * Get Cloudinary URL from public_id or return URL as-is if already a full URL
+ * This is useful when you have public_id stored in database
+ */
+export function getCloudinaryUrl(publicIdOrUrl: string, cloudName?: string): string {
+  // If it's already a full URL (http/https), return as-is
+  if (publicIdOrUrl.startsWith('http://') || publicIdOrUrl.startsWith('https://')) {
+    return publicIdOrUrl;
+  }
+
+  // Otherwise, construct Cloudinary URL from public_id
+  const cloud = cloudName || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dg0ybxdbt';
+  return `https://res.cloudinary.com/${cloud}/image/upload/${publicIdOrUrl}`;
+}
+
+/**
  * Upload to Cloudinary with options
  * Used by storage adapters
  */

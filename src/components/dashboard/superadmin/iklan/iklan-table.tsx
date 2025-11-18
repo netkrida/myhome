@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Advertisement } from "@/app/(protected-pages)/dashboard/superadmin/iklan/page";
 import Image from "next/image";
+import { getCloudinaryUrl } from "@/lib/cloudinary";
 
 interface IklanTableProps {
   data: Advertisement[];
@@ -77,12 +78,18 @@ export function IklanTable({ data, isLoading, onEdit, onDelete }: IklanTableProp
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((ad) => (
+              {data.map((ad) => {
+                // Use publicId if available, otherwise fallback to imageUrl
+                const imageUrl = ad.publicId
+                  ? getCloudinaryUrl(ad.publicId)
+                  : ad.imageUrl;
+
+                return (
                 <TableRow key={ad.id}>
                   <TableCell>
                     <div className="relative w-20 h-12 rounded overflow-hidden bg-muted">
                       <Image
-                        src={ad.imageUrl}
+                        src={imageUrl}
                         alt={ad.title}
                         fill
                         className="object-cover"
@@ -158,7 +165,8 @@ export function IklanTable({ data, isLoading, onEdit, onDelete }: IklanTableProp
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>

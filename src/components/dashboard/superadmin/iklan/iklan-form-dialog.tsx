@@ -30,6 +30,7 @@ import type { Advertisement } from "@/app/(protected-pages)/dashboard/superadmin
 import Image from "next/image";
 import { Upload, X } from "lucide-react";
 import { uploadImageFromBrowser, validateImageFile } from "@/lib/upload-helpers";
+import { getCloudinaryUrl } from "@/lib/cloudinary";
 
 const formSchema = z.object({
   title: z.string().min(1, "Judul harus diisi").max(255, "Judul maksimal 255 karakter"),
@@ -91,7 +92,11 @@ export function IklanFormDialog({
             ? new Date(editingAd.endDate).toISOString().slice(0, 16)
             : "",
         });
-        setImagePreview(editingAd.imageUrl);
+        // Use publicId if available, otherwise fallback to imageUrl
+        const previewUrl = editingAd.publicId
+          ? getCloudinaryUrl(editingAd.publicId)
+          : editingAd.imageUrl;
+        setImagePreview(previewUrl);
         setImageFile(null);
       } else {
         form.reset({
