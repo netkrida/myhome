@@ -93,6 +93,7 @@ export function IklanTable({ data, isLoading, onEdit, onDelete }: IklanTableProp
                         alt={ad.title}
                         fill
                         className="object-cover"
+                        unoptimized
                       />
                     </div>
                   </TableCell>

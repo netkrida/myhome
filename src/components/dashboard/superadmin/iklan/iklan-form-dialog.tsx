@@ -251,6 +251,7 @@ export function IklanFormDialog({
                     alt="Preview"
                     fill
                     className="object-cover"
+                    unoptimized
                   />
                   <Button
                     type="button"
