@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Advertisement } from "@/app/(protected-pages)/dashboard/superadmin/iklan/page";
 import Image from "next/image";
-import { getCloudinaryUrl } from "@/lib/cloudinary";
+import { getCloudinaryUrl } from "@/lib/cloudinary-utils";
 
 interface IklanTableProps {
   data: Advertisement[];

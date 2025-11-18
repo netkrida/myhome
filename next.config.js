@@ -16,8 +16,6 @@ const config = {
 
   // Image configuration for external domains
   images: {
-    loader: 'custom',
-    loaderFile: './src/lib/cloudinary-loader.ts',
     remotePatterns: [
       {
         protocol: 'https',

@@ -30,7 +30,7 @@ import type { Advertisement } from "@/app/(protected-pages)/dashboard/superadmin
 import Image from "next/image";
 import { Upload, X } from "lucide-react";
 import { uploadImageFromBrowser, validateImageFile } from "@/lib/upload-helpers";
-import { getCloudinaryUrl } from "@/lib/cloudinary";
+import { getCloudinaryUrl } from "@/lib/cloudinary-utils";
 
 const formSchema = z.object({
   title: z.string().min(1, "Judul harus diisi").max(255, "Judul maksimal 255 karakter"),
