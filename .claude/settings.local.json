@@ -10,7 +10,9 @@
       "Bash(npx prisma migrate dev:*)",
       "Bash(ls:*)",
       "Bash(src/components/layout/dashboard-sidebar.tsx)",
-      "Bash(npx prisma generate:*)"
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx prisma migrate:*)"
     ],
     "deny": [],
     "ask": []
