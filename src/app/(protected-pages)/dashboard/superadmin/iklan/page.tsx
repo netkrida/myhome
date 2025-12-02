@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { formatErrorMessage } from "@/lib/toast-utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PendingAdvertisements } from "@/components/dashboard/superadmin/iklan/pending-advertisements";
 import { ApprovedAdvertisements } from "@/components/dashboard/superadmin/iklan/approved-advertisements";
@@ -99,7 +100,7 @@ export default function SuperAdminIklanPage() {
         toast.success("Iklan berhasil disetujui!");
         fetchAllData();
       } else {
-        toast.error(result.error || "Gagal menyetujui iklan");
+        toast.error(formatErrorMessage(result.error, "Gagal menyetujui iklan"));
       }
     } catch (error) {
       console.error("Error approving advertisement:", error);
@@ -120,7 +121,7 @@ export default function SuperAdminIklanPage() {
         toast.success("Iklan berhasil ditolak!");
         fetchAllData();
       } else {
-        toast.error(result.error || "Gagal menolak iklan");
+        toast.error(formatErrorMessage(result.error, "Gagal menolak iklan"));
       }
     } catch (error) {
       console.error("Error rejecting advertisement:", error);
@@ -141,7 +142,7 @@ export default function SuperAdminIklanPage() {
         toast.success("Iklan berhasil dipasang!");
         fetchAllData();
       } else {
-        toast.error(result.error || "Gagal memasang iklan");
+        toast.error(formatErrorMessage(result.error, "Gagal memasang iklan"));
       }
     } catch (error) {
       console.error("Error placing advertisement:", error);
@@ -160,7 +161,7 @@ export default function SuperAdminIklanPage() {
         toast.success("Iklan berhasil dihapus dari layout!");
         fetchAllData();
       } else {
-        toast.error(result.error || "Gagal menghapus iklan dari layout");
+        toast.error(formatErrorMessage(result.error, "Gagal menghapus iklan dari layout"));
       }
     } catch (error) {
       console.error("Error removing advertisement from layout:", error);
@@ -183,7 +184,7 @@ export default function SuperAdminIklanPage() {
         toast.success("Iklan berhasil dihapus!");
         fetchAllData();
       } else {
-        toast.error(result.error || "Gagal menghapus iklan");
+        toast.error(formatErrorMessage(result.error, "Gagal menghapus iklan"));
       }
     } catch (error) {
       console.error("Error deleting advertisement:", error);

@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { formatErrorMessage } from "@/lib/toast-utils";
 import { AdvertisementSubmitDialog } from "@/components/dashboard/adminkos/iklan/advertisement-submit-dialog";
 import { AdvertisementList } from "@/components/dashboard/adminkos/iklan/advertisement-list";
 import type { AdvertisementDTO } from "@/server/types/advertisement.types";
@@ -28,7 +29,7 @@ export default function AdminKosIklanPage() {
       if (result.success && result.data) {
         setAdvertisements(result.data);
       } else {
-        toast.error(result.error || "Gagal memuat iklan");
+        toast.error(formatErrorMessage(result.error) || "Gagal memuat iklan");
       }
     } catch (error) {
       console.error("Error fetching advertisements:", error);
@@ -64,7 +65,7 @@ export default function AdminKosIklanPage() {
         toast.success("Iklan berhasil dihapus!");
         fetchAdvertisements();
       } else {
-        toast.error(result.error || "Gagal menghapus iklan");
+        toast.error(formatErrorMessage(result.error) || "Gagal menghapus iklan");
       }
     } catch (error) {
       console.error("Error deleting advertisement:", error);

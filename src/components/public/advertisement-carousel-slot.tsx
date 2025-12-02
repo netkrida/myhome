@@ -181,26 +181,7 @@ export function AdvertisementCarouselSlot({
       </div>
 
       {/* Navigation Arrows - Hidden for infinite scroll */}
-      {advertisements.length > 1 && !infiniteScroll && (
-        <>
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg"
-            onClick={scrollPrev}
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg"
-            onClick={scrollNext}
-          >
-            <ChevronRight className="h-6 w-6" />
-          </Button>
-        </>
-      )}
+      {/* Navigation arrows removed for public display */}
 
       {/* Dots - Hidden for infinite scroll */}
       {advertisements.length > 1 && !infiniteScroll && (

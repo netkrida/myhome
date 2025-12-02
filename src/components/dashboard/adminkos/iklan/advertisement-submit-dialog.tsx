@@ -25,6 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { formatErrorMessage } from "@/lib/toast-utils";
 import type { AdvertisementDTO } from "@/server/types/advertisement.types";
 import { CloudinaryUploadWidget } from "@/components/cloudinary/cloudinary-upload-widget";
 
@@ -96,7 +97,7 @@ export function AdvertisementSubmitDialog({
         onSuccess();
         form.reset();
       } else {
-        toast.error(result.error || "Gagal menyimpan iklan");
+        toast.error(formatErrorMessage(result.error) || "Gagal menyimpan iklan");
       }
     } catch (error) {
       console.error("Error submitting advertisement:", error);
