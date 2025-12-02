@@ -115,6 +115,10 @@ export function DashboardSidebar({ variant = "sidebar" }: DashboardSidebarProps)
             url: "/dashboard/adminkos/bookings",
             icon: IconCalendar,
           },
+          { title: "Iklan",
+            url: "/dashboard/adminkos/iklan",
+            icon: IconAd,
+          },
           {
             title: "Receptionists",
             url: "/dashboard/adminkos/receptionist",

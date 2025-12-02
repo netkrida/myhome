@@ -43,6 +43,7 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().optional(),
+    NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: z.string().optional(),
   },
 
   /**
@@ -73,6 +74,7 @@ export const env = createEnv({
     SKIP_DB_SEED: process.env.SKIP_DB_SEED,
     DB_RESET_MODE: process.env.DB_RESET_MODE,
     NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

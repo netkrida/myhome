@@ -1,12 +1,16 @@
 /**
- * /api/superadmin/iklan/[id]
- * SuperAdmin advertisement detail management
+ * /api/superadmin/iklan/[id]/place
+ * Place advertisement in layout or remove from layout
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserContext } from "@/server/lib/auth";
 import { UserRole } from "@/server/types/rbac";
 import { AdvertisementService } from "@/server/services/advertisement.service";
+import {
+  advertisementPlacementSchema,
+  type AdvertisementPlacementInput,
+} from "@/server/schemas/advertisement.schema";
 
 const service = new AdvertisementService();
 
@@ -15,10 +19,10 @@ interface RouteParams {
 }
 
 /**
- * GET /api/superadmin/iklan/[id]
- * Get specific advertisement by ID
+ * POST /api/superadmin/iklan/[id]/place
+ * Place advertisement in layout slot
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const userContext = await getCurrentUserContext();
     if (!userContext || userContext.role !== UserRole.SUPERADMIN) {
@@ -26,12 +30,30 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    console.log("🔍 SuperAdmin fetching advertisement detail:", { id });
+    const body = await request.json();
 
-    const result = await service.getAdvertisementById(id);
+    console.log("📌 SuperAdmin placing advertisement:", { id });
+
+    // Validate input
+    const validationResult = advertisementPlacementSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Validation error",
+          details: validationResult.error.errors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const data: AdvertisementPlacementInput = validationResult.data;
+
+    // Place advertisement
+    const result = await service.placeAdvertisement(id, data);
 
     if (!result.success) {
-      return NextResponse.json({ success: false, error: result.error }, { status: 404 });
+      return NextResponse.json({ success: false, error: result.error }, { status: 400 });
     }
 
     return NextResponse.json({
@@ -39,7 +61,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       data: result.data,
     });
   } catch (error) {
-    console.error("❌ Error in GET /api/superadmin/iklan/[id]:", error);
+    console.error("❌ Error in POST /api/superadmin/iklan/[id]/place:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }
@@ -48,8 +70,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 /**
- * DELETE /api/superadmin/iklan/[id]
- * Force delete advertisement (SuperAdmin only)
+ * DELETE /api/superadmin/iklan/[id]/place
+ * Remove advertisement from layout
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
@@ -59,9 +81,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    console.log("🗑️ SuperAdmin force deleting advertisement:", { id });
 
-    const result = await service.forceDeleteAdvertisement(id);
+    console.log("🗑️ SuperAdmin removing advertisement from layout:", { id });
+
+    // Remove from layout
+    const result = await service.removeFromLayout(id);
 
     if (!result.success) {
       return NextResponse.json({ success: false, error: result.error }, { status: 400 });
@@ -69,10 +93,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({
       success: true,
-      message: "Advertisement deleted successfully",
+      data: result.data,
     });
   } catch (error) {
-    console.error("❌ Error in DELETE /api/superadmin/iklan/[id]:", error);
+    console.error("❌ Error in DELETE /api/superadmin/iklan/[id]/place:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }

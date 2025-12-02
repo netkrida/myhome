@@ -81,6 +81,8 @@ model User {
   processedPayouts        Payout[]
   handledCheckIns         Booking[]               @relation("BookingCheckedInBy")
   handledCheckOuts        Booking[]               @relation("BookingCheckedOutBy")
+  submittedAdvertisements Advertisement[]         @relation("AdvertisementSubmitter")
+  reviewedAdvertisements  Advertisement[]         @relation("AdvertisementReviewer")
 
   @@index([email])
   @@index([role])
@@ -629,23 +631,51 @@ model LedgerEntry {
   @@index([refType, refId])
 }
 
-// Advertisement/Iklan Model
+// Advertisement/Iklan Model with Approval Flow
 model Advertisement {
-  id          String    @id @default(cuid())
-  title       String    @db.VarChar(255)
-  description String?   @db.Text
-  imageUrl    String    @db.VarChar(500)
-  publicId    String?   @db.VarChar(255) // Cloudinary public ID
-  linkUrl     String?   @db.VarChar(500) // Optional link when ad is clicked
-  sortOrder   Int       @default(0)
-  isActive    Boolean   @default(true)
-  startDate   DateTime? // Optional: when ad should start showing
-  endDate     DateTime? // Optional: when ad should stop showing
-  createdBy   String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id               String              @id @default(cuid())
+  title            String              @db.VarChar(255)
+  description      String?             @db.Text
+  imageUrl         String              @db.VarChar(500)
+  publicId         String?             @db.VarChar(255) // Cloudinary public ID
+  linkUrl          String?             @db.VarChar(500) // Optional link when ad is clicked
+  
+  // Approval workflow
+  status           AdvertisementStatus @default(PENDING)
+  submittedBy      String              // AdminKos user ID
+  submittedAt      DateTime            @default(now())
+  reviewedBy       String?             // SuperAdmin user ID
+  reviewedAt       DateTime?
+  rejectionReason  String?             @db.Text
+  
+  // Layout placement
+  layoutSlot       Int?                // Which carousel slot (1-based index)
+  placedAt         DateTime?           // When it was placed in layout
+  
+  // Display settings
+  sortOrder        Int                 @default(0)
+  isActive         Boolean             @default(true)
+  startDate        DateTime?           // Optional: when ad should start showing
+  endDate          DateTime?           // Optional: when ad should stop showing
+  
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 
+  submitter User @relation("AdvertisementSubmitter", fields: [submittedBy], references: [id], onDelete: Cascade)
+  reviewer  User? @relation("AdvertisementReviewer", fields: [reviewedBy], references: [id])
+
+  @@index([status])
+  @@index([submittedBy])
+  @@index([layoutSlot])
   @@index([isActive])
   @@index([sortOrder])
   @@index([startDate, endDate])
+}
+
+enum AdvertisementStatus {
+  PENDING       // Submitted by AdminKos, waiting approval
+  APPROVED      // Approved by SuperAdmin, waiting placement
+  PLACED        // Placed in layout and active
+  REJECTED      // Rejected by SuperAdmin
+  EXPIRED       // End date passed or manually deactivated
 }
