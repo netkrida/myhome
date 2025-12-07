@@ -10,6 +10,7 @@ import type { BankAccountDTO, BankAccountListItem, BalanceInfo, PayoutDetail } f
 import { AddBankAccountDialog } from "@/components/dashboard/adminkos/withdraw/add-bank-account-dialog";
 import { WithdrawDialog } from "@/components/dashboard/adminkos/withdraw/withdraw-dialog";
 import { PayoutHistoryTable } from "@/components/dashboard/adminkos/withdraw/payout-history-table";
+import { PayoutDetailDialog } from "@/components/dashboard/adminkos/withdraw/payout-detail-dialog";
 
 interface WithdrawPageClientProps {
   approvedBankAccount: BankAccountDTO | null;
@@ -47,6 +48,8 @@ export function WithdrawPageClient({
   const [payouts, setPayouts] = React.useState(initialPayouts);
   const [bankAccounts, setBankAccounts] = React.useState(initialBankAccounts);
   const [currentBalance, setCurrentBalance] = React.useState(balance);
+  const [selectedPayout, setSelectedPayout] = React.useState<PayoutDetail | null>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = React.useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -100,6 +103,11 @@ export function WithdrawPageClient({
   // Check if there's a pending bank account
   const pendingBankAccount = bankAccounts.find((ba) => ba.status === "PENDING");
   const rejectedBankAccount = bankAccounts.find((ba) => ba.status === "REJECTED");
+
+  const handleViewDetail = (payout: PayoutDetail) => {
+    setSelectedPayout(payout);
+    setIsDetailDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -336,7 +344,7 @@ export function WithdrawPageClient({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <PayoutHistoryTable payouts={payouts} />
+              <PayoutHistoryTable payouts={payouts} onViewDetail={handleViewDetail} />
             </CardContent>
           </Card>
         </>
@@ -358,6 +366,12 @@ export function WithdrawPageClient({
           balance={currentBalance}
         />
       )}
+
+      <PayoutDetailDialog
+        payout={selectedPayout}
+        open={isDetailDialogOpen}
+        onOpenChange={setIsDetailDialogOpen}
+      />
     </div>
   );
 }

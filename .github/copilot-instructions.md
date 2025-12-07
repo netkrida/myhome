@@ -1,40 +1,42 @@
+
 # Copilot Instructions for `boxbook`
 
-## 📦 Architecture & Layering
-- App Router is split into `src/app/(public-pages)` and `src/app/(protected-pages)`; protected pages are wrapped by `src/app/(protected-pages)/layout.tsx` which blocks unauthenticated users via `getCurrentUserContext()`.
-- API controllers live under `src/app/api/**/route.ts` and should only parse input, call the matching `src/server/api/*.api.ts` service, and shape the HTTP response.
-- Application services (`src/server/api`) wrap domain rules, always return the shared `Result<T>` type (see `src/server/types/result.ts`) and usually run in the `withAuth` helper from `src/server/lib/auth.ts` to enforce RBAC.
-- Domain logic belongs in `src/server/services`, while all database access, selection payloads, and pagination live in `src/server/repositories`. Repositories translate Prisma models to DTOs from `src/server/types`.
-- Validation starts in `src/server/schemas` (Zod); controllers must not trust raw `request.json()` without round-tripping through these schemas.
+## 🏗️ Architecture & Layering
+- **App Router**: Split into `src/app/(public-pages)` and `src/app/(protected-pages)`. Protected pages use `src/app/(protected-pages)/layout.tsx` for auth gating via `getCurrentUserContext()`.
+- **API Controllers**: Located in `src/app/api/**/route.ts`. Only parse/validate input, call matching service in `src/server/api/*.api.ts`, and shape HTTP responses.
+- **Services & Repositories**: Business logic in `src/server/services`. Data access, selection, and pagination in `src/server/repositories`, which map Prisma models to DTOs from `src/server/types`.
+- **Validation**: All input must be validated using Zod schemas in `src/server/schemas`. Never trust raw request data.
+- **Result Type**: All service methods return `Result<T>` (`src/server/types/result.ts`).
 
 ## 🔐 Authentication & Session Health
-- NextAuth v5 beta is configured in `src/server/auth/config.ts`; JWT callbacks re-validate users every 10 minutes using `UserRepository`. Any change to user state must stay in sync with this logic.
-- Use helpers from `src/server/lib/auth.ts` (e.g., `getCurrentUserContext`, `withRole`, `withPermission`) instead of rolling your own auth checks. They centralize session validation, logging, and RBAC enforcement.
-- Client components rely on `src/components/auth/session-health-monitor.tsx` and hooks in `src/hooks` for periodic session checks; keep these mounted on long-lived dashboards when adding layouts.
+- **NextAuth v5**: Configured in `src/server/auth/config.ts`. JWT callbacks re-validate users every 10 minutes using `UserRepository`.
+- **Auth Helpers**: Use `src/server/lib/auth.ts` (`getCurrentUserContext`, `withRole`, `withPermission`) for all RBAC/session checks. Do not roll your own.
+- **Session Monitoring**: Client components use `src/components/auth/session-health-monitor.tsx` and hooks in `src/hooks` for periodic session checks.
 
 ## 🧭 Frontend Patterns
-- UI primitives come from Shadcn (`src/components/ui`) plus select HeroUI widgets; compose them with the `cn` helper from `@/lib/utils`.
-- Forms use `react-hook-form` with Zod resolvers (see `LoginForm`); stick to this trio and surface errors through `FormMessage` components.
-- Maps and geocoding flow through `src/components/maps/interactive-leaflet-map.tsx`; when touching address flows, update both the map component and related persistence helpers in `src/lib/form-persistence.ts`.
-- Dashboard widgets typically live in `src/components/dashboard/**` and expect DTOs shaped by repositories, not raw Prisma entities.
+- **UI Primitives**: Use Shadcn (`src/components/ui`) and select HeroUI widgets. Compose with `cn` from `@/lib/utils`.
+- **Forms**: Use `react-hook-form` + Zod resolver. Surface errors via `FormMessage` components. See `LoginForm` for reference.
+- **Maps/Geocoding**: Use `src/components/maps/interactive-leaflet-map.tsx` and update related helpers in `src/lib/form-persistence.ts` for address flows.
+- **Dashboards**: Widgets in `src/components/dashboard/**` expect DTOs from repositories, not raw Prisma entities.
 
 ## 🗄️ Data & External Services
-- Prisma client is initialized in `src/server/db/client.ts`; schema migrations live in `prisma/migrations` and seeded fixtures in `prisma/seed.ts`, documented by `SEED_DATA_GUIDE.md` (includes role-based demo accounts).
-- Geospatial data, payment hooks, and Cloudinary uploads surface via dedicated repositories (`PropertyRepository`, `PaymentRepository`, etc.); prefer adding new database access there rather than inside services.
-- Environment variables are validated with `@t3-oss/env-nextjs` in `src/env.js`; add every new env to this schema or the build will fail.
+- **Prisma**: Client in `src/server/db/client.ts`. Migrations in `prisma/migrations`, seeds in `prisma/seed.ts` (see `SEED_DATA_GUIDE.md`).
+- **External Integrations**: Geospatial, payments, Cloudinary handled via dedicated repositories (e.g., `PropertyRepository`). Add new DB access only in repositories.
+- **Env Vars**: Validated in `src/env.js` using `@t3-oss/env-nextjs`. All new envs must be added here.
 
-## 🧪 Workflows & Tooling
-- Start dev with `npm run dev -- --turbo`; if you need a local Postgres, run `./start-database.sh` (WSL recommended on Windows) and then `npm run db:push && npm run db:seed`.
-- CI-equivalent checks: `npm run check` (lint + typecheck) and `npm run test:build` after a successful `npm run build`. API smoke tests use the custom runner at `npm run test:api` and expect seeded approved properties.
-- TypeScript uses strict mode with path alias `@/*`; when adding files remember to use absolute imports to avoid broken lint rules.
-- ESLint is configured via flat config in `eslint.config.js`; follow the existing rule relaxations (numerous `warn`s instead of `error`) and avoid introducing new `any` without justification.
+## 🧪 Developer Workflows
+- **Dev Start**: `npm run dev -- --turbo`. For local Postgres: `./start-database.sh` (WSL recommended), then `npm run db:push && npm run db:seed`.
+- **Testing**: Lint/typecheck: `npm run check`. Build/test: `npm run test:build` after `npm run build`. API smoke tests: `npm run test:api` (requires seeded properties).
+- **TypeScript**: Strict mode, path alias `@/*`. Use absolute imports.
+- **ESLint**: Flat config in `eslint.config.js`. Most rules are `warn`, not `error`. Avoid new `any` types.
 
 ## 🩺 Debugging & Observability
-- Verbose emoji logging is intentional across API layers (`🔍`, `❌`, `✅`); keep the style consistent for easier grepping in production logs.
-- Session-cleanup endpoints (`/api/auth/validate-session`, `/api/auth/clear-session`, `/api/auth/emergency-reset`) are the first line of defense when debugging login loops—reuse their utilities rather than rewriting cleanup code.
-- When adjusting public property flows, mirror changes across repository mappers (`getPublicPropertyDetail`) and integration tests at `__tests__/integration/api/public-property-detail.test.js`.
+- **Logging**: Emoji logging (`🔍`, `❌`, `✅`) is intentional. Keep style for grepping logs.
+- **Session Cleanup**: Use `/api/auth/validate-session`, `/api/auth/clear-session`, `/api/auth/emergency-reset` for login loop/debugging. Reuse utilities, don't rewrite.
+- **Public Property Flows**: Update repository mappers (`getPublicPropertyDetail`) and integration tests (`__tests__/integration/api/public-property-detail.test.js`) when changing public property logic.
 
 ## 🚀 Contribution Checklist
-- For any new feature: schema (Zod) → controller → service → repository, each with targeted logging. Confirm seeds/docs in `docs/*.md` stay accurate when data shapes change.
-- Update dashboards to respect role-based filtering (superadmin vs adminkos) by leveraging `PropertyService.canManageProperty` and existing status helpers.
-- Document non-trivial flows in the relevant summary markdowns (`IMPLEMENTATION_SUMMARY.md`, `IMPROVEMENTS_SUMMARY.md`) so future agents can follow the historical context.
+- New features: Schema (Zod) → Controller → Service → Repository, each with targeted logging.
+- Update docs/seeds in `docs/*.md` when data shapes change.
+- Dashboards must respect role-based filtering (see `PropertyService.canManageProperty`).
+- Document non-trivial flows in `IMPLEMENTATION_SUMMARY.md` or `IMPROVEMENTS_SUMMARY.md`.

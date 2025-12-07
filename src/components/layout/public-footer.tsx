@@ -25,20 +25,20 @@ export function PublicFooter() {
           <div>
             <h3 className="font-semibold mb-4">Layanan</h3>
             <ul className="space-y-2 text-muted-foreground">
-              <li><Link href="/search" className="hover:text-primary transition-colors">Cari Kos</Link></li>
-              <li><Link href="/properties" className="hover:text-primary transition-colors">Daftar Properti</Link></li>
-              <li><Link href="/about" className="hover:text-primary transition-colors">Tentang Kami</Link></li>
-              <li><Link href="/contact" className="hover:text-primary transition-colors">Kontak</Link></li>
+              <li><span className="hover:text-primary transition-colors cursor-default">Cari Kos</span></li>
+              <li><span className="hover:text-primary transition-colors cursor-default">Daftar Properti</span></li>
+              <li><span className="hover:text-primary transition-colors cursor-default">Tentang Kami</span></li>
+              <li><span className="hover:text-primary transition-colors cursor-default">Kontak</span></li>
             </ul>
           </div>
 
           <div>
             <h3 className="font-semibold mb-4">Bantuan</h3>
             <ul className="space-y-2 text-muted-foreground">
-              <li><Link href="/help" className="hover:text-primary transition-colors">Pusat Bantuan</Link></li>
-              <li><Link href="/terms" className="hover:text-primary transition-colors">Syarat & Ketentuan</Link></li>
-              <li><Link href="/privacy" className="hover:text-primary transition-colors">Kebijakan Privasi</Link></li>
-              <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
+              <li><span className="hover:text-primary transition-colors cursor-default">Pusat Bantuan</span></li>
+              <li><span className="hover:text-primary transition-colors cursor-default">Syarat & Ketentuan</span></li>
+              <li><span className="hover:text-primary transition-colors cursor-default">Kebijakan Privasi</span></li>
+              <li><span className="hover:text-primary transition-colors cursor-default">FAQ</span></li>
             </ul>
           </div>
 
@@ -51,7 +51,7 @@ export function PublicFooter() {
               </li>
               <li className="flex items-center">
                 <Phone className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                +62 21 1234 5678
+                08116946828
               </li>
               <li className="flex items-center">
                 <MapPin className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
@@ -61,7 +61,7 @@ export function PublicFooter() {
           </div>
         </div>
 
-  <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
+        <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
           <p>&copy; 2025 myhome. All rights reserved.</p>
         </div>
       </div>

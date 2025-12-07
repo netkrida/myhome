@@ -157,36 +157,13 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      {/* Mobile Booking Card - Fixed Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 p-4 backdrop-blur-sm lg:hidden">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-sm text-muted-foreground">Mulai dari</div>
-            <div className="text-xl font-bold text-rose-600 dark:text-rose-400">
-              Rp {Math.min(...property.rooms.map(r => r.monthlyPrice)).toLocaleString('id-ID')}
-            </div>
-            <div className="text-xs text-muted-foreground">/bulan</div>
-          </div>
-          <a
-            href="#booking-section"
-            className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-blue-500 px-8 py-3 text-base font-semibold text-white shadow-lg transition-all hover:from-blue-700 hover:to-blue-600"
-          >
-            Pesan Sekarang
-          </a>
-        </div>
-      </div>
+      {/* Mobile Booking Card - Fixed Bottom (DIHAPUS SESUAI REQUEST) */}
 
-      {/* Booking Section Anchor for Mobile */}
-      <div id="booking-section" className="lg:hidden">
-        <div className="container mx-auto px-4 pb-8">
-          <QuickBookingCard property={property} adminWa={adminWa} />
-        </div>
-      </div>
+      {/* Booking Section Anchor for Mobile (DIHAPUS SESUAI REQUEST) */}
 
       <PublicFooter />
 
-      {/* Floating WhatsApp Contact Button */}
-      <WhatsAppFloat number={adminWa} presetText={whatsappPresetText} />
+      {/* Floating WhatsApp Contact Button (DIHAPUS SESUAI REQUEST) */}
     </div>
   );
 }

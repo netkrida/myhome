@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Loader2, Upload, X, FileText } from "lucide-react";
+import { Loader2, Upload, X, FileText, Image as ImageIcon } from "lucide-react";
 import type { PayoutDetail } from "@/server/types/bank-account";
 
 interface PayoutApprovalDialogProps {
@@ -50,31 +51,37 @@ export function PayoutApprovalDialog({
     setIsUploading(true);
     try {
       for (const file of Array.from(files)) {
-        // Upload to Cloudinary
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`File ${file.name} terlalu besar (maksimal 5MB)`);
+          continue;
+        }
+
+        // Upload using /api/upload/image endpoint
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("upload_preset", "ml_default"); // You need to set this in Cloudinary
-        formData.append("cloud_name", "dg0ybxdbt");
+        formData.append("category", "payout-proofs");
+        formData.append("subcategory", "transfer-receipts");
 
-        const response = await fetch(
-          "https://api.cloudinary.com/v1_1/dg0ybxdbt/auto/upload",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
+        const response = await fetch("/api/upload/image", {
+          method: "POST",
+          body: formData,
+        });
 
-        const data = await response.json();
+        const result = await response.json();
 
-        if (data.secure_url) {
+        if (result.success && result.data) {
           setUploadedFiles((prev) => [
             ...prev,
             {
-              fileUrl: data.secure_url,
+              fileUrl: result.data.secure_url,
               fileName: file.name,
               fileType: file.type,
+              publicId: result.data.public_id,
             },
           ]);
+        } else {
+          alert(`Gagal mengupload ${file.name}: ${result.error || 'Unknown error'}`);
         }
       }
     } catch (error) {
@@ -228,13 +235,32 @@ export function PayoutApprovalDialog({
 
               {uploadedFiles.length > 0 && (
                 <div className="space-y-2 mt-4">
+                  <p className="text-sm font-medium">File yang diupload:</p>
                   {uploadedFiles.map((file, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30"
+                      className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30"
                     >
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="flex-1 text-sm truncate">{file.fileName}</span>
+                      {file.fileType.startsWith('image/') ? (
+                        <div className="relative w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                          <Image
+                            src={file.fileUrl}
+                            alt={file.fileName}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                          <FileText className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{file.fileName}</p>
+                        <p className="text-xs text-muted-foreground">{
+                          file.fileType.startsWith('image/') ? 'Gambar' : 'Dokumen PDF'
+                        }</p>
+                      </div>
                       <Button
                         type="button"
                         variant="ghost"

@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Loader2, User, CreditCard, Wallet, FileText, Download } from "lucide-react";
+import { Loader2, User, CreditCard, Wallet, FileText, Download, ExternalLink, Image as ImageIcon } from "lucide-react";
 import type { PayoutDetail } from "@/server/types/bank-account";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -31,6 +32,8 @@ const statusLabels: Record<string, string> = {
 };
 
 export function PayoutDetailDialog({ payout, open, onOpenChange }: PayoutDetailDialogProps) {
+  const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
+
   if (!payout) return null;
 
   const formatCurrency = (amount: number) => {
@@ -185,22 +188,63 @@ export function PayoutDetailDialog({ payout, open, onOpenChange }: PayoutDetailD
             <>
               <Separator />
               <div className="space-y-3">
-                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
                   Bukti Transfer
                 </h4>
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-3">
                   {payout.attachments.map((attachment) => (
-                    <a
+                    <div
                       key={attachment.id}
-                      href={attachment.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+                      className="group relative rounded-lg border overflow-hidden bg-muted/30 hover:bg-muted/50 transition-colors"
                     >
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="flex-1 text-sm font-medium">{attachment.fileName}</span>
-                      <Download className="h-4 w-4 text-muted-foreground" />
-                    </a>
+                      {attachment.fileType.startsWith("image/") ? (
+                        <div className="relative aspect-video">
+                          <Image
+                            src={attachment.fileUrl}
+                            alt={attachment.fileName}
+                            fill
+                            className="object-cover cursor-pointer"
+                            onClick={() => setSelectedImage(attachment.fileUrl)}
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setSelectedImage(attachment.fileUrl)}
+                            >
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              Lihat
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="aspect-video flex flex-col items-center justify-center p-4">
+                          <FileText className="h-12 w-12 text-muted-foreground mb-2" />
+                          <p className="text-sm font-medium text-center truncate w-full">
+                            {attachment.fileName}
+                          </p>
+                        </div>
+                      )}
+                      <div className="p-2 border-t bg-background/50">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="w-full"
+                          asChild
+                        >
+                          <a
+                            href={attachment.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Download
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -221,6 +265,25 @@ export function PayoutDetailDialog({ payout, open, onOpenChange }: PayoutDetailD
           )}
         </div>
       </DialogContent>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Bukti Transfer</DialogTitle>
+          </DialogHeader>
+          {selectedImage && (
+            <div className="relative w-full h-[70vh]">
+              <Image
+                src={selectedImage}
+                alt="Bukti Transfer"
+                fill
+                className="object-contain"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
