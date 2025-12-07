@@ -79,6 +79,7 @@ export const editRoomSchema = z.object({
   weeklyPrice: z.coerce.number().positive("Weekly price must be positive").nullable().optional(),
   quarterlyPrice: z.coerce.number().positive("Quarterly price must be positive").nullable().optional(),
   yearlyPrice: z.coerce.number().positive("Yearly price must be positive").nullable().optional(),
+  isAvailable: z.coerce.boolean().optional(),
 }).refine(
   (data) => Object.keys(data).length > 0,
   { message: "At least one field must be provided" }

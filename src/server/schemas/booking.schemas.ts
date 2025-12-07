@@ -107,6 +107,14 @@ export const midtransNotificationSchema = z.object({
   expiry_time: z.string().optional()
 });
 
+// Extend booking schema - for extending/renewing lease
+export const extendBookingSchema = z.object({
+  leaseType: leaseTypeSchema.optional(), // If not provided, use same as original booking
+  periods: z.number().int().min(1).max(12).default(1), // Number of periods to extend (e.g., 1 month, 2 months)
+  depositOption: z.enum(['deposit', 'full']).default('full'), // Payment option
+  notes: z.string().max(500).optional()
+});
+
 // Type exports
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
 export type BookingListQueryInput = z.infer<typeof bookingListQuerySchema>;
@@ -116,3 +124,4 @@ export type BookingIdInput = z.infer<typeof bookingIdSchema>;
 export type RoomAvailabilityInput = z.infer<typeof roomAvailabilitySchema>;
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export type MidtransNotificationInput = z.infer<typeof midtransNotificationSchema>;
+export type ExtendBookingInput = z.infer<typeof extendBookingSchema>;

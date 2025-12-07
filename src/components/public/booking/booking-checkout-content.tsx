@@ -401,19 +401,41 @@ export function BookingCheckoutContent({
       toast.success("Booking berhasil dibuat. Membuka pembayaran...");
 
       pay(paymentToken, {
-        onSuccess: (snapResult: Record<string, unknown>) => {
+        onSuccess: async (snapResult: Record<string, unknown>) => {
+          console.log("✅ Snap onSuccess:", snapResult);
           toast.success("Pembayaran berhasil.");
+          
+          // Confirm payment from client side (fallback for webhook delay)
+          try {
+            await fetch("/api/payments/confirm-client", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderId: snapResult.order_id,
+                transactionStatus: snapResult.transaction_status,
+                paymentType: snapResult.payment_type,
+                transactionTime: snapResult.transaction_time,
+                transactionId: snapResult.transaction_id,
+              }),
+            });
+          } catch (err) {
+            console.error("Failed to confirm payment from client:", err);
+          }
+          
           router.push(`/booking/success/${bookingId}`);
         },
         onPending: (snapResult: Record<string, unknown>) => {
+          console.log("⏳ Snap onPending:", snapResult);
           toast.info("Pembayaran menunggu konfirmasi.");
           router.push(`/booking/success/${bookingId}?status=pending`);
         },
         onError: (snapResult: Record<string, unknown>) => {
+          console.error("❌ Snap onError:", snapResult);
           toast.error("Pembayaran gagal. Silakan coba lagi.");
           router.push(`/booking/failure/${bookingId}`);
         },
         onClose: () => {
+          console.log("🚪 Snap closed by user");
           toast("Anda menutup jendela pembayaran. Booking tetap tersimpan dalam status pending.");
         },
       });

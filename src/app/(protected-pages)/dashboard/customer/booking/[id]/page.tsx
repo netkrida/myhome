@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AnimatedCard, AnimatedList, AnimatedListItem } from "@/components/ui/animated-card";
 import { CustomerLayout } from "@/components/layout/customer-layout";
+import { ExtendBookingDialog } from "@/components/booking/extend-booking-dialog";
 import {
   ArrowLeft,
   Calendar,
@@ -22,6 +23,7 @@ import {
   AlertCircle,
   Download,
   Share2,
+  RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -75,6 +77,7 @@ export default function BookingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [booking, setBooking] = useState<BookingDetail | null>(null);
+  const [extendDialogOpen, setExtendDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchBookingDetail();
@@ -150,6 +153,23 @@ export default function BookingDetailPage() {
 
   const formatDateTime = (dateString: string) => {
     return format(new Date(dateString), "dd MMMM yyyy, HH:mm", { locale: localeId });
+  };
+
+  // Check if booking is eligible for extension
+  const canExtendBooking = () => {
+    if (!booking) return false;
+    // Can extend if status is CONFIRMED, CHECKED_IN, or DEPOSIT_PAID
+    const eligibleStatuses = ["CONFIRMED", "CHECKED_IN", "DEPOSIT_PAID"];
+    return eligibleStatuses.includes(booking.status);
+  };
+
+  const handleExtendSuccess = (paymentUrl: string) => {
+    // Redirect to payment URL or refresh the page
+    if (paymentUrl) {
+      window.open(paymentUrl, "_blank");
+    }
+    // Refresh booking details after extension
+    fetchBookingDetail();
   };
 
   if (loading) {
@@ -372,6 +392,21 @@ export default function BookingDetailPage() {
                     </span>
                   </div>
                 </div>
+
+                {/* Extend Booking Button */}
+                {canExtendBooking() && (
+                  <>
+                    <Separator />
+                    <Button 
+                      onClick={() => setExtendDialogOpen(true)}
+                      className="w-full gap-2"
+                      variant="default"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Perpanjang Sewa
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
           </AnimatedCard>
@@ -397,6 +432,16 @@ export default function BookingDetailPage() {
           </AnimatedCard>
         </div>
       </div>
+
+      {/* Extend Booking Dialog */}
+      {booking && (
+        <ExtendBookingDialog
+          bookingId={booking.id}
+          open={extendDialogOpen}
+          onOpenChange={setExtendDialogOpen}
+          onSuccess={() => fetchBookingDetail()}
+        />
+      )}
     </CustomerLayout>
   );
 }

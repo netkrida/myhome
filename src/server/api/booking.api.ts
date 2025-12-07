@@ -18,7 +18,9 @@ import type {
   UpdateBookingStatusDTO,
   CreatePaymentDTO,
   PaymentDTO,
-  MidtransNotification
+  MidtransNotification,
+  ExtendBookingDTO,
+  BookingExtensionInfo
 } from "../types/booking";
 import {
   BookingStatus,
@@ -620,4 +622,266 @@ export class BookingAPI {
       return internalError("Failed to handle notification");
     }
   };
+
+  /**
+   * Get extension info for a booking
+   * Shows whether booking can be extended and estimated costs
+   */
+  static getExtensionInfo = withAuth(
+    async (userContext: UserContext, bookingId: string): Promise<Result<BookingExtensionInfo>> => {
+      try {
+        // Get booking
+        const bookingResult = await BookingRepository.getById(bookingId);
+        if (!bookingResult.success) {
+          return fail(bookingResult.error!, bookingResult.statusCode);
+        }
+
+        const booking = bookingResult.data!;
+
+        // Check permissions - only booking owner can extend
+        if (userContext.role !== UserRole.CUSTOMER || booking.userId !== userContext.id) {
+          return forbidden("Access denied");
+        }
+
+        // Check if booking is eligible for extension
+        const eligibleStatuses: (typeof BookingStatus[keyof typeof BookingStatus])[] = [
+          BookingStatus.CONFIRMED,
+          BookingStatus.CHECKED_IN,
+          BookingStatus.DEPOSIT_PAID
+        ];
+        if (!eligibleStatuses.includes(booking.status)) {
+          return badRequest("Booking tidak dapat diperpanjang. Status harus CONFIRMED, CHECKED_IN, atau DEPOSIT_PAID");
+        }
+
+        // Get room details for pricing
+        const roomResult = await RoomRepository.getById(booking.roomId);
+        if (!roomResult.success) {
+          return fail(roomResult.error!, roomResult.statusCode);
+        }
+
+        const room = roomResult.data!;
+
+        // Calculate new check-out date and price for 1 period extension
+        const currentCheckOutDate = booking.checkOutDate || new Date();
+        const newCheckOutDate = BookingService.calculateCheckOutDate(currentCheckOutDate, booking.leaseType);
+        
+        // Calculate price for extension
+        const extensionCalculation = BookingService.calculateBookingAmount(
+          room,
+          booking.leaseType,
+          currentCheckOutDate
+        );
+
+        // Check room availability for extended period
+        const existingBookingsResult = await BookingRepository.getBookingsForRoom(
+          booking.roomId,
+          currentCheckOutDate,
+          newCheckOutDate
+        );
+
+        let isAvailable = true;
+        if (existingBookingsResult.success && existingBookingsResult.data) {
+          // Exclude current booking from conflict check
+          const conflictingBookings = existingBookingsResult.data.filter(b => b.id !== booking.id);
+          isAvailable = conflictingBookings.length === 0;
+        }
+
+        return ok({
+          bookingId: booking.id,
+          bookingCode: booking.bookingCode,
+          currentCheckOutDate,
+          newCheckOutDate,
+          leaseType: booking.leaseType,
+          extensionAmount: extensionCalculation.totalAmount,
+          depositAmount: extensionCalculation.depositAmount,
+          isEligible: isAvailable,
+          reason: isAvailable ? undefined : "Kamar sudah dipesan untuk periode tersebut",
+          room: {
+            id: room.id,
+            roomNumber: room.roomNumber,
+            roomType: room.roomType
+          },
+          property: booking.property ? {
+            id: booking.property.id,
+            name: booking.property.name
+          } : undefined
+        });
+
+      } catch (error) {
+        console.error("Error getting extension info:", error);
+        return internalError("Failed to get extension info");
+      }
+    }
+  );
+
+  /**
+   * Extend booking for next period
+   * Creates a new booking (linked) for the extended period
+   */
+  static extendBooking = withAuth(
+    async (userContext: UserContext, bookingId: string, extensionData: ExtendBookingDTO): Promise<Result<{ booking: BookingDTO; paymentToken?: string }>> => {
+      try {
+        // Get original booking
+        const bookingResult = await BookingRepository.getById(bookingId);
+        if (!bookingResult.success) {
+          return fail(bookingResult.error!, bookingResult.statusCode);
+        }
+
+        const originalBooking = bookingResult.data!;
+
+        // Check permissions - only booking owner can extend
+        if (userContext.role !== UserRole.CUSTOMER || originalBooking.userId !== userContext.id) {
+          return forbidden("Access denied");
+        }
+
+        // Check if booking is eligible for extension
+        const eligibleStatuses2: (typeof BookingStatus[keyof typeof BookingStatus])[] = [
+          BookingStatus.CONFIRMED,
+          BookingStatus.CHECKED_IN,
+          BookingStatus.DEPOSIT_PAID
+        ];
+        if (!eligibleStatuses2.includes(originalBooking.status)) {
+          return badRequest("Booking tidak dapat diperpanjang. Status harus CONFIRMED, CHECKED_IN, atau DEPOSIT_PAID");
+        }
+
+        // Get room details
+        const roomResult = await RoomRepository.getById(originalBooking.roomId);
+        if (!roomResult.success) {
+          return fail(roomResult.error!, roomResult.statusCode);
+        }
+        const room = roomResult.data!;
+
+        // Get user details
+        const userResult = await UserRepository.getById(originalBooking.userId);
+        if (!userResult.success) {
+          return fail(userResult.error!, userResult.statusCode);
+        }
+        const user = userResult.data!;
+
+        // Determine lease type (use provided or original)
+        const leaseType = extensionData.leaseType || originalBooking.leaseType;
+        const periods = extensionData.periods || 1;
+
+        // Calculate new dates
+        const currentCheckOutDate = originalBooking.checkOutDate || new Date();
+        let newCheckInDate = new Date(currentCheckOutDate);
+        let newCheckOutDate = new Date(currentCheckOutDate);
+
+        // Calculate check-out date based on periods
+        for (let i = 0; i < periods; i++) {
+          newCheckOutDate = BookingService.calculateCheckOutDate(newCheckOutDate, leaseType);
+        }
+
+        // Check for conflicting bookings
+        const existingBookingsResult = await BookingRepository.getBookingsForRoom(
+          originalBooking.roomId,
+          newCheckInDate,
+          newCheckOutDate
+        );
+
+        if (existingBookingsResult.success && existingBookingsResult.data) {
+          const conflictingBookings = existingBookingsResult.data.filter(b => b.id !== originalBooking.id);
+          if (conflictingBookings.length > 0) {
+            return badRequest("Kamar sudah dipesan untuk periode tersebut");
+          }
+        }
+
+        // Calculate booking amounts
+        let totalAmount = 0;
+        for (let i = 0; i < periods; i++) {
+          const calculation = BookingService.calculateBookingAmount(
+            room,
+            leaseType,
+            newCheckInDate
+          );
+          totalAmount += calculation.totalAmount;
+        }
+
+        // Generate new booking code
+        const bookingCode = BookingService.generateBookingCode();
+
+        // Determine payment amount
+        const isDepositPayment = extensionData.depositOption === 'deposit';
+        const depositAmount = isDepositPayment ? Math.round(totalAmount * 0.3) : undefined; // 30% deposit
+        const paymentAmount = isDepositPayment && depositAmount ? depositAmount : totalAmount;
+        const paymentType = isDepositPayment ? PaymentType.DEPOSIT : PaymentType.FULL;
+
+        // Create new booking for extension
+        const createBookingResult = await BookingRepository.create({
+          userId: originalBooking.userId,
+          roomId: originalBooking.roomId,
+          bookingCode,
+          propertyId: room.propertyId,
+          checkInDate: newCheckInDate,
+          checkOutDate: newCheckOutDate,
+          leaseType,
+          depositOption: isDepositPayment ? 'deposit' : 'full',
+          totalAmount,
+          depositAmount,
+          paymentStatus: PaymentStatus.PENDING,
+          status: BookingStatus.UNPAID
+          // Note: parentBookingId not in schema yet - can be added later for tracking extensions
+        });
+
+        if (!createBookingResult.success) {
+          return fail(createBookingResult.error!, createBookingResult.statusCode);
+        }
+
+        const newBooking = createBookingResult.data!;
+
+        // Create payment record
+        const orderId = PaymentService.generateOrderId(newBooking.id, paymentType);
+        const createPaymentResult = await PaymentRepository.create({
+          bookingId: newBooking.id,
+          userId: newBooking.userId,
+          paymentType,
+          midtransOrderId: orderId,
+          amount: paymentAmount,
+          status: PaymentStatus.PENDING,
+          expiryTime: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+        });
+
+        if (!createPaymentResult.success) {
+          return fail(createPaymentResult.error!, createPaymentResult.statusCode);
+        }
+
+        const payment = createPaymentResult.data!;
+
+        // Create Midtrans Snap token
+        let paymentToken: string | undefined;
+
+        try {
+          const snapRequest = PaymentService.createSnapRequest(newBooking, payment, {
+            name: user.name || undefined,
+            email: user.email || undefined,
+            phoneNumber: user.phoneNumber || undefined
+          });
+
+          const snapResponse = await createSnapTransaction(snapRequest);
+          paymentToken = snapResponse.token;
+
+          // Update payment with token
+          await PaymentRepository.update(payment.id, {
+            paymentToken
+          });
+
+        } catch (midtransError) {
+          console.error("Midtrans error:", midtransError);
+          const errorMessage = midtransError instanceof Error
+            ? midtransError.message
+            : "Failed to create payment token";
+          return internalError(errorMessage);
+        }
+
+        return ok({
+          booking: newBooking,
+          paymentToken
+        });
+
+      } catch (error) {
+        console.error("Error extending booking:", error);
+        return internalError("Failed to extend booking");
+      }
+    }
+  );
 }

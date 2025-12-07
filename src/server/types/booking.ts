@@ -320,3 +320,32 @@ export interface UpdateBookingDatesDTO {
   checkInDate: Date;
   checkOutDate?: Date;
 }
+
+// Extension/Renewal DTOs
+export interface ExtendBookingDTO {
+  leaseType?: LeaseType; // If not provided, use same as original booking
+  periods?: number; // Number of periods to extend (default: 1)
+  depositOption?: 'deposit' | 'full'; // Payment option (default: 'full')
+  notes?: string;
+}
+
+export interface BookingExtensionInfo {
+  bookingId: string;
+  bookingCode: string;
+  currentCheckOutDate: Date;
+  newCheckOutDate: Date;
+  leaseType: LeaseType;
+  extensionAmount: number;
+  depositAmount?: number;
+  isEligible: boolean;
+  reason?: string; // Reason if not eligible
+  room: {
+    id: string;
+    roomNumber: string;
+    roomType: string;
+  };
+  property?: {
+    id: string;
+    name: string;
+  };
+}

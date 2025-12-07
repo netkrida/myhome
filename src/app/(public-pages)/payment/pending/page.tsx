@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Loader2 } from "lucide-react";
+import { Clock, Loader2, RefreshCw } from "lucide-react";
 
 interface PaymentData {
   payment: {
@@ -31,6 +31,7 @@ export default function PaymentPendingPage() {
   const [loading, setLoading] = useState(true);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [pollCount, setPollCount] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (!orderId) {
@@ -74,6 +75,38 @@ export default function PaymentPendingPage() {
 
     fetchPaymentStatus();
   }, [orderId, pollCount, router]);
+
+  // Function to manually refresh status from Midtrans
+  const handleRefreshStatus = async () => {
+    if (!orderId || refreshing) return;
+    
+    setRefreshing(true);
+    try {
+      const response = await fetch("/api/payments/refresh-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success && result.data?.updated) {
+        // Status was updated, check the new status
+        if (result.data.currentStatus === "SUCCESS") {
+          router.push(`/payment/success?orderId=${orderId}`);
+        } else if (result.data.currentStatus === "FAILED" || result.data.currentStatus === "EXPIRED") {
+          router.push(`/payment/failed?reason=${result.data.currentStatus.toLowerCase()}&orderId=${orderId}`);
+        } else {
+          // Refresh the page data
+          window.location.reload();
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing status:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (loading && !paymentData) {
     return (
@@ -172,9 +205,20 @@ export default function PaymentPendingPage() {
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button 
               className="flex-1"
-              onClick={() => window.location.reload()}
+              onClick={handleRefreshStatus}
+              disabled={refreshing}
             >
-              Refresh Status
+              {refreshing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Memeriksa...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Cek Status Pembayaran
+                </>
+              )}
             </Button>
             <Button 
               variant="outline" 

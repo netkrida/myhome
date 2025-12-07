@@ -20,6 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -32,6 +33,7 @@ const editRoomSchema = z.object({
   weeklyPrice: z.coerce.number().positive("Harga mingguan harus lebih dari 0").nullable().optional(),
   quarterlyPrice: z.coerce.number().positive("Harga 3 bulan harus lebih dari 0").nullable().optional(),
   yearlyPrice: z.coerce.number().positive("Harga tahunan harus lebih dari 0").nullable().optional(),
+  isAvailable: z.boolean(),
 });
 
 type EditRoomFormData = z.infer<typeof editRoomSchema>;
@@ -50,6 +52,7 @@ interface RoomEditModalProps {
     weeklyPrice: number | null;
     quarterlyPrice: number | null;
     yearlyPrice: number | null;
+    isAvailable: boolean;
   } | null;
 }
 
@@ -72,6 +75,7 @@ export function RoomEditModal({
       weeklyPrice: null,
       quarterlyPrice: null,
       yearlyPrice: null,
+      isAvailable: true,
     },
   });
 
@@ -85,8 +89,34 @@ export function RoomEditModal({
         weeklyPrice: room.weeklyPrice,
         quarterlyPrice: room.quarterlyPrice,
         yearlyPrice: room.yearlyPrice,
+        isAvailable: room.isAvailable,
       });
     }
+              {/* Room Status */}
+              <FormField
+                control={form.control}
+                name="isAvailable"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status Kamar</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value ? "available" : "unavailable"}
+                        onValueChange={val => field.onChange(val === "available")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="available">Tersedia</SelectItem>
+                          <SelectItem value="unavailable">Tidak Tersedia</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
   }, [room, form]);
 
   const onSubmit = async (data: EditRoomFormData) => {
@@ -129,6 +159,32 @@ export function RoomEditModal({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Room Status */}
+            <FormField
+              control={form.control}
+              name="isAvailable"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status Kamar</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value ? "available" : "unavailable"}
+                      onValueChange={val => field.onChange(val === "available")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih status kamar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="available">Tersedia</SelectItem>
+                        <SelectItem value="unavailable">Tidak Tersedia</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Room Type */}
             <FormField
               control={form.control}
