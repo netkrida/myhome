@@ -520,32 +520,54 @@ export class AdminKosAPI {
           take: limit,
           orderBy: { [sortBy]: sortOrder },
           include: {
-            user: { select: { name: true, email: true } },
+            user: { select: { name: true, email: true, phoneNumber: true } },
             property: { select: { name: true } },
             room: { select: { roomNumber: true, roomType: true } },
           },
         });
 
         const totalPages = Math.ceil(total / limit);
+        const now = new Date();
 
         return ok({
-          bookings: bookings.map((booking): BookingTableItemDTO => ({
-            id: booking.id,
-            bookingCode: booking.bookingCode,
-            createdAt: booking.createdAt,
-            customerName: booking.user.name || "Unknown",
-            customerEmail: booking.user.email || "",
-            propertyName: booking.property.name,
-            roomNumber: booking.room.roomNumber,
-            roomType: booking.room.roomType,
-            leaseType: booking.leaseType as any,
-            checkInDate: booking.checkInDate,
-            checkOutDate: booking.checkOutDate,
-            totalAmount: Number(booking.totalAmount),
-            depositAmount: booking.depositAmount ? Number(booking.depositAmount) : null,
-            paymentStatus: booking.paymentStatus as PaymentStatus,
-            status: booking.status as BookingStatus,
-          })),
+          bookings: bookings.map((booking): BookingTableItemDTO => {
+            // Calculate lease duration based on checkIn and checkOut dates
+            const checkInDate = new Date(booking.checkInDate);
+            const checkOutDate = booking.checkOutDate ? new Date(booking.checkOutDate) : null;
+            const leaseDuration = checkOutDate 
+              ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+              : 0;
+            
+            // Calculate remaining days until checkout
+            let remainingDays = 0;
+            if (checkOutDate && booking.status !== BookingStatus.COMPLETED && booking.status !== BookingStatus.CANCELLED) {
+              remainingDays = Math.ceil((checkOutDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              if (remainingDays < 0) remainingDays = 0;
+            }
+
+            return {
+              id: booking.id,
+              bookingCode: booking.bookingCode,
+              createdAt: booking.createdAt,
+              customerName: booking.user.name || "Unknown",
+              customerEmail: booking.user.email || "",
+              customerPhone: booking.user.phoneNumber || null,
+              propertyName: booking.property.name,
+              roomNumber: booking.room.roomNumber,
+              roomType: booking.room.roomType,
+              leaseType: booking.leaseType as any,
+              checkInDate: booking.checkInDate,
+              checkOutDate: booking.checkOutDate,
+              actualCheckInAt: booking.actualCheckInAt,
+              actualCheckOutAt: booking.actualCheckOutAt,
+              leaseDuration,
+              remainingDays,
+              totalAmount: Number(booking.totalAmount),
+              depositAmount: booking.depositAmount ? Number(booking.depositAmount) : null,
+              paymentStatus: booking.paymentStatus as PaymentStatus,
+              status: booking.status as BookingStatus,
+            };
+          }),
           pagination: { page, limit, total, totalPages },
         });
       } catch (error) {

@@ -65,11 +65,11 @@ export function AddBookingDialog({
   // Form state
   const [accounts, setAccounts] = React.useState<AccountOption[]>([]);
   const [accountId, setAccountId] = React.useState("");
-  // Fetch accounts (exclude system accounts)
+  // Fetch accounts (exclude system accounts and archived accounts, only INCOME type)
   React.useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch("/api/adminkos/ledger/accounts");
+        const res = await fetch("/api/adminkos/ledger/accounts?type=INCOME");
         const data = await res.json();
         if (data.success && Array.isArray(data.data)) {
           setAccounts(data.data.filter((a: any) => !a.isSystem && !a.isArchived));
@@ -77,7 +77,7 @@ export function AddBookingDialog({
           setAccounts(data.data.accounts.filter((a: any) => !a.isSystem && !a.isArchived));
         }
       } catch (err) {
-        // ignore error
+        console.error("Error fetching accounts:", err);
       }
     };
     if (open) fetchAccounts();
@@ -121,8 +121,14 @@ export function AddBookingDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!propertyId || !roomId || !customerEmail || !checkInDate || !accountId) {
+    if (!propertyId || !roomId || !checkInDate || !accountId) {
       alert("Mohon lengkapi semua field yang wajib diisi");
+      return;
+    }
+
+    // Email atau nomor HP harus diisi
+    if (!customerEmail && !customerPhone) {
+      alert("Email atau nomor HP harus diisi");
       return;
     }
 
@@ -250,15 +256,15 @@ export function AddBookingDialog({
 
           {/* Akun Transaksi */}
           <div className="space-y-2">
-            <Label htmlFor="account">Akun Transaksi *</Label>
+            <Label htmlFor="account">Akun Pemasukan *</Label>
             <Select value={accountId} onValueChange={setAccountId}>
               <SelectTrigger id="account">
-                <SelectValue placeholder="Pilih akun transaksi" />
+                <SelectValue placeholder="Pilih akun pemasukan" />
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((acc) => (
                   <SelectItem key={acc.id} value={acc.id}>
-                    {acc.name} ({acc.type === "INCOME" ? "Pemasukan" : acc.type === "EXPENSE" ? "Pengeluaran" : "Lainnya"})
+                    {acc.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -270,14 +276,13 @@ export function AddBookingDialog({
             <h4 className="font-medium">Informasi Penyewa</h4>
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="customer@example.com"
-                required
+                placeholder="customer@example.com (opsional)"
               />
             </div>
 
@@ -292,13 +297,16 @@ export function AddBookingDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">No. HP</Label>
+              <Label htmlFor="phone">No. HP {!customerEmail && "*"}</Label>
               <Input
                 id="phone"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
                 placeholder="08123456789"
               />
+              <p className="text-xs text-muted-foreground">
+                * Email atau No. HP wajib diisi minimal salah satu
+              </p>
             </div>
           </div>
 
@@ -326,7 +334,6 @@ export function AddBookingDialog({
                     mode="single"
                     selected={checkInDate}
                     onSelect={setCheckInDate}
-                    disabled={(date) => date < new Date()}
                     initialFocus
                   />
                 </PopoverContent>

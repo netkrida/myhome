@@ -127,12 +127,17 @@ export interface BookingTableItemDTO {
   createdAt: Date;
   customerName: string;
   customerEmail: string;
+  customerPhone: string | null;
   propertyName: string;
   roomNumber: string;
   roomType: string;
   leaseType: LeaseType;
   checkInDate: Date;
   checkOutDate: Date | null;
+  actualCheckInAt: Date | null;
+  actualCheckOutAt: Date | null;
+  leaseDuration: number; // in days
+  remainingDays: number; // remaining days until checkout
   totalAmount: number;
   depositAmount: number | null;
   paymentStatus: PaymentStatus;

@@ -11,9 +11,12 @@ import { UserRole } from "@/server/types/rbac";
 import { z } from "zod";
 
 const customerSchema = z.object({
-  email: z.string().email("Invalid email format"),
+  email: z.string().email("Invalid email format").optional().or(z.literal("")),
   name: z.string().optional(),
   phoneNumber: z.string().optional(),
+}).refine((data) => data.email || data.phoneNumber, {
+  message: "Email atau nomor HP harus diisi",
+  path: ["email"],
 });
 
 export async function POST(request: NextRequest) {
@@ -52,8 +55,11 @@ export async function POST(request: NextRequest) {
 
     const { email, name, phoneNumber } = validationResult.data;
 
+    // Generate email if not provided
+    const customerEmail = email || `guest_${phoneNumber || Date.now()}@kos.local`;
+
     // Check if customer exists
-    const existingUserResult = await UserRepository.getByEmail(email);
+    const existingUserResult = await UserRepository.getByEmail(customerEmail);
     
     if (existingUserResult.success && existingUserResult.data) {
       // Customer exists
@@ -83,8 +89,8 @@ export async function POST(request: NextRequest) {
 
     // Customer doesn't exist, create new one
     const createResult = await UserRepository.create({
-      email,
-      name: name || email.split("@")[0], // Use email prefix as default name
+      email: customerEmail,
+      name: name || (phoneNumber ? `Tamu ${phoneNumber}` : `Tamu ${Date.now()}`),
       role: UserRole.CUSTOMER,
       phoneNumber,
       isActive: true,

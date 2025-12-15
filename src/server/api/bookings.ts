@@ -565,4 +565,353 @@ export class BookingsApplication {
 
     return ok(updated);
   }
+
+  /**
+   * AdminKos check-in (property owner can also do check-in)
+   */
+  static async adminKosCheckIn(bookingId: string, currentUser: UserContext): Promise<Result<CheckInResponseDTO>> {
+    if (currentUser.role !== UserRole.ADMINKOS) {
+      return forbidden("Hanya AdminKos yang dapat melakukan check-in");
+    }
+
+    const booking = await BookingRepository.findByIdWithPropertyAndRoom(bookingId);
+    if (!booking) {
+      return notFound("Booking tidak ditemukan");
+    }
+
+    // Verify AdminKos owns this property
+    if (!booking.property?.ownerId || booking.property.ownerId !== currentUser.id) {
+      return forbidden("AdminKos tidak memiliki akses ke properti ini");
+    }
+
+    const rule = BookingService.ruleCanCheckIn(booking);
+    if (!rule.allowed) {
+      return conflict(rule.reason || "Booking belum bisa check-in");
+    }
+
+    const overlaps = await BookingRepository.findActiveOverlaps({
+      roomId: booking.roomId,
+      range: { start: booking.checkInDate, end: booking.checkOutDate ?? null },
+      excludeBookingId: booking.id,
+      statuses: [BookingStatus.CHECKED_IN],
+    });
+
+    if (overlaps.length > 0) {
+      return conflict("Kamar sudah terisi oleh tamu lain");
+    }
+
+    if (booking.status === BookingStatus.CHECKED_IN) {
+      const fallbackCheckedInBy: BasicUserInfo = {
+        id: booking.checkedInBy ?? currentUser.id,
+        name: booking.checkedInByUser?.name ?? currentUser.name ?? undefined,
+        email: booking.checkedInByUser?.email ?? currentUser.email,
+      };
+
+      return ok({
+        bookingId: booking.id,
+        status: booking.status,
+        actualCheckInAt: booking.actualCheckInAt,
+        checkedInBy: booking.checkedInByUser ?? fallbackCheckedInBy,
+      });
+    }
+
+    const updated = await BookingRepository.updateForCheckIn({
+      id: booking.id,
+      checkedInBy: currentUser.id,
+      actualCheckInAt: new Date(),
+    });
+
+    if (!updated) {
+      return internalError("Gagal memperbarui status check-in");
+    }
+
+    const defaultCheckedInBy: BasicUserInfo = {
+      id: currentUser.id,
+      name: currentUser.name ?? undefined,
+      email: currentUser.email,
+    };
+
+    // 🔔 Send check-in notification (async, non-blocking)
+    try {
+      const customerResult = await UserRepository.getById(booking.userId);
+      const PropertyRepository = (await import("@/server/repositories/global/property.repository")).PropertyRepository;
+      const propertyOwner = await PropertyRepository.getPropertyOwnerContact(booking.propertyId);
+      
+      if (customerResult.success && customerResult.data && propertyOwner) {
+        const customer = customerResult.data;
+        
+        if (customer.phoneNumber && propertyOwner.ownerPhoneNumber) {
+          const NotificationService = (await import("@/server/services/NotificationService")).NotificationService;
+          const checkInDate = updated.actualCheckInAt || booking.checkInDate;
+          
+          NotificationService.sendCheckInNotification({
+            customerName: customer.name || "Customer",
+            customerPhone: customer.phoneNumber,
+            adminkosPhone: propertyOwner.ownerPhoneNumber,
+            propertyName: propertyOwner.propertyName,
+            bookingCode: booking.bookingCode,
+            checkInDate: checkInDate,
+          }).catch((err) => {
+            console.error("❌ [AdminKosCheckIn] Error sending notification:", err);
+          });
+        }
+      }
+    } catch (notifError) {
+      console.error("⚠️ [AdminKosCheckIn] Error preparing notification:", notifError);
+    }
+
+    return ok({
+      bookingId: updated.id,
+      status: updated.status,
+      actualCheckInAt: updated.actualCheckInAt,
+      checkedInBy: updated.checkedInByUser ?? defaultCheckedInBy,
+    });
+  }
+
+  /**
+   * AdminKos check-out (property owner can also do check-out)
+   */
+  static async adminKosCheckOut(bookingId: string, currentUser: UserContext): Promise<Result<CheckOutResponseDTO>> {
+    if (currentUser.role !== UserRole.ADMINKOS) {
+      return forbidden("Hanya AdminKos yang dapat melakukan check-out");
+    }
+
+    const booking = await BookingRepository.findByIdWithPropertyAndRoom(bookingId);
+    if (!booking) {
+      return notFound("Booking tidak ditemukan");
+    }
+
+    // Verify AdminKos owns this property
+    if (!booking.property?.ownerId || booking.property.ownerId !== currentUser.id) {
+      return forbidden("AdminKos tidak memiliki akses ke properti ini");
+    }
+
+    const rule = BookingService.ruleCanCheckOut(booking);
+    if (!rule.allowed) {
+      return conflict(rule.reason || "Booking belum bisa check-out");
+    }
+
+    if (booking.status === BookingStatus.COMPLETED) {
+      const fallbackCheckedOutBy: BasicUserInfo = {
+        id: booking.checkedOutBy ?? currentUser.id,
+        name: booking.checkedOutByUser?.name ?? currentUser.name ?? undefined,
+        email: booking.checkedOutByUser?.email ?? currentUser.email,
+      };
+
+      return ok({
+        bookingId: booking.id,
+        status: booking.status,
+        actualCheckOutAt: booking.actualCheckOutAt,
+        checkedOutBy: booking.checkedOutByUser ?? fallbackCheckedOutBy,
+      });
+    }
+
+    const updated = await BookingRepository.updateForCheckOut({
+      id: booking.id,
+      checkedOutBy: currentUser.id,
+      actualCheckOutAt: new Date(),
+    });
+
+    if (!updated) {
+      return internalError("Gagal memperbarui status check-out");
+    }
+
+    const defaultCheckedOutBy: BasicUserInfo = {
+      id: currentUser.id,
+      name: currentUser.name ?? undefined,
+      email: currentUser.email,
+    };
+
+    // 🔔 Send check-out notification (async, non-blocking)
+    try {
+      const customerResult = await UserRepository.getById(booking.userId);
+      const PropertyRepository = (await import("@/server/repositories/global/property.repository")).PropertyRepository;
+      const propertyOwner = await PropertyRepository.getPropertyOwnerContact(booking.propertyId);
+      
+      if (customerResult.success && customerResult.data && propertyOwner) {
+        const customer = customerResult.data;
+        
+        if (customer.phoneNumber && propertyOwner.ownerPhoneNumber) {
+          const NotificationService = (await import("@/server/services/NotificationService")).NotificationService;
+          const checkOutDate = updated.actualCheckOutAt || new Date();
+          
+          NotificationService.sendCheckOutNotification({
+            customerName: customer.name || "Customer",
+            customerPhone: customer.phoneNumber,
+            adminkosPhone: propertyOwner.ownerPhoneNumber,
+            propertyName: propertyOwner.propertyName,
+            bookingCode: booking.bookingCode,
+            checkOutDate: checkOutDate,
+          }).catch((err) => {
+            console.error("❌ [AdminKosCheckOut] Error sending notification:", err);
+          });
+        }
+      }
+    } catch (notifError) {
+      console.error("⚠️ [AdminKosCheckOut] Error preparing notification:", notifError);
+    }
+
+    return ok({
+      bookingId: updated.id,
+      status: updated.status,
+      actualCheckOutAt: updated.actualCheckOutAt,
+      checkedOutBy: updated.checkedOutByUser ?? defaultCheckedOutBy,
+    });
+  }
+
+  /**
+   * Renew/extend booking for AdminKos
+   * Creates a new booking continuing from the current booking's checkout date
+   */
+  static async renewBooking(
+    bookingId: string,
+    input: {
+      leaseType: string;
+      depositOption: "deposit" | "full";
+      accountId: string;
+    },
+    currentUser: UserContext
+  ): Promise<Result<DirectBookingResponseDTO>> {
+    if (currentUser.role !== UserRole.ADMINKOS) {
+      return forbidden("Hanya AdminKos yang dapat memperpanjang booking");
+    }
+
+    // Get the original booking
+    const booking = await BookingRepository.findByIdWithPropertyAndRoom(bookingId);
+    if (!booking) {
+      return notFound("Booking tidak ditemukan");
+    }
+
+    // Verify AdminKos owns this property
+    if (!booking.property?.ownerId || booking.property.ownerId !== currentUser.id) {
+      return forbidden("AdminKos tidak memiliki akses ke booking ini");
+    }
+
+    // Only allow renewal for CHECKED_IN bookings
+    if (booking.status !== BookingStatus.CHECKED_IN) {
+      return conflict("Hanya booking dengan status CHECKED_IN yang dapat diperpanjang");
+    }
+
+    // Get the room details
+    const room = await RoomRepository.findPrismaRoomById(booking.roomId);
+    if (!room) {
+      return notFound("Kamar tidak ditemukan");
+    }
+
+    // Get ledger account and verify ownership
+    const ledgerAccount = await LedgerRepository.getAccountById(input.accountId);
+    if (!ledgerAccount) {
+      return badRequest("Akun pembukuan tidak valid");
+    }
+
+    // Get AdminKos profile to verify account ownership
+    const adminKosProfile = await import("../repositories/adminkos/booking.repository").then(
+      async (mod) => {
+        const profile = await import("../db/client").then(({ prisma }) =>
+          prisma.adminKosProfile.findUnique({
+            where: { userId: currentUser.id },
+          })
+        );
+        return profile;
+      }
+    );
+
+    if (!adminKosProfile || ledgerAccount.adminKosId !== adminKosProfile.id) {
+      return badRequest("Akun pembukuan tidak valid untuk properti ini");
+    }
+
+    if (ledgerAccount.type !== "INCOME") {
+      return badRequest("Hanya akun pemasukan yang dapat digunakan untuk pembayaran");
+    }
+
+    if (ledgerAccount.isArchived) {
+      return badRequest("Akun pembukuan ini sudah diarsipkan");
+    }
+
+    // System accounts should not be used
+    if (ledgerAccount.isSystem) {
+      return badRequest("Akun sistem tidak dapat digunakan untuk transaksi manual");
+    }
+
+    // Calculate new check-in date (from original checkout date or current date if no checkout date)
+    const newCheckInDate = booking.checkOutDate ? new Date(booking.checkOutDate) : new Date();
+    const leaseType = input.leaseType as any;
+    const newCheckOutDate = BookingService.calculateCheckOutDate(newCheckInDate, leaseType);
+
+    // Check for overlapping bookings (excluding current one)
+    const overlaps = await BookingRepository.findActiveOverlaps({
+      roomId: booking.roomId,
+      range: { start: newCheckInDate, end: newCheckOutDate },
+      excludeBookingId: booking.id,
+    });
+
+    if (overlaps.length > 0) {
+      return conflict("Rentang tanggal bertabrakan dengan booking lain");
+    }
+
+    // Calculate pricing
+    const calculation = BookingService.calculateBookingAmount(room, leaseType, newCheckInDate);
+    const orderId = buildOfflineOrderId();
+
+    const isFullPayment = input.depositOption === "full";
+    const paymentType = isFullPayment ? PaymentType.FULL : PaymentType.DEPOSIT;
+
+    let depositAmount = calculation.depositAmount;
+    if (!isFullPayment && (!depositAmount || depositAmount <= 0)) {
+      return badRequest("Kamar ini tidak memiliki konfigurasi deposit");
+    }
+
+    const bookingStatus = isFullPayment ? BookingStatus.CONFIRMED : BookingStatus.DEPOSIT_PAID;
+    const paymentAmount = isFullPayment ? calculation.totalAmount : depositAmount!;
+
+    // Create the renewal booking
+    const transactionResult = await BookingRepository.createWithPaymentTx({
+      booking: {
+        bookingCode: BookingService.generateBookingCode(),
+        userId: booking.userId,
+        propertyId: booking.propertyId,
+        roomId: booking.roomId,
+        leaseType,
+        checkInDate: newCheckInDate,
+        checkOutDate: newCheckOutDate,
+        totalAmount: calculation.totalAmount,
+        depositAmount: depositAmount,
+        status: bookingStatus,
+        paymentStatus: PaymentStatus.SUCCESS,
+      },
+      payment: {
+        userId: booking.userId,
+        paymentType,
+        paymentMethod: "CASH",
+        amount: paymentAmount,
+        status: PaymentStatus.SUCCESS,
+        midtransOrderId: orderId,
+        transactionTime: new Date(),
+      },
+      ledgerEntry: {
+        adminKosId: ledgerAccount.adminKosId,
+        accountId: ledgerAccount.id,
+        propertyId: booking.propertyId,
+        amount: paymentAmount,
+        createdBy: currentUser.id,
+        note: `Perpanjangan booking ${booking.bookingCode} - ${isFullPayment ? "Lunas" : "Deposit"}`,
+      },
+    });
+
+    if (!transactionResult.success) {
+      return transactionResult;
+    }
+
+    const { booking: savedBooking, payment } = transactionResult.data;
+
+    return ok({
+      bookingId: savedBooking.id,
+      bookingCode: savedBooking.bookingCode,
+      status: savedBooking.status,
+      payment: {
+        id: payment.id,
+        status: payment.status,
+      },
+    }, 201);
+  }
 }

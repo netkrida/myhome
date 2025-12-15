@@ -7,9 +7,20 @@ import { BookingFiltersComponent, type BookingFilters } from "@/components/dashb
 import { BookingsTable } from "@/components/dashboard/adminkos/bookings/bookings-table";
 import { BookingDetailCard } from "@/components/dashboard/adminkos/bookings/booking-detail-card";
 import { AddBookingDialog } from "@/components/dashboard/adminkos/bookings/add-booking-dialog";
+import { RenewalDialog } from "@/components/dashboard/adminkos/bookings/renewal-dialog";
 import { Plus, FileDown, Loader2 } from "lucide-react";
 import type { BookingTableItemDTO } from "@/server/types/adminkos";
 import { exportToCSV, formatCurrencyForCSV, formatDateForCSV, formatDateTimeForCSV } from "@/lib/export-csv";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface BookingsPageClientProps {
   initialData: {
@@ -34,6 +45,16 @@ export function BookingsPageClient({ initialData, properties }: BookingsPageClie
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isExporting, setIsExporting] = React.useState(false);
+
+  // Check-in/Check-out state
+  const [checkInBooking, setCheckInBooking] = React.useState<BookingTableItemDTO | null>(null);
+  const [checkOutBooking, setCheckOutBooking] = React.useState<BookingTableItemDTO | null>(null);
+  const [isCheckingIn, setIsCheckingIn] = React.useState(false);
+  const [isCheckingOut, setIsCheckingOut] = React.useState(false);
+
+  // Renewal state
+  const [renewalBooking, setRenewalBooking] = React.useState<BookingTableItemDTO | null>(null);
+  const [isRenewalDialogOpen, setIsRenewalDialogOpen] = React.useState(false);
 
   // Fetch bookings with filters
   const fetchBookings = React.useCallback(async (page: number = 1) => {
@@ -100,6 +121,82 @@ export function BookingsPageClient({ initialData, properties }: BookingsPageClie
   const handleCloseDetail = () => {
     setIsDetailCardOpen(false);
     setSelectedBookingDetail(null);
+  };
+
+  // Handle Check-in
+  const handleCheckIn = (booking: BookingTableItemDTO) => {
+    setCheckInBooking(booking);
+  };
+
+  const confirmCheckIn = async () => {
+    if (!checkInBooking) return;
+    
+    setIsCheckingIn(true);
+    try {
+      const response = await fetch("/api/adminkos/bookings/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: checkInBooking.id }),
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || "Gagal melakukan check-in");
+      }
+      
+      alert(`Berhasil! Booking ${checkInBooking.bookingCode} sudah check-in`);
+      fetchBookings(pagination.page);
+    } catch (error) {
+      console.error("Error checking in:", error);
+      alert(error instanceof Error ? error.message : "Gagal melakukan check-in");
+    } finally {
+      setIsCheckingIn(false);
+      setCheckInBooking(null);
+    }
+  };
+
+  // Handle Check-out
+  const handleCheckOut = (booking: BookingTableItemDTO) => {
+    setCheckOutBooking(booking);
+  };
+
+  const confirmCheckOut = async () => {
+    if (!checkOutBooking) return;
+    
+    setIsCheckingOut(true);
+    try {
+      const response = await fetch("/api/adminkos/bookings/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: checkOutBooking.id }),
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || "Gagal melakukan check-out");
+      }
+      
+      alert(`Berhasil! Booking ${checkOutBooking.bookingCode} sudah check-out`);
+      fetchBookings(pagination.page);
+    } catch (error) {
+      console.error("Error checking out:", error);
+      alert(error instanceof Error ? error.message : "Gagal melakukan check-out");
+    } finally {
+      setIsCheckingOut(false);
+      setCheckOutBooking(null);
+    }
+  };
+
+  // Handle Renewal
+  const handleRenewal = (booking: BookingTableItemDTO) => {
+    setRenewalBooking(booking);
+    setIsRenewalDialogOpen(true);
+  };
+
+  const handleRenewalSuccess = () => {
+    fetchBookings(pagination.page);
   };
 
   const handleExport = async () => {
@@ -294,6 +391,9 @@ export function BookingsPageClient({ initialData, properties }: BookingsPageClie
               pagination={pagination}
               onPageChange={handlePageChange}
               onViewDetails={handleViewDetails}
+              onCheckIn={handleCheckIn}
+              onCheckOut={handleCheckOut}
+              onRenewal={handleRenewal}
             />
           )}
         </CardContent>
@@ -326,6 +426,72 @@ export function BookingsPageClient({ initialData, properties }: BookingsPageClie
         onSuccess={handleAddSuccess}
         properties={properties}
       />
+
+      {/* Renewal Dialog */}
+      <RenewalDialog
+        open={isRenewalDialogOpen}
+        onOpenChange={setIsRenewalDialogOpen}
+        onSuccess={handleRenewalSuccess}
+        booking={renewalBooking}
+      />
+
+      {/* Check-in Confirmation Dialog */}
+      <AlertDialog open={!!checkInBooking} onOpenChange={() => setCheckInBooking(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Check-in</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin melakukan check-in untuk booking{" "}
+              <span className="font-semibold">{checkInBooking?.bookingCode}</span> atas nama{" "}
+              <span className="font-semibold">{checkInBooking?.customerName}</span>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCheckingIn}>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCheckIn} disabled={isCheckingIn}>
+              {isCheckingIn ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                "Ya, Check-in"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Check-out Confirmation Dialog */}
+      <AlertDialog open={!!checkOutBooking} onOpenChange={() => setCheckOutBooking(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Check-out</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin melakukan check-out untuk booking{" "}
+              <span className="font-semibold">{checkOutBooking?.bookingCode}</span> atas nama{" "}
+              <span className="font-semibold">{checkOutBooking?.customerName}</span>?
+              <br />
+              <span className="text-orange-600 mt-2 block">
+                Kamar akan tersedia kembali setelah check-out.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCheckingOut}>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCheckOut} disabled={isCheckingOut}>
+              {isCheckingOut ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                "Ya, Check-out"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

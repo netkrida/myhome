@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +19,11 @@ import {
   AlertCircle,
   CreditCard,
   BedDouble,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface Booking {
   id: string;
@@ -50,6 +53,68 @@ const ACTIVE_STATUSES = ["DEPOSIT_PAID", "CONFIRMED", "CHECKED_IN"];
 
 export function BookingListClient({ bookings }: BookingListClientProps) {
   const router = useRouter();
+  const [payingBookingId, setPayingBookingId] = useState<string | null>(null);
+
+  // Handle continue payment
+  const handleContinuePayment = async (booking: Booking) => {
+    try {
+      setPayingBookingId(booking.id);
+
+      // Create payment token
+      const response = await fetch("/api/payments/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          paymentType: booking.depositAmount && booking.depositAmount > 0 ? "DEPOSIT" : "FULL",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Gagal membuat pembayaran");
+      }
+
+      const { token, orderId } = result.data;
+
+      // Store orderId in localStorage as backup
+      localStorage.setItem('pendingPaymentOrderId', orderId);
+      localStorage.setItem('pendingPaymentTimestamp', Date.now().toString());
+
+      // Load Midtrans Snap script if not already loaded
+      if (!(window as any).snap) {
+        await loadSnapScript();
+      }
+
+      // Open Snap payment popup
+      (window as any).snap.pay(token, {
+        onSuccess: function (result: any) {
+          console.log("✅ Payment success:", result);
+          window.location.href = `/payment/success?orderId=${orderId}`;
+        },
+        onPending: function (result: any) {
+          console.log("⏳ Payment pending:", result);
+          window.location.href = `/payment/pending?orderId=${orderId}`;
+        },
+        onError: function (result: any) {
+          console.error("❌ Payment error:", result);
+          window.location.href = `/payment/failed?reason=error&orderId=${orderId}`;
+        },
+        onClose: function () {
+          console.log("🚪 Payment popup closed");
+          setPayingBookingId(null);
+        },
+      });
+
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      toast.error(error.message || "Gagal memproses pembayaran");
+      setPayingBookingId(null);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<
@@ -131,57 +196,85 @@ export function BookingListClient({ bookings }: BookingListClientProps) {
     ACTIVE_STATUSES.includes(b.status)
   );
 
-  const BookingCard = ({ booking }: { booking: Booking }) => (
-    <Card className="overflow-hidden rounded-2xl border shadow-sm transition-all hover:shadow-md">
-      <CardContent className="p-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          {/* Left Section */}
-          <div className="flex-1 space-y-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Kode Booking</p>
-                <p className="font-mono text-sm font-bold">{booking.bookingCode}</p>
+  const BookingCard = ({ booking }: { booking: Booking }) => {
+    const canPay = booking.status === "UNPAID" || booking.status === "PENDING";
+    const isPaying = payingBookingId === booking.id;
+
+    return (
+      <Card className="overflow-hidden rounded-2xl border shadow-sm transition-all hover:shadow-md">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Left Section */}
+            <div className="flex-1 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Kode Booking</p>
+                  <p className="font-mono text-sm font-bold">{booking.bookingCode}</p>
+                </div>
+                {getStatusBadge(booking.status)}
               </div>
-              {getStatusBadge(booking.status)}
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Home className="h-4 w-4 text-blue-500" />
+                  <span className="font-medium">{booking.propertyName || "-"}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <BedDouble className="h-4 w-4" />
+                  <span>
+                    {booking.roomType} - Kamar {booking.roomNumber}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>{formatDate(booking.checkInDate)}</span>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Home className="h-4 w-4 text-blue-500" />
-                <span className="font-medium">{booking.propertyName || "-"}</span>
+            {/* Right Section */}
+            <div className="flex flex-col items-end gap-3 sm:min-w-[180px]">
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Total Pembayaran</p>
+                <Price amount={booking.totalAmount} className="text-lg" />
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <BedDouble className="h-4 w-4" />
-                <span>
-                  {booking.roomType} - Kamar {booking.roomNumber}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>{formatDate(booking.checkInDate)}</span>
+              <div className="flex flex-col gap-2 w-full sm:w-auto">
+                {canPay && (
+                  <Button
+                    onClick={() => handleContinuePayment(booking)}
+                    disabled={isPaying}
+                    className="w-full rounded-full sm:w-auto bg-green-600 hover:bg-green-700"
+                    size="sm"
+                  >
+                    {isPaying ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Memproses...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Lanjutkan Bayar
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button
+                  onClick={() => router.push(`/dashboard/customer/booking/${booking.id}`)}
+                  className="w-full rounded-full sm:w-auto"
+                  size="sm"
+                  variant={canPay ? "outline" : "default"}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Lihat Detail
+                </Button>
               </div>
             </div>
           </div>
-
-          {/* Right Section */}
-          <div className="flex flex-col items-end gap-3 sm:min-w-[180px]">
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Total Pembayaran</p>
-              <Price amount={booking.totalAmount} className="text-lg" />
-            </div>
-            <Button
-              onClick={() => router.push(`/dashboard/customer/booking/${booking.id}`)}
-              className="w-full rounded-full sm:w-auto"
-              size="sm"
-            >
-              <Eye className="mr-2 h-4 w-4" />
-              Lihat Detail
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -248,3 +341,47 @@ export function BookingListClient({ bookings }: BookingListClientProps) {
   );
 }
 
+/**
+ * Load Midtrans Snap script dynamically
+ */
+function loadSnapScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // Check if script already exists
+    const existingScript = document.getElementById("midtrans-snap-script");
+    if (existingScript) {
+      resolve();
+      return;
+    }
+
+    // Get client key from environment
+    const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
+    if (!clientKey) {
+      reject(new Error("Midtrans client key not configured"));
+      return;
+    }
+
+    // Determine script URL based on environment
+    const isProduction = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true";
+    const scriptUrl = isProduction
+      ? "https://app.midtrans.com/snap/snap.js"
+      : "https://app.sandbox.midtrans.com/snap/snap.js";
+
+    // Create script element
+    const script = document.createElement("script");
+    script.id = "midtrans-snap-script";
+    script.src = scriptUrl;
+    script.setAttribute("data-client-key", clientKey);
+    script.async = true;
+
+    script.onload = () => {
+      console.log("Midtrans Snap script loaded");
+      resolve();
+    };
+
+    script.onerror = () => {
+      reject(new Error("Failed to load Midtrans Snap script"));
+    };
+
+    document.body.appendChild(script);
+  });
+}
