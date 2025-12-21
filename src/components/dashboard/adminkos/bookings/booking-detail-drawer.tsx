@@ -233,8 +233,28 @@ export function BookingDetailDrawer({ booking, open, onOpenChange }: BookingDeta
             <div className="rounded-lg border p-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Tagihan</span>
-                <span className="font-bold text-lg">{formatCurrency(booking.totalAmount)}</span>
+                <span className="font-medium">{formatCurrency(booking.totalAmount)}</span>
               </div>
+              {booking.discountAmount && booking.discountAmount > 0 && (
+                <>
+                  <div className="flex justify-between text-green-600">
+                    <span>Potongan Harga</span>
+                    <span className="font-medium">-{formatCurrency(booking.discountAmount)}</span>
+                  </div>
+                  {booking.discountNote && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Catatan</span>
+                      <span className="font-medium text-right text-sm">{booking.discountNote}</span>
+                    </div>
+                  )}
+                </>
+              )}
+              {booking.finalAmount && (
+                <div className="flex justify-between border-t pt-2 mt-2">
+                  <span className="text-muted-foreground">Total Bayar</span>
+                  <span className="font-bold text-lg">{formatCurrency(booking.finalAmount)}</span>
+                </div>
+              )}
               {booking.depositAmount && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Deposit</span>

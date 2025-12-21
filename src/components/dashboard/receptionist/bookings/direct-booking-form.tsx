@@ -21,6 +21,8 @@ type PricingSummary = {
   units: number;
   totalAmount: number;
   depositAmount?: number | null;
+  discountAmount?: number;
+  finalAmount?: number;
 };
 
 interface StepDefinition {
@@ -117,6 +119,8 @@ export function DirectBookingForm() {
   const [paymentMode, setPaymentMode] = useState<DirectBookingPaymentMode>("FULL");
   const [paymentMethod, setPaymentMethod] = useState<OfflinePaymentMethod>("CASH");
   const [selectedLedgerAccountId, setSelectedLedgerAccountId] = useState<string>("");
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [discountNote, setDiscountNote] = useState<string>("");
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -151,9 +155,11 @@ export function DirectBookingForm() {
           throw new Error(accountsPayload.error || "Gagal mengambil akun pembukuan");
         }
         const accounts = accountsPayload.data as LedgerAccountOption[];
-        setLedgerAccounts(accounts);
-        setSelectedLedgerAccountId(accounts[0]?.id ?? "");
-        if (accounts.length === 0) {
+        // Filter out system accounts for receptionist
+        const nonSystemAccounts = accounts.filter(a => !a.isSystem);
+        setLedgerAccounts(nonSystemAccounts);
+        setSelectedLedgerAccountId(nonSystemAccounts[0]?.id ?? "");
+        if (nonSystemAccounts.length === 0) {
           toast.error("Belum ada akun pemasukan aktif. Minta AdminKos menyiapkan akun pembukuan terlebih dahulu.");
         }
       } catch (error) {
@@ -195,14 +201,18 @@ export function DirectBookingForm() {
     const units = computeUnits(leaseType, durationDays);
     const totalAmount = pricePerUnit * units;
     const depositAmount = computeDeposit(selectedRoom, totalAmount);
+    const validDiscount = discountAmount > 0 && discountAmount < totalAmount ? discountAmount : 0;
+    const finalAmount = totalAmount - validDiscount;
 
     return {
       pricePerUnit,
       units,
       totalAmount,
       depositAmount,
+      discountAmount: validDiscount,
+      finalAmount,
     };
-  }, [selectedRoom, leaseType, checkInDate, checkOutDate]);
+  }, [selectedRoom, leaseType, checkInDate, checkOutDate, discountAmount]);
 
   const readyForSubmission =
     (selectedCustomer || (newCustomer.name && newCustomer.phoneNumber)) &&
@@ -310,6 +320,8 @@ export function DirectBookingForm() {
           method: paymentMethod,
           ledgerAccountId,
         },
+        discountAmount: pricingSummary?.discountAmount || undefined,
+        discountNote: discountNote || undefined,
       };
 
       const response = await fetch("/api/receptionist/bookings/direct", {
@@ -351,7 +363,9 @@ export function DirectBookingForm() {
     setCheckOutDate("");
     setPaymentMode("FULL");
     setPaymentMethod("CASH");
-    setSelectedLedgerAccountId(ledgerAccounts[0]?.id ?? "");
+    setSelectedLedgerAccountId(ledgerAccounts.filter(a => !a.isSystem)[0]?.id ?? "");
+    setDiscountAmount(0);
+    setDiscountNote("");
   };
 
   return (
@@ -419,6 +433,10 @@ export function DirectBookingForm() {
                 ledgerAccountsLoading={ledgerAccountsLoading}
                 selectedLedgerAccountId={selectedLedgerAccountId}
                 onLedgerAccountChange={setSelectedLedgerAccountId}
+                discountAmount={discountAmount}
+                onDiscountAmountChange={setDiscountAmount}
+                discountNote={discountNote}
+                onDiscountNoteChange={setDiscountNote}
               />
             )}
 
@@ -438,6 +456,7 @@ export function DirectBookingForm() {
                 paymentMode={paymentMode}
                 paymentMethod={paymentMethod}
                 ledgerAccount={selectedLedgerAccount}
+                discountNote={discountNote}
               />
             )}
           </div>
@@ -772,6 +791,10 @@ interface PaymentStepProps {
   ledgerAccountsLoading: boolean;
   selectedLedgerAccountId: string;
   onLedgerAccountChange: (accountId: string) => void;
+  discountAmount: number;
+  onDiscountAmountChange: (amount: number) => void;
+  discountNote: string;
+  onDiscountNoteChange: (note: string) => void;
 }
 
 function PaymentStep({
@@ -784,6 +807,10 @@ function PaymentStep({
   ledgerAccountsLoading,
   selectedLedgerAccountId,
   onLedgerAccountChange,
+  discountAmount,
+  onDiscountAmountChange,
+  discountNote,
+  onDiscountNoteChange,
 }: PaymentStepProps) {
   const depositRequiredButMissing = paymentMode === "DEPOSIT" && pricingSummary.depositAmount == null;
 
@@ -847,7 +874,7 @@ function PaymentStep({
             <SelectContent>
               {ledgerAccounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
-                  {`${account.name}${account.code ? ` · ${account.code}` : ""}${account.isSystem ? " (Sistem)" : ""}`}
+                  {`${account.name}${account.code ? ` · ${account.code}` : ""}`}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -855,14 +882,49 @@ function PaymentStep({
         )}
       </div>
 
+      {/* Discount Section */}
+      <div className="space-y-2">
+        <Label htmlFor="discount-amount">Potongan Harga (Rp)</Label>
+        <Input
+          id="discount-amount"
+          type="number"
+          min="0"
+          max={pricingSummary.totalAmount - 1}
+          value={discountAmount || ""}
+          onChange={(e) => onDiscountAmountChange(Number(e.target.value) || 0)}
+          placeholder="0"
+        />
+        <p className="text-xs text-muted-foreground">Masukkan potongan harga jika ada</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="discount-note">Catatan Potongan</Label>
+        <Input
+          id="discount-note"
+          type="text"
+          value={discountNote}
+          onChange={(e) => onDiscountNoteChange(e.target.value)}
+          placeholder="Contoh: Diskon promo awal tahun"
+          maxLength={255}
+        />
+      </div>
+
       <div className="md:col-span-2 rounded-lg border bg-muted/40 p-4 space-y-2 text-sm">
         <p className="font-semibold">Ringkasan Pembayaran</p>
         <div className="space-y-1">
           <p>Total Sewa: Rp {pricingSummary.totalAmount.toLocaleString("id-ID")}</p>
+          {pricingSummary.discountAmount && pricingSummary.discountAmount > 0 && (
+            <p className="text-green-600">Potongan: -Rp {pricingSummary.discountAmount.toLocaleString("id-ID")}</p>
+          )}
+          {pricingSummary.discountAmount && pricingSummary.discountAmount > 0 && (
+            <p className="font-semibold">Harga Setelah Diskon: Rp {pricingSummary.finalAmount?.toLocaleString("id-ID")}</p>
+          )}
           {paymentMode === "DEPOSIT" && pricingSummary.depositAmount != null ? (
             <p>Jumlah Deposit: Rp {pricingSummary.depositAmount.toLocaleString("id-ID")}</p>
           ) : (
-            <p>Jumlah Dibayar: Rp {pricingSummary.totalAmount.toLocaleString("id-ID")}</p>
+            <p className="font-semibold border-t pt-1 mt-1">
+              Jumlah Dibayar: Rp {(pricingSummary.finalAmount ?? pricingSummary.totalAmount).toLocaleString("id-ID")}
+            </p>
           )}
         </div>
       </div>
@@ -880,6 +942,7 @@ interface ReviewStepProps {
   paymentMode: DirectBookingPaymentMode;
   paymentMethod: OfflinePaymentMethod;
   ledgerAccount?: LedgerAccountOption | null;
+  discountNote?: string;
 }
 
 function ReviewStep({
@@ -892,6 +955,7 @@ function ReviewStep({
   paymentMode,
   paymentMethod,
   ledgerAccount,
+  discountNote,
 }: ReviewStepProps) {
   return (
     <div className="space-y-4 text-sm">
@@ -921,6 +985,13 @@ function ReviewStep({
         />
         <ReviewItem label="Harga per unit" value={`Rp ${pricingSummary.pricePerUnit.toLocaleString("id-ID")}`} />
         <ReviewItem label="Total" value={`Rp ${pricingSummary.totalAmount.toLocaleString("id-ID")}`} />
+        {pricingSummary.discountAmount != null && pricingSummary.discountAmount > 0 && (
+          <>
+            <ReviewItem label="Potongan" value={`-Rp ${pricingSummary.discountAmount.toLocaleString("id-ID")}`} />
+            {discountNote && <ReviewItem label="Catatan Potongan" value={discountNote} />}
+            <ReviewItem label="Harga Setelah Diskon" value={`Rp ${(pricingSummary.finalAmount ?? pricingSummary.totalAmount).toLocaleString("id-ID")}`} />
+          </>
+        )}
         {paymentMode === "DEPOSIT" && pricingSummary.depositAmount != null && (
           <ReviewItem label="Deposit" value={`Rp ${pricingSummary.depositAmount.toLocaleString("id-ID")}`} />
         )}

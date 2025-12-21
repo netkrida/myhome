@@ -219,8 +219,13 @@ export function BookingsTable({
                   <TableCell className="text-right">
                     <div className="space-y-1">
                       <div className="font-semibold text-sm">
-                        {formatCurrency(booking.totalAmount)}
+                        {formatCurrency(booking.finalAmount ?? booking.totalAmount)}
                       </div>
+                      {booking.discountAmount && booking.discountAmount > 0 && (
+                        <div className="text-xs text-green-600">
+                          -{formatCurrency(booking.discountAmount)}
+                        </div>
+                      )}
                       {booking.depositAmount && (
                         <div className="text-xs text-muted-foreground">
                           DP: {formatCurrency(booking.depositAmount)}

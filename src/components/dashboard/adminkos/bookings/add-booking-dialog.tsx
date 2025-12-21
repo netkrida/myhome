@@ -90,6 +90,8 @@ export function AddBookingDialog({
   const [checkInDate, setCheckInDate] = React.useState<Date>();
   const [leaseType, setLeaseType] = React.useState<LeaseType>(LeaseType.MONTHLY);
   const [depositOption, setDepositOption] = React.useState<"deposit" | "full">("full");
+  const [discountAmount, setDiscountAmount] = React.useState<number>(0);
+  const [discountNote, setDiscountNote] = React.useState<string>("");
 
   // Fetch rooms when property changes
   React.useEffect(() => {
@@ -164,6 +166,8 @@ export function AddBookingDialog({
           leaseType,
           depositOption,
           accountId,
+          discountAmount: discountAmount > 0 ? discountAmount : undefined,
+          discountNote: discountNote || undefined,
         }),
       });
 
@@ -197,6 +201,8 @@ export function AddBookingDialog({
     setCheckInDate(undefined);
     setLeaseType(LeaseType.MONTHLY);
     setDepositOption("full");
+    setDiscountAmount(0);
+    setDiscountNote("");
   setRooms([]);
   setAccountId("");
   };
@@ -367,6 +373,32 @@ export function AddBookingDialog({
                   <SelectItem value="deposit">Bayar Deposit</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Discount Section */}
+            <div className="space-y-2">
+              <Label htmlFor="discountAmount">Potongan Harga (Rp)</Label>
+              <Input
+                id="discountAmount"
+                type="number"
+                min="0"
+                value={discountAmount || ""}
+                onChange={(e) => setDiscountAmount(Number(e.target.value) || 0)}
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground">Masukkan potongan harga jika ada</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="discountNote">Catatan Potongan</Label>
+              <Input
+                id="discountNote"
+                type="text"
+                value={discountNote}
+                onChange={(e) => setDiscountNote(e.target.value)}
+                placeholder="Contoh: Diskon promo awal tahun"
+                maxLength={255}
+              />
             </div>
           </div>
 

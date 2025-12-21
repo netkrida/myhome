@@ -9,6 +9,9 @@ interface PropertyDetailMetricsProps {
 
 export function PropertyDetailMetrics({ property }: PropertyDetailMetricsProps) {
   const typeMeta = getPropertyTypeMeta(property.propertyType);
+  
+  // Calculate available rooms dynamically from rooms that are not occupied
+  const availableRoomsCount = property.rooms?.filter(room => room.isAvailable).length ?? property.availableRooms;
 
   return (
     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -59,7 +62,7 @@ export function PropertyDetailMetrics({ property }: PropertyDetailMetricsProps) 
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{property.availableRooms}</div>
+          <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{availableRoomsCount}</div>
           <p className="text-sm text-slate-500 dark:text-slate-300">Kamar siap disewa</p>
         </CardContent>
       </Card>

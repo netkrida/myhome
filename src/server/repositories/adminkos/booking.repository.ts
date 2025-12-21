@@ -94,8 +94,13 @@ interface DirectBookingTransactionInput {
     checkOutDate?: Date | null;
     totalAmount: number;
     depositAmount?: number;
+    discountAmount?: number;
+    discountNote?: string;
+    finalAmount?: number;
     status: BookingStatus;
     paymentStatus: PaymentStatus;
+    checkedInBy?: string;
+    actualCheckInAt?: Date;
   };
   payment: {
     userId: string;
@@ -133,6 +138,9 @@ export class BookingRepository {
       checkOutDate?: Date;
       totalAmount: number;
       depositAmount?: number;
+      discountAmount?: number;
+      discountNote?: string;
+      finalAmount?: number;
       paymentStatus: PaymentStatus;
       status: BookingStatus;
     }
@@ -149,6 +157,9 @@ export class BookingRepository {
           leaseType: bookingData.leaseType,
           totalAmount: bookingData.totalAmount,
           depositAmount: bookingData.depositAmount,
+          discountAmount: bookingData.discountAmount,
+          discountNote: bookingData.discountNote,
+          finalAmount: bookingData.finalAmount,
           paymentStatus: bookingData.paymentStatus,
           status: bookingData.status
         },
@@ -583,8 +594,13 @@ export class BookingRepository {
             leaseType: input.booking.leaseType,
             totalAmount: input.booking.totalAmount,
             depositAmount: input.booking.depositAmount ?? null,
+            discountAmount: input.booking.discountAmount ?? null,
+            discountNote: input.booking.discountNote ?? null,
+            finalAmount: input.booking.finalAmount ?? null,
             paymentStatus: input.booking.paymentStatus,
             status: input.booking.status,
+            checkedInBy: input.booking.checkedInBy ?? null,
+            actualCheckInAt: input.booking.actualCheckInAt ?? null,
           },
           include: BASE_BOOKING_INCLUDE,
         });
@@ -619,7 +635,8 @@ export class BookingRepository {
           });
         }
 
-        if (MANAGE_ROOM_AVAILABILITY && input.booking.status === BookingStatus.CONFIRMED) {
+        // Manage room availability for confirmed/checked-in bookings
+        if (MANAGE_ROOM_AVAILABILITY && (input.booking.status === BookingStatus.CONFIRMED || input.booking.status === BookingStatus.CHECKED_IN)) {
           await tx.room.update({
             where: { id: booking.roomId },
             data: { isAvailable: false },
@@ -657,6 +674,9 @@ export class BookingRepository {
       leaseType: booking.leaseType as LeaseType,
       totalAmount: Number(booking.totalAmount),
       depositAmount: booking.depositAmount ? Number(booking.depositAmount) : undefined,
+      discountAmount: (booking as any).discountAmount ? Number((booking as any).discountAmount) : undefined,
+      discountNote: (booking as any).discountNote ?? undefined,
+      finalAmount: (booking as any).finalAmount ? Number((booking as any).finalAmount) : undefined,
       paymentStatus: booking.paymentStatus as PaymentStatus,
       status: booking.status as BookingStatus,
       checkedInBy: booking.checkedInBy ?? undefined,

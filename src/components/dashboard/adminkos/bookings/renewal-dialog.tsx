@@ -54,6 +54,7 @@ export function RenewalDialog({
   const [accountId, setAccountId] = React.useState("");
   const [leaseType, setLeaseType] = React.useState<LeaseType>(LeaseType.MONTHLY);
   const [depositOption, setDepositOption] = React.useState<"deposit" | "full">("full");
+  const [useOriginalDiscount, setUseOriginalDiscount] = React.useState(true);
 
   // Fetch accounts (exclude system accounts and archived accounts, only INCOME type)
   React.useEffect(() => {
@@ -76,6 +77,7 @@ export function RenewalDialog({
       setLeaseType(booking?.leaseType as LeaseType || LeaseType.MONTHLY);
       setDepositOption("full");
       setAccountId("");
+      setUseOriginalDiscount(booking?.discountAmount ? true : false);
     }
   }, [open, booking]);
 
@@ -97,6 +99,9 @@ export function RenewalDialog({
           leaseType,
           depositOption,
           accountId,
+          // Carry over discount from original booking if selected
+          discountAmount: useOriginalDiscount && booking.discountAmount ? booking.discountAmount : undefined,
+          discountNote: useOriginalDiscount && booking.discountNote ? `${booking.discountNote} (perpanjangan)` : undefined,
         }),
       });
 
@@ -129,7 +134,7 @@ export function RenewalDialog({
             Perpanjangan Sewa
           </DialogTitle>
           <DialogDescription>
-            Buat booking perpanjangan untuk penyewa yang sudah ada.
+            Buat booking perpanjangan untuk penyewa yang sudah ada. Status akan otomatis CHECKED_IN.
           </DialogDescription>
         </DialogHeader>
 
@@ -153,8 +158,41 @@ export function RenewalDialog({
                 <span className="text-muted-foreground">Sisa Waktu:</span>
                 <p className="font-medium text-orange-600">{booking.remainingDays} hari lagi</p>
               </div>
+              <div>
+                <span className="text-muted-foreground">Harga Asli:</span>
+                <p className="font-medium">{formatCurrency(booking.totalAmount)}</p>
+              </div>
+              {booking.discountAmount && booking.discountAmount > 0 && (
+                <>
+                  <div>
+                    <span className="text-muted-foreground">Potongan:</span>
+                    <p className="font-medium text-green-600">-{formatCurrency(booking.discountAmount)}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Harga Setelah Diskon:</span>
+                    <p className="font-bold text-primary">{formatCurrency(booking.finalAmount ?? (booking.totalAmount - booking.discountAmount))}</p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
+
+          {/* Discount carry over option */}
+          {booking.discountAmount && booking.discountAmount > 0 && (
+            <div className="flex items-center space-x-2 border rounded-lg p-3 bg-green-50 dark:bg-green-900/20">
+              <input
+                type="checkbox"
+                id="useOriginalDiscount"
+                checked={useOriginalDiscount}
+                onChange={(e) => setUseOriginalDiscount(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <label htmlFor="useOriginalDiscount" className="text-sm">
+                Gunakan potongan harga yang sama ({formatCurrency(booking.discountAmount)})
+                {booking.discountNote && <span className="text-muted-foreground"> - {booking.discountNote}</span>}
+              </label>
+            </div>
+          )}
 
           {/* Akun Transaksi */}
           <div className="space-y-2">

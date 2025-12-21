@@ -43,6 +43,8 @@ export const DirectBookingSchema = z.object({
     ledgerAccountId: z.string().cuid("Invalid ledger account ID"),
   }),
   idempotencyKey: z.string().max(100).optional(),
+  discountAmount: z.number().min(0).optional(),
+  discountNote: z.string().max(255).optional(),
 });
 
 export const UpdateBookingDatesSchema = z

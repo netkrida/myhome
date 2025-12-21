@@ -12,6 +12,8 @@ const RenewalRequestSchema = z.object({
   leaseType: z.enum(["DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "YEARLY"]),
   depositOption: z.enum(["deposit", "full"]).default("full"),
   accountId: z.string().cuid("Invalid account ID"),
+  discountAmount: z.number().min(0).optional(),
+  discountNote: z.string().max(255).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -41,6 +43,8 @@ export async function POST(request: NextRequest) {
         leaseType: parsed.data.leaseType,
         depositOption: parsed.data.depositOption,
         accountId: parsed.data.accountId,
+        discountAmount: parsed.data.discountAmount,
+        discountNote: parsed.data.discountNote,
       },
       user
     );

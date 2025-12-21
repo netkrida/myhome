@@ -140,6 +140,9 @@ export interface BookingTableItemDTO {
   remainingDays: number; // remaining days until checkout
   totalAmount: number;
   depositAmount: number | null;
+  discountAmount: number | null;   // Potongan harga yang diberikan
+  discountNote: string | null;     // Catatan untuk potongan harga
+  finalAmount: number | null;      // Harga setelah diskon
   paymentStatus: PaymentStatus;
   status: BookingStatus;
 }

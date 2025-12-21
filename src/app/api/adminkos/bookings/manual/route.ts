@@ -25,6 +25,8 @@ const manualBookingSchema = z.object({
   leaseType: z.nativeEnum(LeaseType),
   depositOption: z.enum(["deposit", "full"]),
   accountId: z.string().cuid("Invalid account ID"),
+  discountAmount: z.number().min(0).optional(),
+  discountNote: z.string().max(255).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-  const { userId, roomId, checkInDate, leaseType, depositOption, accountId } = validationResult.data;
+  const { userId, roomId, checkInDate, leaseType, depositOption, accountId, discountAmount, discountNote } = validationResult.data;
     // Validate accountId (must be a non-system account belonging to this AdminKos)
     const accountsResult = await AdminKosLedgerAPI.listAccounts();
     if (!accountsResult.success || !Array.isArray(accountsResult.data.accounts)) {
@@ -137,9 +139,13 @@ export async function POST(request: NextRequest) {
     // Generate booking code
     const bookingCode = BookingService.generateBookingCode();
 
+    // Calculate final amount with discount
+    const validDiscountAmount = discountAmount && discountAmount > 0 ? discountAmount : undefined;
+    const finalAmount = validDiscountAmount ? calculation.totalAmount - validDiscountAmount : calculation.totalAmount;
+
     // Determine payment amount
     const isDepositPayment = depositOption === "deposit" && calculation.depositAmount;
-    const paymentAmount = isDepositPayment ? calculation.depositAmount! : calculation.totalAmount;
+    const paymentAmount = isDepositPayment ? calculation.depositAmount! : finalAmount;
     const paymentType = isDepositPayment ? PaymentType.DEPOSIT : PaymentType.FULL;
 
     // Create booking with CONFIRMED status (langsung lunas)
@@ -153,6 +159,9 @@ export async function POST(request: NextRequest) {
       leaseType,
       totalAmount: calculation.totalAmount,
       depositAmount: calculation.depositAmount,
+      discountAmount: validDiscountAmount,
+      discountNote,
+      finalAmount,
       paymentStatus: PaymentStatus.SUCCESS,
       status: BookingStatus.CONFIRMED,
       depositOption,
@@ -202,7 +211,7 @@ export async function POST(request: NextRequest) {
         direction: "IN",
         amount: paymentAmount,
         date: new Date(),
-        note: `Booking manual ${booking.bookingCode} oleh admin`,
+        note: `Booking manual ${booking.bookingCode} oleh admin${validDiscountAmount ? ` (diskon: Rp ${validDiscountAmount.toLocaleString("id-ID")})` : ""}`,
         refType: "PAYMENT",
         refId: payment.id,
         propertyId: property.id,
@@ -216,6 +225,8 @@ export async function POST(request: NextRequest) {
         bookingCode: booking.bookingCode,
         totalAmount: booking.totalAmount,
         depositAmount: booking.depositAmount,
+        discountAmount: validDiscountAmount,
+        finalAmount: finalAmount,
         paymentAmount,
         paymentType,
         paymentId: payment.id,

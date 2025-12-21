@@ -467,7 +467,11 @@ export class BookingsApplication {
     }
 
     const bookingStatus = isFullPayment ? BookingStatus.CONFIRMED : BookingStatus.DEPOSIT_PAID;
-    const paymentAmount = isFullPayment ? calculation.totalAmount : depositAmount!;
+    
+    // Calculate final amount with discount
+    const discountAmount = payload.discountAmount && payload.discountAmount > 0 ? payload.discountAmount : undefined;
+    const finalAmount = discountAmount ? calculation.totalAmount - discountAmount : calculation.totalAmount;
+    const paymentAmount = isFullPayment ? finalAmount : depositAmount!;
 
     const transactionResult = await BookingRepository.createWithPaymentTx({
       booking: {
@@ -480,6 +484,9 @@ export class BookingsApplication {
         checkOutDate: resolvedCheckOutDate,
         totalAmount: calculation.totalAmount,
         depositAmount,
+        discountAmount,
+        discountNote: payload.discountNote,
+        finalAmount,
         status: bookingStatus,
         paymentStatus: PaymentStatus.SUCCESS,
       },
@@ -498,7 +505,7 @@ export class BookingsApplication {
         propertyId: payload.propertyId,
         amount: paymentAmount,
         createdBy: currentUser.id,
-        note: `Pembayaran offline ${isFullPayment ? "lunas" : "deposit"} melalui ${payload.payment.method}`,
+        note: `Pembayaran offline ${isFullPayment ? "lunas" : "deposit"} melalui ${payload.payment.method}${discountAmount ? ` (diskon: Rp ${discountAmount.toLocaleString("id-ID")})` : ""}`,
       },
     });
 
@@ -762,6 +769,7 @@ export class BookingsApplication {
   /**
    * Renew/extend booking for AdminKos
    * Creates a new booking continuing from the current booking's checkout date
+   * Renewals are automatically set to CHECKED_IN status since the customer is already staying
    */
   static async renewBooking(
     bookingId: string,
@@ -769,6 +777,8 @@ export class BookingsApplication {
       leaseType: string;
       depositOption: "deposit" | "full";
       accountId: string;
+      discountAmount?: number;
+      discountNote?: string;
     },
     currentUser: UserContext
   ): Promise<Result<DirectBookingResponseDTO>> {
@@ -861,8 +871,14 @@ export class BookingsApplication {
       return badRequest("Kamar ini tidak memiliki konfigurasi deposit");
     }
 
-    const bookingStatus = isFullPayment ? BookingStatus.CONFIRMED : BookingStatus.DEPOSIT_PAID;
-    const paymentAmount = isFullPayment ? calculation.totalAmount : depositAmount!;
+    // Calculate final amount with discount
+    const discountAmount = input.discountAmount && input.discountAmount > 0 ? input.discountAmount : undefined;
+    const finalAmount = discountAmount ? calculation.totalAmount - discountAmount : calculation.totalAmount;
+    
+    // Renewal bookings are automatically CHECKED_IN since customer is already staying
+    // Only use DEPOSIT_PAID if deposit payment, otherwise CHECKED_IN directly
+    const bookingStatus = isFullPayment ? BookingStatus.CHECKED_IN : BookingStatus.DEPOSIT_PAID;
+    const paymentAmount = isFullPayment ? finalAmount : depositAmount!;
 
     // Create the renewal booking
     const transactionResult = await BookingRepository.createWithPaymentTx({
@@ -876,8 +892,14 @@ export class BookingsApplication {
         checkOutDate: newCheckOutDate,
         totalAmount: calculation.totalAmount,
         depositAmount: depositAmount,
+        discountAmount,
+        discountNote: input.discountNote,
+        finalAmount,
         status: bookingStatus,
         paymentStatus: PaymentStatus.SUCCESS,
+        // Auto check-in for renewals
+        checkedInBy: currentUser.id,
+        actualCheckInAt: new Date(),
       },
       payment: {
         userId: booking.userId,
@@ -894,7 +916,7 @@ export class BookingsApplication {
         propertyId: booking.propertyId,
         amount: paymentAmount,
         createdBy: currentUser.id,
-        note: `Perpanjangan booking ${booking.bookingCode} - ${isFullPayment ? "Lunas" : "Deposit"}`,
+        note: `Perpanjangan booking ${booking.bookingCode} - ${isFullPayment ? "Lunas" : "Deposit"}${discountAmount ? ` (diskon: Rp ${discountAmount.toLocaleString("id-ID")})` : ""}`,
       },
     });
 

@@ -54,6 +54,8 @@ export interface CreateBookingDTO {
   leaseType: LeaseType;
   depositOption: 'deposit' | 'full'; // User choice for payment type
   paymentMethod?: string;
+  discountAmount?: number;   // Potongan harga yang diberikan
+  discountNote?: string;     // Catatan untuk potongan harga
 }
 
 export interface BookingDTO {
@@ -67,6 +69,9 @@ export interface BookingDTO {
   leaseType: LeaseType;
   totalAmount: number;
   depositAmount?: number;
+  discountAmount?: number;   // Potongan harga yang diberikan
+  discountNote?: string;     // Catatan untuk potongan harga
+  finalAmount?: number;      // Harga setelah diskon (totalAmount - discountAmount)
   paymentStatus: PaymentStatus;
   status: BookingStatus;
   checkedInBy?: string;
@@ -304,6 +309,8 @@ export interface DirectBookingRequestDTO {
   checkOutDate?: Date;
   payment: DirectBookingPaymentInput;
   idempotencyKey?: string;
+  discountAmount?: number;   // Potongan harga yang diberikan
+  discountNote?: string;     // Catatan untuk potongan harga
 }
 
 export interface DirectBookingResponseDTO {

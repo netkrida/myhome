@@ -299,6 +299,9 @@ model Booking {
   leaseType        LeaseType
   totalAmount      Decimal       @db.Decimal(12, 2)
   depositAmount    Decimal?      @db.Decimal(12, 2)
+  discountAmount   Decimal?      @db.Decimal(12, 2) // Potongan harga yang diberikan
+  discountNote     String?       @db.VarChar(255)   // Catatan untuk potongan harga
+  finalAmount      Decimal?      @db.Decimal(12, 2) // Harga setelah diskon (totalAmount - discountAmount)
   paymentStatus    PaymentStatus @default(PENDING)
   status           BookingStatus @default(UNPAID)
   checkedInBy      String?

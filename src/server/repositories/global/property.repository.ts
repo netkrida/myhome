@@ -687,12 +687,15 @@ export class PropertyRepository {
         const cheapestPrice = property.rooms.length > 0
           ? Math.min(...property.rooms.map(room => Number(room.monthlyPrice)))
           : 0;
+        
+        // Count available rooms (rooms in query are already filtered by isAvailable: true)
+        const availableRoomsCount = property.rooms.length;
 
         return {
           id: property.id,
           name: property.name,
           propertyType: property.propertyType as PropertyType,
-          availableRooms: property.availableRooms,
+          availableRooms: availableRoomsCount,
           facilities: property.facilities as unknown as PropertyFacility[],
           cheapestMonthlyPrice: cheapestPrice,
           mainImage: property.images[0]?.imageUrl,
@@ -813,6 +816,9 @@ export class PropertyRepository {
       }
     }
 
+    // Calculate available rooms dynamically from rooms that are currently available
+    const availableRoomsCount = property.rooms?.filter(room => room.isAvailable).length ?? property.availableRooms;
+
     // Transform to PublicPropertyDetailDTO
     return {
       id: property.id,
@@ -822,7 +828,7 @@ export class PropertyRepository {
       description: property.description,
       roomTypes: property.roomTypes as string[],
       totalRooms: property.totalRooms,
-      availableRooms: property.availableRooms,
+      availableRooms: availableRoomsCount,
       location: {
         provinceCode: property.provinceCode,
         provinceName: property.provinceName,
