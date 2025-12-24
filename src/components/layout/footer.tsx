@@ -1,10 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, Phone, MapPin, Facebook, Twitter, Instagram } from "lucide-react";
+import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="bg-muted/50 border-t">
+    <footer className="relative bg-gradient-to-b from-background to-muted/30 border-t border-border/50">
+      {/* Decorative gradient line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
       <div className="container px-4 py-12 sm:px-6 md:py-16">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
           {/* Company Info */}
@@ -18,23 +20,39 @@ export function Footer() {
                 className="h-8 w-auto sm:h-9"
               />
             </Link>
-            <p className="text-sm text-muted-foreground">
-              Find and book the perfect kos (boarding house) for your needs. 
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Find and book the perfect kos (boarding house) for your needs.
               Connecting students and professionals with quality accommodation.
             </p>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <Link href="#" className="text-muted-foreground hover:text-primary">
+            <div className="flex items-center gap-3">
+              <a
+                href="#"
+                className="flex items-center justify-center h-9 w-9 rounded-full bg-muted/50 text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover:scale-110"
+                aria-label="Facebook"
+              >
                 <Facebook className="h-4 w-4" />
-                <span className="sr-only">Facebook</span>
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary">
+              </a>
+              <a
+                href="#"
+                className="flex items-center justify-center h-9 w-9 rounded-full bg-muted/50 text-muted-foreground hover:bg-sky-500 hover:text-white transition-all duration-300 hover:scale-110"
+                aria-label="Twitter"
+              >
                 <Twitter className="h-4 w-4" />
-                <span className="sr-only">Twitter</span>
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary">
+              </a>
+              <a
+                href="#"
+                className="flex items-center justify-center h-9 w-9 rounded-full bg-muted/50 text-muted-foreground hover:bg-gradient-to-br hover:from-purple-500 hover:to-pink-500 hover:text-white transition-all duration-300 hover:scale-110"
+                aria-label="Instagram"
+              >
                 <Instagram className="h-4 w-4" />
-                <span className="sr-only">Instagram</span>
-              </Link>
+              </a>
+              <a
+                href="#"
+                className="flex items-center justify-center h-9 w-9 rounded-full bg-muted/50 text-muted-foreground hover:bg-red-600 hover:text-white transition-all duration-300 hover:scale-110"
+                aria-label="Youtube"
+              >
+                <Youtube className="h-4 w-4" />
+              </a>
             </div>
           </div>
 

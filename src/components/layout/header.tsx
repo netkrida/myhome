@@ -66,7 +66,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 text-foreground">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl shadow-sm text-foreground transition-all duration-300">
       <div className="container flex h-14 items-center justify-between gap-2 px-4 sm:h-16 sm:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center">
@@ -182,119 +182,119 @@ export function Header() {
                 </SheetTitle>
               </SheetHeader>
               <div className="flex flex-col space-y-3 px-4 pb-6">
-              {/* Mobile Logo */}
-              <Link
-                href="/"
-                className="flex items-center"
-                onClick={() => setIsOpen(false)}
-              >
-                <Image
-                  src="/logo.png"
-                  alt="MyHome"
-                  width={32}
-                  height={32}
-                  className="h-8 w-auto"
-                />
-              </Link>
+                {/* Mobile Logo */}
+                <Link
+                  href="/"
+                  className="flex items-center"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Image
+                    src="/logo.png"
+                    alt="MyHome"
+                    width={32}
+                    height={32}
+                    className="h-8 w-auto"
+                  />
+                </Link>
 
-              {/* Mobile Navigation */}
-              <nav className="flex flex-col space-y-2">
-                {navigationItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="text-sm font-medium transition-colors hover:text-primary"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </nav>
-
-              {/* Mobile Auth Section */}
-              <div className="flex flex-col space-y-2.5 pt-3 border-t">
-                {session?.user ? (
-                  <>
-                    <div className="flex items-center space-x-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={session.user.image || ""} alt="Avatar" />
-                        <AvatarFallback>
-                          {session.user.name?.charAt(0) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <p className="text-sm font-medium">{session.user.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {session.user.email}
-                        </p>
-                      </div>
-                    </div>
-                    {session.user.role !== "CUSTOMER" && (
-                      <Link
-                        href={getDashboardUrl(session.user.role || "customer")}
-                        className="text-sm font-medium transition-colors hover:text-primary"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        Dashboard
-                      </Link>
-                    )}
-                    {session.user.role === "CUSTOMER" && (
-                      <>
-                        <Link
-                          href="/bookings/my"
-                          className="text-sm font-medium transition-colors hover:text-primary"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          My Bookings
-                        </Link>
-                        <Link
-                          href="/favorites"
-                          className="text-sm font-medium transition-colors hover:text-primary"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          Favorites
-                        </Link>
-                      </>
-                    )}
+                {/* Mobile Navigation */}
+                <nav className="flex flex-col space-y-2">
+                  {navigationItems.map((item) => (
                     <Link
-                      href="/profile"
+                      key={item.name}
+                      href={item.href}
                       className="text-sm font-medium transition-colors hover:text-primary"
                       onClick={() => setIsOpen(false)}
                     >
-                      Profile
+                      {item.name}
                     </Link>
-                    <LogoutButton
-                      variant="link"
-                      className="text-sm font-medium transition-colors hover:text-primary"
-                    />
-                  </>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      variant="ghost"
-                      className="justify-start"
-                      onClick={() => {
-                        setIsOpen(false);
-                        setIsAuthModalOpen(true);
-                      }}
-                    >
-                      <LogIn className="mr-2 h-3.5 w-3.5" />
-                      Masuk
-                    </Button>
-                    <Button
-                      className="justify-start"
-                      onClick={() => {
-                        setIsOpen(false);
-                        setIsAuthModalOpen(true);
-                      }}
-                    >
-                      Daftar
-                    </Button>
-                  </div>
-                )}
+                  ))}
+                </nav>
+
+                {/* Mobile Auth Section */}
+                <div className="flex flex-col space-y-2.5 pt-3 border-t">
+                  {session?.user ? (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={session.user.image || ""} alt="Avatar" />
+                          <AvatarFallback>
+                            {session.user.name?.charAt(0) || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <p className="text-sm font-medium">{session.user.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {session.user.email}
+                          </p>
+                        </div>
+                      </div>
+                      {session.user.role !== "CUSTOMER" && (
+                        <Link
+                          href={getDashboardUrl(session.user.role || "customer")}
+                          className="text-sm font-medium transition-colors hover:text-primary"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          Dashboard
+                        </Link>
+                      )}
+                      {session.user.role === "CUSTOMER" && (
+                        <>
+                          <Link
+                            href="/bookings/my"
+                            className="text-sm font-medium transition-colors hover:text-primary"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            My Bookings
+                          </Link>
+                          <Link
+                            href="/favorites"
+                            className="text-sm font-medium transition-colors hover:text-primary"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            Favorites
+                          </Link>
+                        </>
+                      )}
+                      <Link
+                        href="/profile"
+                        className="text-sm font-medium transition-colors hover:text-primary"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        Profile
+                      </Link>
+                      <LogoutButton
+                        variant="link"
+                        className="text-sm font-medium transition-colors hover:text-primary"
+                      />
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant="ghost"
+                        className="justify-start"
+                        onClick={() => {
+                          setIsOpen(false);
+                          setIsAuthModalOpen(true);
+                        }}
+                      >
+                        <LogIn className="mr-2 h-3.5 w-3.5" />
+                        Masuk
+                      </Button>
+                      <Button
+                        className="justify-start"
+                        onClick={() => {
+                          setIsOpen(false);
+                          setIsAuthModalOpen(true);
+                        }}
+                      >
+                        Daftar
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </SheetContent>
+            </SheetContent>
           </Sheet>
         </div>
       </div>

@@ -139,14 +139,14 @@ export function PropertyListingSection() {
   }
 
   return (
-    <section className="py-12 sm:py-16 lg:py-20 bg-slate-50 dark:bg-slate-950">
+    <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8 space-y-2 text-center lg:text-left">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
+        <div className="mb-8 space-y-3 text-center lg:text-left">
+          <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent sm:text-4xl">
             Temukan Kos Impianmu
           </h2>
-          <p className="text-lg text-slate-600 dark:text-slate-400">
+          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl lg:max-w-none">
             Pilihan kos terbaik dengan harga terjangkau dan fasilitas lengkap
           </p>
         </div>

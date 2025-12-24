@@ -5,14 +5,14 @@ import { getToken } from "next-auth/jwt";
 // Simplified route config
 const ROLE_DASHBOARDS = {
   SUPERADMIN: "/dashboard/superadmin",
-  ADMINKOS: "/dashboard/adminkos", 
+  ADMINKOS: "/dashboard/adminkos",
   RECEPTIONIST: "/dashboard/receptionist",
   CUSTOMER: "/dashboard/customer"
 } as const;
 
 const PUBLIC_ROUTES = [
   "/", "/login", "/register", "/about", "/contact",
-  "/search", "/properties", "/property", "/rooms", "/payment",
+  "/search", "/cari-kos", "/properties", "/property", "/rooms", "/payment",
   "/api/auth", "/api/test-db", "/api/wilayah", "/api/properties/coordinates",
   "/api/public", "/api/analytics", "/api/debug", "/data"
 ];
@@ -114,7 +114,7 @@ export default async function middleware(request: NextRequest) {
     tokenSource: token ? "found" : "not_found"
   });
 
-  const isPublic = PUBLIC_ROUTES.some(route => 
+  const isPublic = PUBLIC_ROUTES.some(route =>
     route === "/" ? pathname === "/" : pathname.startsWith(route)
   );
 
