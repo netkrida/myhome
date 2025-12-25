@@ -30,7 +30,7 @@ export function PublicFooter() {
               {/* Content */}
               <div className="space-y-4 flex-1">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30">
-                  
+
                   <span className="text-sm font-medium text-white">Bergabung Sekarang!</span>
                 </div>
 
@@ -152,12 +152,7 @@ export function PublicFooter() {
                   <span>Tentang Kami</span>
                 </Link>
               </li>
-              <li>
-                <Link href="/contact" className="group flex items-center text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
-                  <ArrowRight className="mr-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-                  <span>Kontak</span>
-                </Link>
-              </li>
+
             </ul>
           </div>
 
@@ -165,12 +160,6 @@ export function PublicFooter() {
           <div className="space-y-4">
             <h3 className="font-semibold text-base">Bantuan</h3>
             <ul className="space-y-3">
-              <li>
-                <Link href="/help" className="group flex items-center text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
-                  <ArrowRight className="mr-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-                  <span>Pusat Bantuan</span>
-                </Link>
-              </li>
               <li>
                 <Link href="/terms" className="group flex items-center text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
                   <ArrowRight className="mr-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
@@ -181,12 +170,6 @@ export function PublicFooter() {
                 <Link href="/privacy" className="group flex items-center text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
                   <ArrowRight className="mr-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
                   <span>Kebijakan Privasi</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/faq" className="group flex items-center text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
-                  <ArrowRight className="mr-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-                  <span>FAQ</span>
                 </Link>
               </li>
             </ul>
@@ -217,7 +200,7 @@ export function PublicFooter() {
                   <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/50">
                     <MapPin className="h-4 w-4" />
                   </div>
-                  <span className="pt-1">Jakarta, Indonesia</span>
+                  <span className="pt-1">Pekanbaru, Indonesia</span>
                 </div>
               </li>
             </ul>

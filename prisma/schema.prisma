@@ -83,6 +83,7 @@ model User {
   handledCheckOuts        Booking[]               @relation("BookingCheckedOutBy")
   submittedAdvertisements Advertisement[]         @relation("AdvertisementSubmitter")
   reviewedAdvertisements  Advertisement[]         @relation("AdvertisementReviewer")
+  siteContentsUpdated     SiteContent[]
 
   @@index([email])
   @@index([role])
@@ -681,4 +682,21 @@ enum AdvertisementStatus {
   PLACED        // Placed in layout and active
   REJECTED      // Rejected by SuperAdmin
   EXPIRED       // End date passed or manually deactivated
+}
+
+// Site Content for dynamic pages (Terms, Privacy, etc.)
+model SiteContent {
+  id          String   @id @default(cuid())
+  type        String   @unique @db.VarChar(50) // "terms", "privacy", etc.
+  title       String   @db.VarChar(255)
+  content     String   @db.Text
+  isPublished Boolean  @default(false)
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  updater     User?    @relation(fields: [updatedBy], references: [id])
+  
+  @@index([type])
+  @@index([isPublished])
 }

@@ -16,6 +16,7 @@ import type {
   PublicPropertyDetailDTO
 } from "../../types";
 import { PropertyStatus, PropertyType, ImageCategory, type PropertyFacility } from "../../types/property";
+import { BookingStatus } from "../../types/booking";
 
 /**
  * Property Repository
@@ -26,19 +27,19 @@ export class PropertyRepository {
    * Find property by ID with optional includes
    */
   static async findById(
-    id: string, 
+    id: string,
     includeImages: boolean = true,
     includeRooms: boolean = false,
     includeOwner: boolean = false
   ): Promise<PropertyDetailItem | null> {
     const include: Prisma.PropertyInclude = {};
-    
+
     if (includeImages) {
       include.images = {
         orderBy: { sortOrder: 'asc' }
       };
     }
-    
+
     if (includeRooms) {
       include.rooms = {
         orderBy: { roomNumber: 'asc' }
@@ -46,7 +47,7 @@ export class PropertyRepository {
       // Note: Room images will be fetched separately using RoomTypeImage
       // to avoid duplication (shared images per room type)
     }
-    
+
     if (includeOwner) {
       include.owner = {
         select: {
@@ -275,7 +276,7 @@ export class PropertyRepository {
    */
   static async update(id: string, updateData: UpdatePropertyDTO): Promise<Property> {
     const data: Prisma.PropertyUpdateInput = {};
-    
+
     if (updateData.name) data.name = updateData.name;
     if (updateData.buildYear) data.buildYear = updateData.buildYear;
     if (updateData.propertyType) data.propertyType = updateData.propertyType;
@@ -284,7 +285,7 @@ export class PropertyRepository {
     if (updateData.totalRooms) data.totalRooms = updateData.totalRooms;
     if (updateData.facilities) data.facilities = updateData.facilities as any;
     if (updateData.rules) data.rules = updateData.rules as any;
-    
+
     if (updateData.location) {
       if (updateData.location.provinceCode) data.provinceCode = updateData.location.provinceCode;
       if (updateData.location.provinceName) data.provinceName = updateData.location.provinceName;
@@ -307,8 +308,8 @@ export class PropertyRepository {
    * Update property status (approval/rejection)
    */
   static async updateStatus(
-    id: string, 
-    approval: PropertyApprovalDTO, 
+    id: string,
+    approval: PropertyApprovalDTO,
     approverId: string
   ): Promise<Property> {
     const data: any = {
@@ -662,7 +663,19 @@ export class PropertyRepository {
             isAvailable: true,
           },
           where: {
-            isAvailable: true, // Only available rooms for price calculation
+            isAvailable: true,
+            // Filter out rooms with active bookings
+            bookings: {
+              none: {
+                status: {
+                  in: [BookingStatus.DEPOSIT_PAID, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
+                },
+                OR: [
+                  { checkOutDate: null },
+                  { checkOutDate: { gte: new Date() } }
+                ]
+              }
+            }
           },
           orderBy: {
             monthlyPrice: 'asc', // Get cheapest first
@@ -687,7 +700,7 @@ export class PropertyRepository {
         const cheapestPrice = property.rooms.length > 0
           ? Math.min(...property.rooms.map(room => Number(room.monthlyPrice)))
           : 0;
-        
+
         // Count available rooms (rooms in query are already filtered by isAvailable: true)
         const availableRoomsCount = property.rooms.length;
 
@@ -763,7 +776,21 @@ export class PropertyRepository {
           orderBy: { sortOrder: 'asc' }
         },
         rooms: {
-          orderBy: { roomNumber: 'asc' }
+          orderBy: { roomNumber: 'asc' },
+          include: {
+            bookings: {
+              where: {
+                status: {
+                  in: [BookingStatus.DEPOSIT_PAID, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
+                },
+                OR: [
+                  { checkOutDate: null },
+                  { checkOutDate: { gte: new Date() } }
+                ]
+              },
+              take: 1
+            }
+          }
         },
         owner: {
           select: {
@@ -816,8 +843,11 @@ export class PropertyRepository {
       }
     }
 
-    // Calculate available rooms dynamically from rooms that are currently available
-    const availableRoomsCount = property.rooms?.filter(room => room.isAvailable).length ?? property.availableRooms;
+    // Calculate available rooms dynamically from rooms that are currently available AND have no active bookings
+    const availableRoomsCount = property.rooms?.filter(room => {
+      const hasActiveBooking = (room as any).bookings && (room as any).bookings.length > 0;
+      return room.isAvailable && !hasActiveBooking;
+    }).length ?? property.availableRooms;
 
     // Transform to PublicPropertyDetailDTO
     return {
@@ -852,24 +882,28 @@ export class PropertyRepository {
         createdAt: img.createdAt,
         updatedAt: img.updatedAt,
       })) || [],
-      rooms: property.rooms?.map(room => ({
-        id: room.id,
-        roomType: room.roomType,
-        description: room.description || undefined,
-        size: room.size || undefined,
-        monthlyPrice: Number(room.monthlyPrice),
-        dailyPrice: room.dailyPrice ? Number(room.dailyPrice) : undefined,
-        weeklyPrice: room.weeklyPrice ? Number(room.weeklyPrice) : undefined,
-        quarterlyPrice: room.quarterlyPrice ? Number(room.quarterlyPrice) : undefined,
-        yearlyPrice: room.yearlyPrice ? Number(room.yearlyPrice) : undefined,
-        depositRequired: room.depositRequired,
-        depositType: room.depositType || undefined,
-        depositValue: room.depositValue ? Number(room.depositValue) : undefined,
-        facilities: room.facilities as any[],
-        isAvailable: room.isAvailable,
-        // Use shared room type images
-        images: roomTypeImagesMap.get(room.roomType) || [],
-      })) || [],
+      rooms: property.rooms?.map(room => {
+        const hasActiveBooking = (room as any).bookings && (room as any).bookings.length > 0;
+
+        return {
+          id: room.id,
+          roomType: room.roomType,
+          description: room.description || undefined,
+          size: room.size || undefined,
+          monthlyPrice: Number(room.monthlyPrice),
+          dailyPrice: room.dailyPrice ? Number(room.dailyPrice) : undefined,
+          weeklyPrice: room.weeklyPrice ? Number(room.weeklyPrice) : undefined,
+          quarterlyPrice: room.quarterlyPrice ? Number(room.quarterlyPrice) : undefined,
+          yearlyPrice: room.yearlyPrice ? Number(room.yearlyPrice) : undefined,
+          depositRequired: room.depositRequired,
+          depositType: room.depositType || undefined,
+          depositValue: room.depositValue ? Number(room.depositValue) : undefined,
+          facilities: room.facilities as any[],
+          isAvailable: room.isAvailable && !hasActiveBooking, // Room is only "publicly available" if it has no active booking
+          // Use shared room type images
+          images: roomTypeImagesMap.get(room.roomType) || [],
+        };
+      }) || [],
       createdAt: property.createdAt,
       updatedAt: property.updatedAt,
     };

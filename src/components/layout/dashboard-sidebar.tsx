@@ -87,6 +87,11 @@ export function DashboardSidebar({ variant = "sidebar" }: DashboardSidebarProps)
             icon: IconFileText,
           },
           {
+            title: "Konten Website",
+            url: "/dashboard/superadmin/site-content",
+            icon: IconClipboardList,
+          },
+          {
             title: "Settings",
             url: "/dashboard/superadmin/settings",
             icon: IconSettings,
@@ -115,7 +120,8 @@ export function DashboardSidebar({ variant = "sidebar" }: DashboardSidebarProps)
             url: "/dashboard/adminkos/bookings",
             icon: IconCalendar,
           },
-          { title: "Iklan",
+          {
+            title: "Iklan",
             url: "/dashboard/adminkos/iklan",
             icon: IconAd,
           },

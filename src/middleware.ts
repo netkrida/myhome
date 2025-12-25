@@ -13,6 +13,7 @@ const ROLE_DASHBOARDS = {
 const PUBLIC_ROUTES = [
   "/", "/login", "/register", "/about", "/contact",
   "/search", "/cari-kos", "/properties", "/property", "/rooms", "/payment",
+  "/terms", "/privacy",
   "/api/auth", "/api/test-db", "/api/wilayah", "/api/properties/coordinates",
   "/api/public", "/api/analytics", "/api/debug", "/data"
 ];

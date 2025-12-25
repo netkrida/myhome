@@ -165,8 +165,8 @@ export class AdminKosAPI {
         ]);
 
         // Calculate occupancy rate
-        const occupancyRate = totalRooms > 0 
-          ? Math.round((1 - (availableRooms / totalRooms)) * 100) 
+        const occupancyRate = totalRooms > 0
+          ? Math.round((1 - (availableRooms / totalRooms)) * 100)
           : 0;
 
         return ok({
@@ -534,10 +534,10 @@ export class AdminKosAPI {
             // Calculate lease duration based on checkIn and checkOut dates
             const checkInDate = new Date(booking.checkInDate);
             const checkOutDate = booking.checkOutDate ? new Date(booking.checkOutDate) : null;
-            const leaseDuration = checkOutDate 
+            const leaseDuration = checkOutDate
               ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
               : 0;
-            
+
             // Calculate remaining days until checkout
             let remainingDays = 0;
             if (checkOutDate && booking.status !== BookingStatus.COMPLETED && booking.status !== BookingStatus.CANCELLED) {
@@ -876,18 +876,30 @@ export class AdminKosAPI {
           where: { propertyId: { in: targetPropertyIds } },
         });
 
-        // Get available rooms count
+        // Get available rooms count (isAvailable: true AND no active bookings)
         const availableRooms = await prisma.room.count({
           where: {
             propertyId: { in: targetPropertyIds },
             isAvailable: true,
+            bookings: {
+              none: {
+                status: {
+                  in: [BookingStatus.DEPOSIT_PAID, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
+                },
+                OR: [
+                  { checkOutDate: null },
+                  { checkOutDate: { gte: new Date() } }
+                ]
+              }
+            }
           },
         });
 
-        // Get occupied rooms count (rooms with active bookings)
+        // Get occupied rooms count (isAvailable: true AND has active bookings)
         const occupiedRooms = await prisma.room.count({
           where: {
             propertyId: { in: targetPropertyIds },
+            isAvailable: true,
             bookings: {
               some: {
                 status: {
