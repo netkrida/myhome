@@ -143,7 +143,7 @@ export default function AboutPage() {
                             >
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
                                 <Image
-                                    src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070&auto=format&fit=crop"
+                                    src="/photo-1522708323590-d24dbb6b0267.webp"
                                     alt="Modern Living"
                                     fill
                                     className="object-cover transition-transform duration-700 group-hover:scale-105"
