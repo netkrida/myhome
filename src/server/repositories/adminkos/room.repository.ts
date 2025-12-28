@@ -983,17 +983,17 @@ export class RoomRepository {
       include: {
         bookings: {
           where: {
-            status: {
-              in: ['CONFIRMED', 'CHECKED_IN', 'DEPOSIT_PAID'] // Active booking statuses
-            },
             OR: [
+              // CHECKED_IN bookings occupy the room regardless of checkout date
+              // Room stays occupied until admin does checkout or renewal
+              { status: 'CHECKED_IN' },
+              // DEPOSIT_PAID and CONFIRMED bookings that haven't ended yet
               {
-                checkOutDate: null // Monthly/long-term bookings without checkout date
-              },
-              {
-                checkOutDate: {
-                  gte: new Date() // Bookings that haven't ended yet
-                }
+                status: { in: ['DEPOSIT_PAID', 'CONFIRMED'] },
+                OR: [
+                  { checkOutDate: null },
+                  { checkOutDate: { gte: new Date() } }
+                ]
               }
             ]
           },

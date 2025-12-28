@@ -659,24 +659,11 @@ export class PropertyRepository {
       include: {
         rooms: {
           select: {
+            id: true,
             monthlyPrice: true,
             isAvailable: true,
           },
-          where: {
-            isAvailable: true,
-            // Filter out rooms with active bookings
-            bookings: {
-              none: {
-                status: {
-                  in: [BookingStatus.DEPOSIT_PAID, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
-                },
-                OR: [
-                  { checkOutDate: null },
-                  { checkOutDate: { gte: new Date() } }
-                ]
-              }
-            }
-          },
+          // Get all rooms, we'll calculate availability based on active bookings
           orderBy: {
             monthlyPrice: 'asc', // Get cheapest first
           }
@@ -693,16 +680,51 @@ export class PropertyRepository {
       },
     });
 
+    // Get room IDs with active bookings for these properties
+    const propertyIds = properties.map(p => p.id);
+    const activeBookings = await prisma.booking.findMany({
+      where: {
+        propertyId: { in: propertyIds },
+        OR: [
+          // CHECKED_IN bookings occupy the room regardless of checkout date
+          // Room stays occupied until admin does checkout or renewal
+          { status: BookingStatus.CHECKED_IN },
+          // DEPOSIT_PAID and CONFIRMED bookings that haven't ended yet
+          {
+            status: { in: [BookingStatus.DEPOSIT_PAID, BookingStatus.CONFIRMED] },
+            OR: [
+              { checkOutDate: null },
+              { checkOutDate: { gte: new Date() } }
+            ]
+          }
+        ]
+      },
+      select: {
+        roomId: true,
+        propertyId: true
+      }
+    });
+
+    // Create a Set of roomIds with active bookings for quick lookup
+    const roomsWithActiveBookings = new Set(activeBookings.map(b => b.roomId));
+
     // Transform to DTO and apply price filtering if needed
     let transformedProperties: PublicPropertyCardDTO[] = properties
       .map(property => {
-        // Get cheapest monthly price from available rooms
-        const cheapestPrice = property.rooms.length > 0
-          ? Math.min(...property.rooms.map(room => Number(room.monthlyPrice)))
-          : 0;
+        // Filter rooms that are truly available (no active booking)
+        const availableRooms = property.rooms.filter(room => 
+          room.isAvailable && !roomsWithActiveBookings.has(room.id)
+        );
 
-        // Count available rooms (rooms in query are already filtered by isAvailable: true)
-        const availableRoomsCount = property.rooms.length;
+        // Get cheapest monthly price from available rooms
+        const cheapestPrice = availableRooms.length > 0
+          ? Math.min(...availableRooms.map(room => Number(room.monthlyPrice)))
+          : (property.rooms.length > 0 
+              ? Math.min(...property.rooms.map(room => Number(room.monthlyPrice))) 
+              : 0);
+
+        // Count available rooms
+        const availableRoomsCount = availableRooms.length;
 
         return {
           id: property.id,
@@ -780,12 +802,18 @@ export class PropertyRepository {
           include: {
             bookings: {
               where: {
-                status: {
-                  in: [BookingStatus.DEPOSIT_PAID, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
-                },
                 OR: [
-                  { checkOutDate: null },
-                  { checkOutDate: { gte: new Date() } }
+                  // CHECKED_IN bookings occupy the room regardless of checkout date
+                  // Room stays occupied until admin does checkout or renewal
+                  { status: BookingStatus.CHECKED_IN },
+                  // DEPOSIT_PAID and CONFIRMED bookings that haven't ended yet
+                  {
+                    status: { in: [BookingStatus.DEPOSIT_PAID, BookingStatus.CONFIRMED] },
+                    OR: [
+                      { checkOutDate: null },
+                      { checkOutDate: { gte: new Date() } }
+                    ]
+                  }
                 ]
               },
               take: 1

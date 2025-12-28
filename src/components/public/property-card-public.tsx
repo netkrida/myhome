@@ -117,9 +117,13 @@ export function PublicPropertyCard({
               {typeInfo.label}
             </Badge>
           )}
-          {property.availableRooms > 0 && (
+          {property.availableRooms > 0 ? (
             <Badge className="rounded-full bg-blue-500 px-1.5 py-0.5 text-[10px] font-semibold text-white dark:bg-blue-500/80 sm:px-2.5 sm:py-1 sm:text-xs">
               {property.availableRooms} kamar
+            </Badge>
+          ) : (
+            <Badge className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-white dark:bg-red-500/80 sm:px-2.5 sm:py-1 sm:text-xs">
+              Penuh
             </Badge>
           )}
         </div>

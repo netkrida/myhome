@@ -926,6 +926,18 @@ export class BookingsApplication {
 
     const { booking: savedBooking, payment } = transactionResult.data;
 
+    // Mark the original booking as COMPLETED since it's being renewed
+    // This handles the "overdue/expired" bookings that are being extended
+    try {
+      await BookingRepository.updateStatus(bookingId, {
+        status: BookingStatus.COMPLETED
+      });
+      console.log(`✅ [renewBooking] Original booking ${booking.bookingCode} marked as COMPLETED`);
+    } catch (updateError) {
+      console.error(`⚠️ [renewBooking] Failed to mark original booking as COMPLETED:`, updateError);
+      // Don't fail the renewal if we can't update the original booking status
+    }
+
     return ok({
       bookingId: savedBooking.id,
       bookingCode: savedBooking.bookingCode,
