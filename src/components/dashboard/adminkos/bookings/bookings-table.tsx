@@ -98,8 +98,17 @@ export function BookingsTable({
   onRenewal,
 }: BookingsTableProps) {
   const [showOverdueOnly, setShowOverdueOnly] = React.useState(false);
-  const startIndex = (pagination.page - 1) * pagination.limit + 1;
-  const endIndex = Math.min(pagination.page * pagination.limit, pagination.total);
+  // Jika filter overdue aktif, tampilkan semua overdue tanpa pagination
+  const isOverdueFilter = showOverdueOnly;
+  const filteredBookings = isOverdueFilter
+    ? bookings.filter(
+        (b) => b.remainingDays <= 0 && !["COMPLETED", "CANCELLED", "EXPIRED"].includes(b.status)
+      )
+    : bookings;
+
+  // Untuk info jumlah data
+  const startIndex = isOverdueFilter ? (filteredBookings.length === 0 ? 0 : 1) : (pagination.page - 1) * pagination.limit + 1;
+  const endIndex = isOverdueFilter ? filteredBookings.length : Math.min(pagination.page * pagination.limit, pagination.total);
 
   // Check if booking can be checked in (CONFIRMED status)
   const canCheckIn = (booking: BookingTableItemDTO) => {
@@ -116,12 +125,11 @@ export function BookingsTable({
     return booking.status === "CHECKED_IN";
   };
 
-  // Filter bookings jika showOverdueOnly aktif
-  const filteredBookings = showOverdueOnly
-    ? bookings.filter(
-        (b) => b.remainingDays <= 0 && !["COMPLETED", "CANCELLED", "EXPIRED"].includes(b.status)
-      )
-    : bookings;
+
+  // Jika filter overdue aktif, tampilkan semua overdue tanpa pagination
+  const pagedBookings = isOverdueFilter
+    ? filteredBookings
+    : filteredBookings;
 
   return (
     <div className="space-y-4">
@@ -157,17 +165,17 @@ export function BookingsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredBookings.length === 0 ? (
+            {pagedBookings.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={12} className="h-24 text-center text-muted-foreground">
                   Tidak ada data booking
                 </TableCell>
               </TableRow>
             ) : (
-              filteredBookings.map((booking, index) => (
+              pagedBookings.map((booking, index) => (
                 <TableRow key={booking.id}>
                   <TableCell className="font-medium">
-                    {(pagination.page - 1) * pagination.limit + index + 1}
+                    {isOverdueFilter ? index + 1 : (pagination.page - 1) * pagination.limit + index + 1}
                   </TableCell>
                   <TableCell className="font-mono text-xs">
                     {booking.bookingCode}
@@ -311,8 +319,8 @@ export function BookingsTable({
         </Table>
       </div>
 
-      {/* Pagination */}
-      {pagination.totalPages > 1 && (
+      {/* Pagination: Sembunyikan jika filter overdue aktif */}
+      {!isOverdueFilter && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
             Menampilkan {startIndex} - {endIndex} dari {pagination.total} booking
@@ -363,6 +371,12 @@ export function BookingsTable({
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
+        </div>
+      )}
+      {/* Info jumlah data jika filter overdue aktif */}
+      {isOverdueFilter && (
+        <div className="text-sm text-muted-foreground">
+          Menampilkan semua ({filteredBookings.length}) booking yang lewat
         </div>
       )}
     </div>
