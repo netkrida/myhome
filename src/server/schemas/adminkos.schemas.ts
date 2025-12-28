@@ -32,6 +32,7 @@ export const adminKosBookingsQuerySchema = z.object({
   dateTo: z.coerce.date().optional(),
   sortBy: z.enum(["createdAt", "checkInDate", "totalAmount"]).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  overdue: z.coerce.boolean().optional(), // Filter untuk booking yang sudah lewat waktu
 });
 
 export type AdminKosBookingsQueryInput = z.infer<typeof adminKosBookingsQuerySchema>;

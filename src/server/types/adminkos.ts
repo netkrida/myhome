@@ -217,6 +217,7 @@ export interface AdminKosBookingsQuery {
   dateTo?: Date;
   sortBy?: "createdAt" | "checkInDate" | "totalAmount";
   sortOrder?: "asc" | "desc";
+  overdue?: boolean; // Filter untuk booking yang sudah lewat waktu
 }
 
 export interface AdminKosRoomsQuery {

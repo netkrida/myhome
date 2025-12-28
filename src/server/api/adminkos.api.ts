@@ -483,6 +483,7 @@ export class AdminKosAPI {
           dateTo,
           sortBy = "createdAt",
           sortOrder = "desc",
+          overdue,
         } = query;
 
         // Build where clause
@@ -493,6 +494,15 @@ export class AdminKosAPI {
         if (status) where.status = status;
         if (paymentStatus) where.paymentStatus = paymentStatus;
         if (leaseType) where.leaseType = leaseType;
+
+        // Filter overdue: booking yang checkOutDate sudah lewat dan status masih aktif
+        if (overdue) {
+          const now = new Date();
+          where.checkOutDate = { lt: now };
+          where.status = {
+            notIn: [BookingStatus.COMPLETED, BookingStatus.CANCELLED, BookingStatus.EXPIRED],
+          };
+        }
 
         if (search) {
           where.OR = [

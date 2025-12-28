@@ -72,6 +72,7 @@ export function BookingsPageClient({ initialData, properties }: BookingsPageClie
       if (filters.propertyId) params.append("propertyId", filters.propertyId);
       if (filters.dateFrom) params.append("dateFrom", filters.dateFrom.toISOString());
       if (filters.dateTo) params.append("dateTo", filters.dateTo.toISOString());
+      if (filters.overdue) params.append("overdue", "true");
 
       const response = await fetch(`/api/adminkos/bookings?${params.toString()}`);
       const data = await response.json();
@@ -215,6 +216,7 @@ export function BookingsPageClient({ initialData, properties }: BookingsPageClie
       if (filters.propertyId) params.append("propertyId", filters.propertyId);
       if (filters.dateFrom) params.append("dateFrom", filters.dateFrom.toISOString());
       if (filters.dateTo) params.append("dateTo", filters.dateTo.toISOString());
+      if (filters.overdue) params.append("overdue", "true");
 
       const response = await fetch(`/api/adminkos/bookings?${params.toString()}`);
 

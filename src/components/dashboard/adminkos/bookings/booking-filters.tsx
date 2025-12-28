@@ -30,6 +30,7 @@ export interface BookingFilters {
   propertyId?: string;
   dateFrom?: Date;
   dateTo?: Date;
+  overdue?: boolean;
 }
 
 interface BookingFiltersProps {
@@ -90,6 +91,13 @@ export function BookingFiltersComponent({ filters, onFiltersChange, properties =
     onFiltersChange({});
   };
 
+  const handleOverdueChange = (checked: boolean) => {
+    onFiltersChange({ 
+      ...filters, 
+      overdue: checked ? true : undefined 
+    });
+  };
+
   const hasActiveFilters = 
     filters.search || 
     filters.status || 
@@ -97,7 +105,8 @@ export function BookingFiltersComponent({ filters, onFiltersChange, properties =
     filters.leaseType || 
     filters.propertyId ||
     filters.dateFrom ||
-    filters.dateTo;
+    filters.dateTo ||
+    filters.overdue;
 
   return (
     <div className="space-y-4">
@@ -195,6 +204,19 @@ export function BookingFiltersComponent({ filters, onFiltersChange, properties =
             </SelectContent>
           </Select>
         )}
+
+        {/* Overdue Filter */}
+        <div className="flex items-center">
+          <label className="flex items-center gap-2 cursor-pointer select-none px-3 py-2 border rounded-md hover:bg-accent">
+            <input
+              type="checkbox"
+              checked={filters.overdue || false}
+              onChange={(e) => handleOverdueChange(e.target.checked)}
+              className="accent-red-600 h-4 w-4"
+            />
+            <span className="text-sm">Sisa waktu <span className="font-semibold text-red-600">lewat</span></span>
+          </label>
+        </div>
 
         {/* Date Range Filter */}
         <div className="flex gap-2">
