@@ -138,7 +138,6 @@ export function BookingFiltersComponent({ filters, onFiltersChange, properties =
             <SelectItem value="CHECKED_IN">Check-in</SelectItem>
             <SelectItem value="COMPLETED">Selesai</SelectItem>
             <SelectItem value="CANCELLED">Dibatalkan</SelectItem>
-            <SelectItem value="EXPIRED">Kadaluarsa</SelectItem>
           </SelectContent>
         </Select>
 
@@ -155,7 +154,6 @@ export function BookingFiltersComponent({ filters, onFiltersChange, properties =
             <SelectItem value="PENDING">Menunggu</SelectItem>
             <SelectItem value="SUCCESS">Berhasil</SelectItem>
             <SelectItem value="FAILED">Gagal</SelectItem>
-            <SelectItem value="EXPIRED">Kadaluarsa</SelectItem>
             <SelectItem value="REFUNDED">Dikembalikan</SelectItem>
           </SelectContent>
         </Select>
